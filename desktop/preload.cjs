@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld('propTool',{
   refresh:scope=>ipcRenderer.invoke('refresh',scope),
   clearLogs:()=>ipcRenderer.invoke('clear-logs'),
   exportLogs:()=>ipcRenderer.invoke('export-logs'),
+  factoryReset:()=>ipcRenderer.invoke('factory-reset'),
   checkUpdate:()=>ipcRenderer.invoke('check-update'),
   runUpdateFlow:()=>ipcRenderer.invoke('run-update-flow'),
   acknowledgeNews:()=>ipcRenderer.invoke('ack-news'),
