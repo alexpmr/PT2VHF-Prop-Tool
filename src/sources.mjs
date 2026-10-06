@@ -3,8 +3,23 @@ import {APP_VERSION} from './version.mjs';
 export const PSK_INTERVAL=300000;
 export const NOAA_INTERVAL=300000;
 export const RBN_INTERVAL=300000;
-export function pskURL(settings,scope='nearby') {
-  const q=new URLSearchParams({flowStartSeconds:'-3600',rronly:'1',noactive:'1',rptlimit:'3000'});
+export const PSK_REPORT_LIMIT=3000;
+export function observationWindowSeconds(settings){
+  const minutes=Number(settings?.windowMinutes);
+  if(!Number.isFinite(minutes)||minutes<5||minutes>1440)throw new Error('Janela de observação inválida');
+  return Math.round(minutes*60);
+}
+export function pskQueryPlan(settings,coverage,now=Date.now(),refreshMs=PSK_INTERVAL,grid=''){
+  const windowSeconds=observationWindowSeconds(settings),windowMs=windowSeconds*1000,neededFrom=now-windowMs;
+  const sameGrid=Boolean(coverage)&&(!grid||coverage.grid===grid),sameWindow=Number(coverage?.windowMinutes)===Number(settings.windowMinutes);
+  const complete=sameGrid&&sameWindow&&coverage.complete!==false&&Number.isFinite(coverage.from)&&Number.isFinite(coverage.to)&&coverage.from<=neededFrom&&coverage.to>=now-Math.max(refreshMs*1.5,PSK_INTERVAL);
+  if(!complete)return {mode:'backfill',seconds:windowSeconds,from:neededFrom,to:now,windowMinutes:Number(settings.windowMinutes)};
+  const gapSeconds=Math.max(0,Math.ceil((now-coverage.to)/1000)),seconds=Math.min(windowSeconds,Math.max(300,gapSeconds+120));
+  return {mode:'incremental',seconds,from:now-seconds*1000,to:now,windowMinutes:Number(settings.windowMinutes)};
+}
+export function pskURL(settings,scope='nearby',lookbackSeconds=observationWindowSeconds(settings)) {
+  const requested=Math.max(300,Math.min(86400,Math.round(Number(lookbackSeconds)||observationWindowSeconds(settings))));
+  const q=new URLSearchParams({flowStartSeconds:String(-requested),rronly:'1',noactive:'1',rptlimit:String(PSK_REPORT_LIMIT)});
   if(scope==='nearby') {
     if(!settings.grid)throw new Error('Localização da estação necessária');
     q.set('callsign',settings.grid.slice(0,4));q.set('modify','grid');
@@ -83,7 +98,7 @@ export function parseXray(rows){
   if(!/^[ABCMX]\d+(?:\.\d+)?$/.test(cls)||!Number.isFinite(when))throw new Error('Raios X inválidos');
   return {class:cls,timestamp:when,evidence:'measured',source:'NOAA SWPC'};
 }
-export async function loadPSK(settings,scope,fetchImpl,activity) {return parsePSK(await boundedFetch(pskURL(settings,scope),'text',fetchImpl,activity));}
+export async function loadPSK(settings,scope,lookbackSeconds,fetchImpl,activity) {return parsePSK(await boundedFetch(pskURL(settings,scope,lookbackSeconds),'text',fetchImpl,activity));}
 export function parseRBN(payload){
   const rows=Array.isArray(payload)?payload:Array.isArray(payload?.spots)?payload.spots:[];
   const out=[];
