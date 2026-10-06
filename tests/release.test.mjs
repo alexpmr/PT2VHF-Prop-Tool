@@ -9,9 +9,9 @@ import {LANGUAGES,MESSAGES,translate} from '../src/i18n.mjs';
 import {compareVersions,releaseAsset,trustedDownloadURL} from '../src/updates.mjs';
 import updater from '../desktop/portable-update.cjs';
 test('14 bands including 11 m, vertical antennas, 100 W and 5-minute update default',()=>{
- assert.equal(BANDS.length,14);assert.equal(bandFor(27555000),'11 m');assert.equal(bandFor(28074000),'10 m');assert.equal(DEFAULT_SETTINGS.power,100);assert.equal(DEFAULT_SETTINGS.updateMinutes,5);
+ assert.equal(BANDS.length,14);assert.equal(bandFor(27555000),'11 m');assert.equal(bandFor(28074000),'10 m');assert.equal(DEFAULT_SETTINGS.power,100);assert.equal(DEFAULT_SETTINGS.updateMinutes,5);assert.equal(DEFAULT_SETTINGS.dataRefreshMinutes,5);
  for(const b of BANDS)assert.equal(DEFAULT_SETTINGS.antennas[b.name].type,'Vertical');assert.equal(validateSettings(DEFAULT_SETTINGS).language,'pt-BR');
- assert.throws(()=>validateSettings({...DEFAULT_SETTINGS,updateMinutes:4}));assert.throws(()=>validateSettings({...DEFAULT_SETTINGS,language:'xx'}));
+ assert.throws(()=>validateSettings({...DEFAULT_SETTINGS,updateMinutes:4}));assert.throws(()=>validateSettings({...DEFAULT_SETTINGS,dataRefreshMinutes:4}));assert.throws(()=>validateSettings({...DEFAULT_SETTINGS,language:'xx'}));
  const xml='<receptionReports><receptionReport senderCallsign="TEST" receiverCallsign="RX" frequency="27555000" flowStartSeconds="1800000000"/></receptionReports>';assert.equal(parsePSK(xml)[0].band,'11 m');
 });
 test('Migration adds 11 m to old all-band profiles, retains custom antennas, power and disabled bands',()=>{
