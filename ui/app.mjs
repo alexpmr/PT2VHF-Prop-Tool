@@ -35,7 +35,7 @@ function paintTranslations(){
   const selected=LANGUAGES.find(l=>l.code===language);$('languageFlag').src=`flags/${selected.flag}.svg`;$('currentLanguage').textContent=selected.name;$('languageMenu').querySelector('summary').title=t('language');
   for(const n of $('languages').querySelectorAll('button'))n.setAttribute('aria-pressed',String(n.dataset.language===language));
   $('themeButton').textContent=(current.settings.theme==='dark'?'☀ ':'☾ ')+t(current.settings.theme==='dark'?'light':'dark');$('themeButton').title=t('theme');
-  if(configErrorKey)$('configError').textContent=t(configErrorKey);if(toastKey)$('toast').textContent=t(toastKey.key,toastKey.vars);
+  if(configErrorKey)$('configError').textContent=t(configErrorKey);if(toastKey)$('toast').textContent=t(toastKey.key,toastKey.vars);if($('pauseLogs'))$('pauseLogs').textContent=t(logsPaused?'resume':'pause');
   for(const n of $('bandSettings').querySelectorAll('select'))n.setAttribute('aria-label',t('antennaFor',{band:n.dataset.antenna}));
   renderConversation();
 }
