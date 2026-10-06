@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.2.2 — 2026-10-06
+
+- A visão padrão passa a ser **Propagação da região**, usando a posição configurada como referência geográfica em vez de depender dos contatos de PT2VHF.
+- PSK Reporter passa a consultar a região por Grid e classificar enlaces como saída da região ou entrada na região; **Minha estação** permanece disponível como diagnóstico.
+- **Bandas agora** foi simplificado para apresentar chance operacional por banda: **Grande chance**, **Boa chance**, **Possível** ou **Chance baixa**, sem expor a lista de fontes no bloco.
+- Novo motor combina evidência regional observada com clima espacial para produzir uma **chance estimada**, mantendo separada a força da evidência bruta.
+- Adicionada segunda fonte observacional: **Reverse Beacon Network**, consumida pela API pública Vail ReRBN e normalizada no mesmo modelo de enlaces do PSK Reporter.
+- NOAA SWPC ampliado: além de Kp, passam a ser consultados **F10.7/SFI, Bz/Bt, velocidade do vento solar e classe de raios X GOES**.
+- Mapa ganha dois tipos de polígonos por banda: **Confirmada** (sólido) e **Previsão** (tracejado/translúcido), com controles independentes na legenda.
+- As cores continuam específicas por banda. Polígonos previstos são conservadores e só ocupam regiões sustentadas por geometria observacional; o clima espacial ajusta a chance, sem inventar uma área geográfica onde não há base espacial.
+- Painel de clima espacial passa a mostrar Kp, SFI, Bz, velocidade do vento solar e raios X.
+- Status e LOGs passam a distinguir atividade de PSK Reporter, RBN e NOAA, preservando os LEDs RX/TX baseados em tráfego real.
+- Traduções, Ajuda, Sobre, testes e manual atualizados para o novo modelo regional.
+
 ## v0.2.1 — 2026-10-06
 
 - Corrigido o fluxo de coleta da v0.2.0 para tornar falhas de consulta visíveis e permitir atualização efetiva do mapa e do painel lateral.
