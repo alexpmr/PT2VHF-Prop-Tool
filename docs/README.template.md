@@ -58,13 +58,15 @@ Node.js 24, dependências fixadas no lockfile. Electron com HTML/CSS, módulos J
 ```powershell
 npm ci
 node node_modules/electron/install.js
+python -m pip install pillow reportlab pypdf
+python scripts/make-manual.py
 npm run check
 npm test
 npm start
 npm run dist:win
 ```
 
-`npm run check` sincroniza README e metadados com a versão do pacote e valida as fontes. O template é `docs/README.template.md`. `dist:win` usa electron-builder para o runtime e o compilador nativo NSIS, sem Wine. O workflow publica os executáveis, manual, `latest.yml` e checksums somente depois dos testes. Releases existentes não são sobrescritas; uma distribuição nova exige versão nova. O manual é produzido por `scripts/make-manual.py` a partir das capturas em `docs/screenshots`.
+`npm run check` sincroniza README e metadados com a versão do pacote e valida as fontes. O manual da versão corrente deve ser gerado antes do check; o workflow Windows faz essa etapa automaticamente. O template é `docs/README.template.md`. `dist:win` usa electron-builder para o runtime e o compilador nativo NSIS, sem Wine. O workflow publica os executáveis, manual, `latest.yml` e checksums somente depois dos testes. Releases existentes não são sobrescritas; uma distribuição nova exige versão nova. O manual é produzido por `scripts/make-manual.py` a partir das capturas em `docs/screenshots`.
 
 ## Fontes e contato
 
