@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.2.6 — 2026-10-06
+
+- **WSPR.live** integrado como nova fonte observacional independente, consultada por Grid, bandas habilitadas e Janela de observação.
+- O motor passa a considerar convergência entre PSK Reporter, WSPR.live e RBN sem simplesmente duplicar a mesma evidência; origem, timestamp e tipo da fonte permanecem identificáveis.
+- Resultados passam a indicar a base usada: observado, observado + condições físicas, estimativa solar/ionosférica ou base insuficiente.
+- **11 m / PX** deixa de depender de spots para apresentar estado operacional: quando não há observação compatível, usa estimativa conservadora baseada em SFI/F10.7, Kp, Bz, vento solar e raios X, sem inventar confirmação geográfica.
+- Seletor pull-down de bandas substituído por **botões compactos** na barra superior, incluindo **Todas as bandas**; somente bandas habilitadas são mostradas.
+- Removidas do mapa a indicação textual duplicada da banda e o subtítulo descritivo.
+- **Janela de observação** passa a usar botões diretos de 15, 30 e 60 minutos; controles `select` restantes recebem contraste explícito nos temas claro/escuro.
+- Assistente local passa a interpretar diferentes intenções — melhor banda, banda específica, direção/azimute, tráfego, última evidência, fontes, Heatmap, Janela de observação, score e limitações — em vez de responder sempre com a mesma mensagem.
+- Configurações ganha **Reiniciar de fábrica**, com confirmação, remoção de configurações/histórico/cache/LOGs/dados locais e reabertura automática sem remover a versão instalada.
+- Verificação automática de novas versões passa a **15 minutos por padrão**, permanecendo configurável.
+- Manual, Ajuda, README, traduções e testes atualizados.
+
 ## v0.2.5 — 2026-10-06
 
 - O período do mapa passa a ser identificado como **Janela de observação**, separando claramente duração da análise e intervalo de atualização das fontes.
