@@ -1,0 +1,89 @@
+name: Windows build and release
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    outputs:
+      version: ${{ steps.version.outputs.value }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install locked dependencies
+        run: |
+          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+          npm ci --no-audit --no-fund
+      - name: Validate sources and engine
+        run: |
+          npm run check
+          npm test
+      - name: Read application version
+        id: version
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          Add-Content $env:GITHUB_OUTPUT "value=$version"
+      - name: Verify release tag matches application version
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          if ($env:GITHUB_REF_NAME -ne "v$version") { throw 'Release tag must match package.json version' }
+      - name: Smoke-test Electron and offline map
+        shell: pwsh
+        run: |
+          $process = Start-Process -FilePath '.\node_modules\electron\dist\electron.exe' -ArgumentList '. --smoke-test' -PassThru -Wait -NoNewWindow
+          if ($process.ExitCode -ne 0) { throw "Electron smoke test failed: $($process.ExitCode)" }
+      - name: Build installer and portable x64
+        run: npm run dist:win
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - name: Generate SHA-256 sums
+        shell: pwsh
+        run: |
+          Get-ChildItem dist -File | Where-Object { $_.Extension -in '.exe', '.yml', '.blockmap' } | ForEach-Object {
+            $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
+            "$hash  $($_.Name)"
+          } | Set-Content dist/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PT2VHF-Prop-Tool-Windows-x64
+          path: |
+            dist/*.exe
+            dist/*.yml
+            dist/*.blockmap
+            dist/SHA256SUMS.txt
+            package-lock.json
+          if-no-files-found: error
+  release:
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: PT2VHF-Prop-Tool-Windows-x64
+          path: dist
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: v${{ needs.build.outputs.version }}
+          RELEASE_COMMIT: ${{ github.sha }}
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Release $RELEASE_TAG already exists; build artifacts remain available in Actions."
+            exit 0
+          fi
+          gh release create "$RELEASE_TAG" dist/*.exe dist/*.yml dist/SHA256SUMS.txt --target "$RELEASE_COMMIT" --title "PT2VHF Prop Tool $RELEASE_TAG" --generate-notes

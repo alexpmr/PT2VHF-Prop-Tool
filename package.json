@@ -1,0 +1,35 @@
+{
+  "name": "pt2vhf-prop-tool",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Análise de evidências de propagação personalizada à estação",
+  "author": "Alex Rodrigues, PT2VHF",
+  "main": "desktop/main.cjs",
+  "repository": "https://github.com/alexpmr/PT2VHF-Prop-Tool",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test tests/*.test.mjs",
+    "check": "node scripts/check.mjs",
+    "dist:win": "electron-builder --win dir --x64 --publish never -c.win.signAndEditExecutable=false && node scripts/package-windows.mjs",
+    "preview": "python3 -m http.server 8093 --bind 127.0.0.1"
+  },
+  "dependencies": { "electron-updater": "6.6.2" },
+  "devDependencies": { "electron": "44.5.0", "electron-builder": "26.0.12" },
+  "build": {
+    "appId": "br.pt2vhf.proptool",
+    "productName": "PT2VHF Prop Tool",
+    "directories": { "output": "dist" },
+    "files": ["desktop/**/*", "src/**/*", "ui/**/*", "package.json"],
+    "asar": true,
+    "win": { "target": ["nsis", "portable"], "artifactName": "PT2VHF-Prop-Tool-${version}-${arch}-setup.${ext}" },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "portable": { "artifactName": "PT2VHF-Prop-Tool-${version}-${arch}-portable.exe" },
+    "publish": [{ "provider": "github", "owner": "alexpmr", "repo": "PT2VHF-Prop-Tool" }]
+  }
+}
