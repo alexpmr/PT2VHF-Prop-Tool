@@ -148,16 +148,29 @@ async function factoryReset(){
   const body=`param([int]$ParentPid,[string]$DataDir,[string]$RestartExe)
 $ErrorActionPreference='SilentlyContinue'
 $log=Join-Path $env:TEMP 'PT2VHF-Prop-Tool-factory-reset.log'
+$backup=$DataDir+'.factory-reset-backup'
 try { Wait-Process -Id $ParentPid -Timeout 30 } catch {}
+Remove-Item -LiteralPath $backup -Recurse -Force -ErrorAction SilentlyContinue
 $ok=$false
 $lastError=''
-for($i=0;$i -lt 30;$i++){
-  try { if(Test-Path -LiteralPath $DataDir){Remove-Item -LiteralPath $DataDir -Recurse -Force -ErrorAction Stop}; $ok=$true; break } catch { $lastError=$_.Exception.Message; Start-Sleep -Milliseconds 500 }
+try {
+  if(Test-Path -LiteralPath $DataDir){ Move-Item -LiteralPath $DataDir -Destination $backup -Force -ErrorAction Stop }
+  $ok=$true
+} catch { $lastError=$_.Exception.Message }
+if($ok -and (Test-Path -LiteralPath $backup)){
+  $deleted=$false
+  for($i=0;$i -lt 30;$i++){
+    try { Remove-Item -LiteralPath $backup -Recurse -Force -ErrorAction Stop; $deleted=$true; break } catch { $lastError=$_.Exception.Message; Start-Sleep -Milliseconds 500 }
+  }
+  $ok=$deleted
 }
 if($ok){
   Remove-Item -LiteralPath $log -Force -ErrorAction SilentlyContinue
   Start-Process -FilePath $RestartExe
 }else{
+  if((Test-Path -LiteralPath $backup) -and -not (Test-Path -LiteralPath $DataDir)){
+    try { Move-Item -LiteralPath $backup -Destination $DataDir -Force -ErrorAction Stop } catch { $lastError=$lastError+'; restore: '+$_.Exception.Message }
+  }
   ('Factory reset failed: '+$lastError) | Set-Content -LiteralPath $log -Encoding UTF8
   Start-Process -FilePath $RestartExe -ArgumentList ('--factory-reset-error='+$log)
 }
