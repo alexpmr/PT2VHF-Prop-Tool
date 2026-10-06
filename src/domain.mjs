@@ -189,15 +189,18 @@ export function spaceWeatherScore(band,space={}) {
 }
 function evidenceScore(data,now) {
   if(!data.length)return null;
-  const pairs=new Set(data.map(s=>s.tx+'|'+s.rx)),latest=Math.max(...data.map(s=>s.timestamp));
-  return Math.round(clamp((Math.log2(1+pairs.size)*18+Math.min(18,data.length/2))*Math.exp(-(now-latest)/(30*60000))));
+  const pairs=new Set(data.map(s=>s.tx+'|'+s.rx)),sources=new Set(data.map(s=>s.source).filter(Boolean)),latest=Math.max(...data.map(s=>s.timestamp));
+  const independentEvents=new Set(data.map(s=>[s.tx,s.rx,s.band,Math.floor(s.timestamp/(5*60000))].join('|')));
+  const diversityBoost=Math.min(8,Math.max(0,sources.size-1)*4);
+  return Math.round(clamp((Math.log2(1+pairs.size)*18+Math.min(18,independentEvents.size/2)+diversityBoost)*Math.exp(-(now-latest)/(30*60000))));
 }
 export function evaluateBand(spots,band,now=Date.now(),spaceWeather={}) {
   const data=spots.filter(s=>s.band===band),pairs=new Set(data.map(s=>s.tx+'|'+s.rx));
   const latest=data.length?Math.max(...data.map(s=>s.timestamp)):null;
-  const score=evidenceScore(data,now),spaceScore=spaceWeatherScore(band,spaceWeather);
+  const score=evidenceScore(data,now),spaceScore=spaceWeatherScore(band,spaceWeather),sourceCount=new Set(data.map(s=>s.source).filter(Boolean)).size;
+  const independentEvents=new Set(data.map(s=>[s.tx,s.rx,s.band,Math.floor(s.timestamp/(5*60000))].join('|'))).size;
   let chance=null;
-  if(score!==null&&spaceScore!==null)chance=Math.round(clamp(score*.72+spaceScore*.28+Math.min(8,data.length/4)));
+  if(score!==null&&spaceScore!==null)chance=Math.round(clamp(score*.72+spaceScore*.28+Math.min(8,independentEvents/4)+Math.min(4,Math.max(0,sourceCount-1)*2)));
   else if(score!==null)chance=score;
   else if(spaceScore!==null){
     const weight=band==='11 m'?.78:['6 m'].includes(band)?.35:['2 m','70 cm'].includes(band)?.18:.55;
@@ -209,7 +212,7 @@ export function evaluateBand(spots,band,now=Date.now(),spaceWeather={}) {
   const previous=data.filter(s=>s.timestamp>=now-20*60000&&s.timestamp<now-10*60000).length;
   const trend=previous>=3?(recent>previous*1.25?'↑':recent<previous*.75?'↓':'→'):'—';
   const confirmedZones=zonesFor(data,band),predictedZones=forecastZonesFor(data,band,chance);
-  return {band,state,score,chance,spaceScore,basis,pairs:pairs.size,reports:data.length,latest,trend,
+  return {band,state,score,chance,spaceScore,basis,sourceCount,pairs:pairs.size,reports:data.length,latest,trend,
     txReports:data.filter(s=>s.origin==='regional-out'||s.origin==='direct-tx').length,
     rxReports:data.filter(s=>s.origin==='regional-in'||s.origin==='direct-rx').length,
     zones:confirmedZones,confirmedZones,predictedZones};
