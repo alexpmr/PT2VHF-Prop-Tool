@@ -31,6 +31,7 @@ export function fromGrid(grid) {
   return {lat:lat+h/2,lon:lon+w/2,precisionKm:Math.hypot(h*111,w*111*Math.cos(lat*Math.PI/180))};
 }
 const rad=n=>n*Math.PI/180;
+const clamp=(n,min=0,max=100)=>Math.max(min,Math.min(max,n));
 export function distance(a,b) {
   const dl=rad(b.lat-a.lat),dn=rad(b.lon-a.lon);
   const x=Math.sin(dl/2)**2+Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dn/2)**2;
@@ -93,30 +94,39 @@ export function parsePSK(xml) {
   }
   return result;
 }
-export function relevantSpots(spots,settings,scope,now=Date.now()) {
+export function relevantSpots(spots,settings,scope='nearby',now=Date.now()) {
   if(!coordinates(settings.lat,settings.lon))return [];
-  const home={lat:settings.lat,lon:settings.lon};
-  const seen=new Set(),out=[];
+  const home={lat:settings.lat,lon:settings.lon},seen=new Set(),out=[];
   for(const spot of spots) {
     if(spot.timestamp>now+60000 || spot.timestamp<now-settings.windowMinutes*60000 || seen.has(spot.id))continue;
     seen.add(spot.id);
-    const directTX=spot.tx===settings.callsign && Boolean(settings.callsign);
-    const directRX=spot.rx===settings.callsign && Boolean(settings.callsign);
     let endpoint,direction,origin;
-    if(directTX){endpoint=spot.rxPosition;direction='Sua transmissão recebida';origin='direct-tx';}
-    else if(directRX){endpoint=spot.txPosition;direction='Recebido pela sua estação';origin='direct-rx';}
-    else if(scope==='nearby' && spot.txPosition && distance(home,spot.txPosition)<=settings.nearbyRadius){endpoint=spot.rxPosition;direction='Transmissão de estação próxima';origin='nearby';}
-    else continue;
+    if(scope==='station'){
+      const directTX=spot.tx===settings.callsign && Boolean(settings.callsign);
+      const directRX=spot.rx===settings.callsign && Boolean(settings.callsign);
+      if(directTX){endpoint=spot.rxPosition;direction='Sua transmissão recebida';origin='direct-tx';}
+      else if(directRX){endpoint=spot.txPosition;direction='Recebido pela sua estação';origin='direct-rx';}
+      else continue;
+    }else if(scope==='nearby'){
+      const txDistance=spot.txPosition?distance(home,spot.txPosition):Infinity;
+      const rxDistance=spot.rxPosition?distance(home,spot.rxPosition):Infinity;
+      const txNear=txDistance<=settings.nearbyRadius,rxNear=rxDistance<=settings.nearbyRadius;
+      if(txNear && spot.rxPosition && rxDistance>settings.nearbyRadius){
+        endpoint=spot.rxPosition;direction='Saída da região observada';origin='regional-out';
+      }else if(rxNear && spot.txPosition && txDistance>settings.nearbyRadius){
+        endpoint=spot.txPosition;direction='Entrada na região observada';origin='regional-in';
+      }else continue;
+    }else continue;
     if(!endpoint)continue;
     out.push({...spot,endpoint,direction,origin,distance:distance(home,endpoint),bearing:bearing(home,endpoint)});
   }
   return out;
 }
-// Occupied cells only. No hull connecting distant receptions or smoothing into unsampled areas.
-export function zonesFor(spots,band) {
-  const cells=new Map();
-  for(const s of spots.filter(v=>v.band===band)) {
-    const x=Math.min(179,Math.floor((s.endpoint.lon+180)/2)),y=Math.min(89,Math.floor((s.endpoint.lat+90)/2));
+function buildZones(spots,band,cellSize,minPairs,minCells,evidence) {
+  const cells=new Map(),maxX=Math.ceil(360/cellSize)-1,maxY=Math.ceil(180/cellSize)-1;
+  for(const s of spots.filter(v=>v.band===band&&v.endpoint)) {
+    const x=Math.max(0,Math.min(maxX,Math.floor((s.endpoint.lon+180)/cellSize)));
+    const y=Math.max(0,Math.min(maxY,Math.floor((s.endpoint.lat+90)/cellSize)));
     const key=`${x},${y}`;
     if(!cells.has(key))cells.set(key,{x,y,spots:[]});
     cells.get(key).spots.push(s);
@@ -129,38 +139,77 @@ export function zonesFor(spots,band) {
       const n=`${c.x+dx},${c.y+dy}`;if(cells.has(n)&&!visited.has(n)){visited.add(n);queue.push(cells.get(n));}
     }}
     const reports=group.flatMap(c=>c.spots),pairs=new Set(reports.map(s=>s.tx+'|'+s.rx));
-    if(pairs.size<3 || group.length<2)continue;
-    // Remove shared edges, then stitch the exterior and any holes as independent closed rings.
+    if(pairs.size<minPairs || group.length<minCells)continue;
     const edges=new Map();
     for(const c of group){const p=[[c.x,c.y],[c.x+1,c.y],[c.x+1,c.y+1],[c.x,c.y+1]];
-      for(let i=0;i<4;i++){const a=p[i],b=p[(i+1)%4],id=a+'>'+b,rev=b+'>'+a;if(edges.has(rev))edges.delete(rev);else edges.set(id,[a,b]);}
+      for(let i=0;i<4;i++){const a=p[i],b=p[(i+1)%4],id=a+'=>'+b,rev=b+'=>'+a;if(edges.has(rev))edges.delete(rev);else edges.set(id,[a,b]);}
     }
     const rings=[];
     while(edges.size){const [id,edge]=edges.entries().next().value;edges.delete(id);const ring=[edge[0],edge[1]];
       while(String(ring.at(-1))!==String(ring[0])){const next=[...edges].find(([,e])=>String(e[0])===String(ring.at(-1)));if(!next)break;edges.delete(next[0]);ring.push(next[1][1]);}
-      rings.push(ring.map(([x,y])=>[x*2-180,y*2-90]));
+      rings.push(ring.map(([x,y])=>[x*cellSize-180,y*cellSize-90]));
     }
-    const outgoing=reports.filter(s=>s.origin==='direct-tx');
-    zones.push({id:`${band}:${key}`,band,rings,reportCount:reports.length,pairs:pairs.size,evidence:'observed',
-      directTX:outgoing.length>0,directTXPairs:new Set(outgoing.map(s=>s.tx+'|'+s.rx)).size,
-      txMaxDistance:outgoing.length?Math.max(...outgoing.map(s=>s.distance)):0,
-      latestTX:outgoing.length?Math.max(...outgoing.map(s=>s.timestamp)):0,lastEvidence:Math.max(...reports.map(s=>s.timestamp)),
-      maxDistance:Math.max(...reports.map(s=>s.distance))});
+    const outbound=reports.filter(s=>s.origin==='regional-out'||s.origin==='direct-tx');
+    zones.push({id:`${evidence}:${band}:${key}`,band,rings,reportCount:reports.length,pairs:pairs.size,evidence,type:evidence,
+      regionalOutPairs:new Set(outbound.map(s=>s.tx+'|'+s.rx)).size,
+      maxDistance:Math.max(...reports.map(s=>s.distance)),lastEvidence:Math.max(...reports.map(s=>s.timestamp))});
   }
   return zones;
 }
-export function evaluateBand(spots,band,now=Date.now()) {
+export function zonesFor(spots,band) {return buildZones(spots,band,2,3,2,'confirmed');}
+export function forecastZonesFor(spots,band,chance) {
+  if(!Number.isFinite(chance)||chance<25)return [];
+  return buildZones(spots,band,4,2,1,'predicted');
+}
+function numericMetric(value){const n=Number(value?.value??value);return Number.isFinite(n)?n:null;}
+export function spaceWeatherScore(band,space={}) {
+  const f107=numericMetric(space.f107),kp=numericMetric(space.kp),wind=numericMetric(space.wind),bz=numericMetric(space.bz);
+  const xray=String(space.xray?.class??space.xrayClass??'').toUpperCase();
+  if([f107,kp,wind,bz].every(v=>v===null)&&!xray)return null;
+  const base={'160 m':48,'80 m':50,'60 m':52,'40 m':56,'30 m':58,'20 m':60,'17 m':52,'15 m':44,'12 m':34,'11 m':30,'10 m':28,'6 m':18,'2 m':8,'70 cm':6}[band]??35;
+  let score=base;
+  if(f107!==null){
+    const delta=f107-100;
+    if(['20 m','17 m'].includes(band))score+=delta*.12;
+    else if(['15 m','12 m','11 m','10 m'].includes(band))score+=delta*.28;
+    else if(band==='6 m')score+=delta*.12;
+    else score+=delta*.04;
+  }
+  if(kp!==null){
+    if(kp<=2)score+=8;else if(kp<=4)score+=2;else if(kp<6)score-=10;else score-=22;
+    if(['2 m','70 cm'].includes(band)&&kp>=5)score+=10;
+  }
+  if(wind!==null&&bz!==null&&wind>=550&&bz<=-5&&!['2 m','70 cm'].includes(band))score-=10;
+  const cls=xray[0],level=parseFloat(xray.slice(1))||0;
+  if(cls==='M')score-=12+Math.min(8,level);
+  if(cls==='X')score-=28+Math.min(12,level*2);
+  return Math.round(clamp(score));
+}
+function evidenceScore(data,now) {
+  if(!data.length)return null;
+  const pairs=new Set(data.map(s=>s.tx+'|'+s.rx)),latest=Math.max(...data.map(s=>s.timestamp));
+  return Math.round(clamp((Math.log2(1+pairs.size)*18+Math.min(18,data.length/2))*Math.exp(-(now-latest)/(30*60000))));
+}
+export function evaluateBand(spots,band,now=Date.now(),spaceWeather={}) {
   const data=spots.filter(s=>s.band===band),pairs=new Set(data.map(s=>s.tx+'|'+s.rx));
   const latest=data.length?Math.max(...data.map(s=>s.timestamp)):null;
-  // Evidence strength, not probability of a contact, mode conversion or physical propagation mechanism.
-  const score=data.length?Math.round(Math.min(100,Math.log2(1+pairs.size)*18+Math.min(15,data.length/2))*Math.exp(-(now-latest)/(30*60000))):null;
-  const state=score===null?'Sem evidências':score>=75?'Evidência forte':score>=45?'Evidência moderada':'Evidência limitada';
+  const score=evidenceScore(data,now),spaceScore=spaceWeatherScore(band,spaceWeather);
+  let chance=null;
+  if(score!==null&&spaceScore!==null)chance=Math.round(clamp(score*.72+spaceScore*.28+Math.min(8,data.length/4)));
+  else if(score!==null)chance=score;
+  else if(spaceScore!==null){
+    const weight=['6 m'].includes(band)?.35:['2 m','70 cm'].includes(band)?.18:.55;
+    chance=Math.round(clamp(spaceScore*weight));
+  }
+  const state=chance===null?'Sem evidências':chance>=75?'Evidência forte':chance>=50?'Evidência moderada':chance>=25?'Evidência limitada':'Sem evidências';
   const recent=data.filter(s=>s.timestamp>=now-10*60000).length;
   const previous=data.filter(s=>s.timestamp>=now-20*60000&&s.timestamp<now-10*60000).length;
   const trend=previous>=3?(recent>previous*1.25?'↑':recent<previous*.75?'↓':'→'):'—';
-  return {band,state,score,pairs:pairs.size,reports:data.length,latest,trend,
-    txReports:data.filter(s=>s.origin==='direct-tx').length,rxReports:data.filter(s=>s.origin==='direct-rx').length,
-    zones:zonesFor(data,band)};
+  const confirmedZones=zonesFor(data,band),predictedZones=forecastZonesFor(data,band,chance);
+  return {band,state,score,chance,spaceScore,pairs:pairs.size,reports:data.length,latest,trend,
+    txReports:data.filter(s=>s.origin==='regional-out'||s.origin==='direct-tx').length,
+    rxReports:data.filter(s=>s.origin==='regional-in'||s.origin==='direct-rx').length,
+    zones:confirmedZones,confirmedZones,predictedZones};
 }
 export function mergeSpots(existing,incoming,now=Date.now()) {
   const map=new Map();for(const s of [...existing,...incoming])if(s.timestamp>=now-24*3600000&&s.timestamp<=now+60000)map.set(s.id,s);
@@ -170,12 +219,13 @@ export class AlertMachine {
   constructor(){this.states=new Map();}
   update(bands,settings,now=Date.now(),healthy=true) {
     const alerts=[];
-    for(const b of bands){const eligible=settings.alertBands.includes(b.band)&&healthy&&b.score!==null&&b.score>=settings.alertMinScore;
-      const qualified=b.zones.some(z=>z.directTXPairs>=3&&z.txMaxDistance>=settings.alertMinDistance&&now-z.latestTX<10*60000);
+    for(const b of bands){
+      const metric=b.chance??b.score,eligible=settings.alertBands.includes(b.band)&&healthy&&metric!==null&&metric>=settings.alertMinScore;
+      const zones=b.confirmedZones||b.zones||[];
+      const qualified=zones.some(z=>z.maxDistance>=settings.alertMinDistance&&now-z.lastEvidence<15*60000);
       const open=eligible&&qualified,prev=this.states.get(b.band)||{active:false,last:0};
       if(open&&!prev.active&&(prev.last===0||now-prev.last>=settings.alertCooldown*60000)){alerts.push(b);prev.last=now;}
-      // Failure or stale data suspends notifications, without inventing closure/reopening.
-      if(healthy){if(open)prev.active=true;else if(b.score===null||b.score<settings.alertMinScore-10)prev.active=false;}
+      if(healthy){if(open)prev.active=true;else if(metric===null||metric<settings.alertMinScore-10)prev.active=false;}
       this.states.set(b.band,prev);
     }
     return alerts;

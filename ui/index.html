@@ -7,14 +7,14 @@
 </head>
 <body>
   <header>
-    <div class="topLine"><div class="brand"><span class="logo">◉</span><div><strong>PT2VHF <span>PROP TOOL</span> <span id="appVersion">v0.2.1</span></strong><small data-i18n="subtitle"></small></div></div>
+    <div class="topLine"><div class="brand"><span class="logo">◉</span><div><strong>PT2VHF <span>PROP TOOL</span> <span id="appVersion">v0.2.2</span></strong><small data-i18n="subtitle"></small></div></div>
       <div class="headerActions"><div class="trafficLights" data-i18n-title="trafficActivity"><span><i id="rxLed" class="trafficLed rx"></i>RX</span><span><i id="txLed" class="trafficLed tx"></i>TX</span></div><span id="status" class="pill"></span><details id="languageMenu"><summary><img id="languageFlag" src="flags/br.svg" alt=""><span id="currentLanguage">Português (Brasil)</span></summary><div id="languages"></div></details><button id="themeButton"></button></div>
     </div>
     <div class="navLine"><nav data-i18n-aria="navigation"><button id="mapTab" data-page="map" data-i18n="map" class="selected"></button><button id="settingsButton" data-page="settings" data-i18n="settings"></button><button id="logsTab" data-page="logs" data-i18n="logs"></button><button id="helpTab" data-page="help" data-i18n="help"></button><button id="aboutTab" data-page="about" data-i18n="about"></button></nav><button id="version" class="updateButton" data-i18n="checkUpdate"></button></div>
   </header>
   <main id="mapPage">
     <section class="mapPanel">
-      <nav class="mapTools"><div class="segmented"><button id="stationView" class="selected" data-i18n="station"></button><button id="nearbyView" data-i18n="nearby"></button></div>
+      <nav class="mapTools"><div class="segmented"><button id="nearbyView" class="selected" data-i18n="nearby"></button><button id="stationView" data-i18n="station"></button></div>
         <select id="band" data-i18n-aria="allBands"><option value="" data-i18n="allBands"></option></select>
         <select id="period" data-i18n-aria="minutes"><option value="15"></option><option value="30" selected></option><option value="60" data-i18n="hour"></option></select>
         <button id="refresh" data-i18n="refresh"></button><button id="resetMap" data-i18n-title="world">◎</button></nav>
@@ -22,14 +22,14 @@
         <div class="mapTitle"><span data-i18n="mapCaption"></span><strong id="stationLabel"></strong><small id="viewNotice"></small></div>
         <div id="empty"><span>⌁</span><strong id="emptyTitle"></strong><p data-i18n="setupBody"></p><button id="emptyConfigure" data-i18n="configure"></button></div>
         <div id="mapNotice" class="hidden" role="status"></div>
-        <div class="legend"><span class="dot observed"></span><span data-i18n="observed"></span><span class="dot measured"></span><span data-i18n="measured"></span><span class="dot predicted"></span><span data-i18n="predicted"></span><span id="cursorInfo" class="cursorInfo hidden"></span></div>
+        <div class="legend"><label class="layerToggle"><input id="showConfirmed" type="checkbox" checked><span class="zoneSample confirmed"></span><span data-i18n="observed"></span></label><label class="layerToggle"><input id="showPredicted" type="checkbox" checked><span class="zoneSample forecast"></span><span data-i18n="predicted"></span></label><span id="cursorInfo" class="cursorInfo hidden"></span></div>
         <div class="zoom"><button id="zoomIn" data-i18n-aria="zoomIn">+</button><button id="zoomOut" data-i18n-aria="zoomOut">−</button></div>
       </div>
       <div class="mapFoot"><span id="evidenceCount"></span><span id="freshness"></span></div>
     </section>
     <aside><div class="panelTitle"><div><small data-i18n="monitoring"></small><h1 data-i18n="bandsNow"></h1></div><span id="bandCount" class="pill"></span></div>
       <div class="scoreNote" data-i18n="scoreNote"></div><div id="bands"></div>
-      <div class="solar"><small data-i18n="space"></small><div><strong>Kp <span id="kp">—</span></strong><span id="kpState"></span></div><p id="kpTime"></p></div>
+      <div class="solar"><small data-i18n="space"></small><div><strong>Kp <span id="kp">—</span></strong><span id="kpState"></span></div><div class="solarMetrics"><span>SFI <b id="sfi">—</b></span><span>Bz <b id="bz">—</b></span><span>Vsw <b id="wind">—</b></span><span>X-Ray <b id="xray">—</b></span></div><p id="kpTime"></p></div>
     </aside>
     <section class="assistant"><div class="assistantHead"><strong data-i18n="assistant"></strong><span data-i18n="localRules"></span></div><div id="conversation" aria-live="polite"></div>
       <form id="chat"><input id="question" data-i18n-placeholder="question" data-i18n-aria="question" maxlength="500"><button data-i18n="ask"></button></form>
@@ -54,7 +54,7 @@
       <label><span data-i18n="grid"></span><input id="grid" placeholder="GH64" maxlength="8"></label><button type="button" id="locate" data-i18n="locate"></button></div>
     <p class="help" data-i18n="locationHelp"></p>
     <h2 data-i18n="sources"></h2><p class="help" data-i18n="sourcesHelp"></p>
-    <div class="sourceCards"><article><strong>PSK Reporter</strong><small>retrieve.pskreporter.info</small><p data-i18n="pskSource"></p></article><article><strong>NOAA SWPC</strong><small>services.swpc.noaa.gov</small><p data-i18n="noaaSource"></p></article><article><strong>Natural Earth</strong><small>offline · land.geojson</small><p data-i18n="mapSource"></p></article><article><strong>GitHub</strong><small>api.github.com</small><p data-i18n="githubSource"></p></article></div>
+    <div class="sourceCards"><article><strong>PSK Reporter</strong><small>retrieve.pskreporter.info</small><p data-i18n="pskSource"></p></article><article><strong>NOAA SWPC</strong><small>services.swpc.noaa.gov</small><p data-i18n="noaaSource"></p></article><article><strong>Reverse Beacon Network</strong><small>vailrerbn.com · RBN</small><p data-i18n="rbnSource"></p></article><article><strong>Natural Earth</strong><small>offline · land.geojson</small><p data-i18n="mapSource"></p></article><article><strong>GitHub</strong><small>api.github.com</small><p data-i18n="githubSource"></p></article></div>
     <div class="fields sourceFields"><label><span data-i18n="dataRefreshMinutes"></span><input id="dataRefreshMinutes" type="number" min="5" max="1440" required></label></div>
     <h2 data-i18n="antennas"></h2><p class="help" data-i18n="bandsHelp"></p><div id="bandSettings"></div>
     <details id="criteria"><summary data-i18n="criteria"></summary><div class="fields">

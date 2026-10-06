@@ -1,59 +1,69 @@
-# PT2VHF Prop Tool — v0.2.1
+# PT2VHF Prop Tool — v0.2.2
 
-Aplicativo experimental para Windows 10/11 x64 que reúne evidências de propagação relacionadas à estação, PSK Reporter, Kp da NOAA e mapa offline.
+Aplicativo experimental para Windows 10/11 x64 que estima **onde há possibilidade de contato a partir da região da estação**, combinando observações reais de propagação, clima espacial e visualização geográfica.
 
 ## Downloads da versão atual
 
 | Arquivo | Download direto |
 | --- | --- |
-| Instalador Windows x64 | [Baixar instalador v0.2.1](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.1/PT2VHF-Prop-Tool-0.2.1-x64-setup.exe) |
-| Portátil Windows x64 | [Baixar portátil v0.2.1](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.1/PT2VHF-Prop-Tool-0.2.1-x64-portable.exe) |
-| Manual ilustrado em PDF | [Baixar manual v0.2.1](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.1/PT2VHF-Prop-Tool-0.2.1-Manual.pdf) |
-| SHA-256 | [Baixar checksums](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.1/SHA256SUMS.txt) |
+| Instalador Windows x64 | [Baixar instalador v0.2.2](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.2/PT2VHF-Prop-Tool-0.2.2-x64-setup.exe) |
+| Portátil Windows x64 | [Baixar portátil v0.2.2](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.2/PT2VHF-Prop-Tool-0.2.2-x64-portable.exe) |
+| Manual ilustrado em PDF | [Baixar manual v0.2.2](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.2/PT2VHF-Prop-Tool-0.2.2-Manual.pdf) |
+| SHA-256 | [Baixar checksums](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.2/SHA256SUMS.txt) |
 
 [Última release publicada](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/latest) · [Notas da versão](CHANGELOG.md) · [Relatar problema ou sugestão](https://github.com/alexpmr/PT2VHF-Prop-Tool/issues)
 
 ## O que funciona
 
 - Indicativo, coordenadas, Grid Maidenhead e localização automática quando disponível/autorizada no Windows.
-- 14 bandas, de 160 m a 70 cm, incluindo **11 metros**, habilitadas inicialmente com antena **vertical**. Potência inicial **100 W**. Configurações anteriores e valores personalizados são preservados.
-- Português, inglês, espanhol, francês, alemão e italiano, com bandeiras SVG, textos da interface, mensagens, assistente e **Ajuda traduzidos**. Idioma e tema claro/escuro ficam salvos.
-- Barra superior com versão após o nome, navegação **Mapa / Configurações / LOGs / Ajuda / Sobre**, LEDs de atividade **RX verde / TX vermelho**, apresentação do software e contato pelo GitHub.
-- Consulta PSK Reporter por indicativo ou Grid; intervalo mínimo de cinco minutos, inclusive após reiniciar. Redirecionamentos da API são aceitos somente entre destinos HTTPS autorizados. Ausência de dados, especialmente em 11 m, não é interpretada como banda fechada.
-- Separação entre TX recebido por terceiros, RX pela estação e observações de transmissores próximos, sem confundir evidência regional com alcance confirmado da própria estação.
-- Mapa offline com pontos, zoom, movimentação e zonas irregulares conservadoras. Ao mover o cursor, a legenda mostra **azimute/direção e distância** desde a estação configurada. Zonas exigem pelo menos três enlaces e duas células adjacentes; pontos esparsos não são unidos artificialmente.
-- Painel de bandas, contagem de recepções/enlaces, horário e índice de evidências 0–100. **Não é probabilidade de contato** e não equivale a QSO confirmado.
-- Kp NOAA com horário da medição. Alertas por banda exigem múltiplos receptores da própria transmissão, dados recentes, limiar, distância e intervalo de repetição.
-- Histórico local de até 24 h; análise nos últimos 15, 30 ou 60 minutos. **Refresh automático do mapa a cada 5 minutos por padrão**, configurável e respeitando o limite das fontes. Assistente local por regras, sem dados inventados.
-- Após configurar a estação, um aviso discreto de ausência de evidências substitui o bloco central; o botão de configuração não continua cobrindo o mapa.
-- Nova aba **LOGs** para diagnóstico do tráfego real: TX das consultas, RX das respostas, fonte, endpoint, status, latência, volume, erros e prévia limitada do payload; inclui filtros, busca, pausa, limpeza e exportação JSONL.
-- **Configurações → Fontes de consulta** identifica PSK Reporter, NOAA SWPC, Natural Earth e GitHub e separa o intervalo de atualização dos dados do mapa do intervalo de verificação de versões.
-- Verificação de novas versões a cada **30 minutos** por padrão, configurável. Ao clicar no botão de versão, a checagem é imediata: sem versão nova, a aplicação continua normalmente; com nova versão, o download e a instalação são iniciados automaticamente. Na primeira abertura após atualizar, um popup mostra as novidades uma única vez.
-- Atualização instalada com electron-updater e instalador NSIS. A partir da v0.2.0, o portátil usa substituição do lançador em sua pasta, preserva `data` e mantém o executável anterior como `.previous`, com recuperação automática se a nova versão não confirmar inicialização.
+- 14 bandas, de 160 m a 70 cm, incluindo **11 metros**, habilitadas inicialmente com antena **vertical**. Potência inicial **100 W**. Preferências anteriores são preservadas.
+- Português, inglês, espanhol, francês, alemão e italiano, com bandeiras SVG, Ajuda e interface traduzidas. Tema claro/escuro persistente.
+- Barra superior com versão, menu **Mapa / Configurações / LOGs / Ajuda / Sobre** e LEDs reais de tráfego **RX verde / TX vermelho**.
+- **Propagação da região** é a visão padrão. A posição configurada é a referência; o aplicativo procura enlaces observados envolvendo estações da região, sem depender de transmissões da própria PT2VHF.
+- **Minha estação** continua disponível como visão diagnóstica para recepções/transmissões diretamente associadas ao indicativo configurado.
+- **PSK Reporter regional por Grid**, incluindo os modos reportados pela rede, com classificação de enlaces de saída e entrada da região.
+- **Reverse Beacon Network (RBN)** como segunda fonte observacional, consultada por meio da API pública Vail ReRBN. Spots com Grid conhecido são normalizados no mesmo modelo geográfico do PSK Reporter.
+- **NOAA SWPC ampliado:** Kp, F10.7/SFI, Bz/Bt, velocidade do vento solar e classe de raios X GOES entram no contexto da estimativa.
+- **Bandas agora** mostra somente a leitura operacional: **Grande chance**, **Boa chance**, **Possível** ou **Chance baixa**. As fontes usadas ficam fora desse bloco.
+- O motor mantém separados o índice de evidência observada e a **chance estimada**. O clima espacial ajusta a chance de forma conservadora; não transforma automaticamente uma medição global em confirmação local.
+- Mapa offline com pontos, zoom e polígonos por banda. **Confirmada** usa preenchimento/contorno sólido para regiões sustentadas por observação; **Previsão** usa a mesma cor da banda com preenchimento mais suave e contorno tracejado.
+- Os polígonos previstos da v0.2.2 permanecem geograficamente conservadores: dependem de geometria observacional disponível e não inventam continentes/regiões apenas a partir de índices globais.
+- Controles na legenda permitem ligar/desligar **Confirmada** e **Previsão**. O cursor mostra direção/azimute e distância desde a estação configurada.
+- Painel de clima espacial exibe **Kp, SFI, Bz, Vsw e X-Ray**.
+- Histórico local de até 24 h; análise nos últimos 15, 30 ou 60 minutos. Refresh automático do mapa a cada **5 minutos por padrão**, configurável.
+- Aba **LOGs** registra TX, RX, fonte, endpoint, status, latência, bytes, erros e prévia limitada do payload, incluindo PSK Reporter, RBN, NOAA e GitHub.
+- Verificação de versões a cada **30 minutos** por padrão, configurável. O botão de versão verifica imediatamente e, havendo release nova, inicia o fluxo automático de atualização.
+- Na primeira abertura após atualizar, um popup mostra as novidades uma única vez.
+- Atualização instalada por electron-updater/NSIS e atualização portátil com substituição segura e recuperação da versão anterior.
 
 ## Instalar e começar
 
-**Instalador:** execute o setup e siga o assistente. Instala para a conta atual e oferece atalhos e desinstalação. Os dados ficam no perfil do usuário e não são removidos pelo desinstalador.
+**Instalador:** execute o setup e siga o assistente. A instalação é feita para a conta atual e as configurações são preservadas na desinstalação.
 
-**Portátil:** coloque o executável em uma pasta gravável, inclusive em USB. Ele extrai temporariamente o runtime e mantém configurações/histórico na pasta `data`, ao lado do lançador. Mantenha ambos juntos. Não requer Python, Node.js ou Electron instalados.
+**Portátil:** coloque o executável em uma pasta gravável, inclusive USB. A pasta `data` fica ao lado do executável e contém configurações e histórico.
 
-Abra **Configurações**, preencha indicativo e posição da antena, confira as fontes de consulta, ajuste bandas/antenas/potência e salve. No mapa, escolha contexto, banda e período. O refresh automático inicia em **5 minutos** e **Atualizar dados** respeita os limites das fontes. Informar um Grid usa o centro da célula, não a posição exata da antena. Para diagnóstico, abra **LOGs** e confira TX/RX.
+Abra **Configurações**, informe indicativo e posição da antena, ajuste bandas/antenas/potência e salve. A tela **Mapa** abre por padrão em **Propagação da região**. Selecione uma banda para ver apenas seus pontos e polígonos, ou mantenha Todas as bandas. Use **Minha estação** somente quando quiser inspecionar atividade diretamente ligada ao seu indicativo.
 
-A edição portátil **v0.1.0** ainda não tem o novo mecanismo: baixe a v0.2.0 manualmente para a mesma pasta, preservando `data`. As próximas atualizações podem ser iniciadas pela interface da v0.2.0.
+## Como interpretar
 
-## Limites e validação
+- **Confirmada:** há enlaces observados que sustentam aquela região para a banda selecionada.
+- **Previsão:** estimativa conservadora derivada da geometria observada e das condições disponíveis; não é garantia de QSO.
+- **Grande chance / Boa chance / Possível / Chance baixa:** síntese operacional do motor, não uma promessa estatística de contato.
+- Recepção digital não comprova QSO bidirecional e não deve ser convertida automaticamente em garantia para SSB/CW.
+- Ausência de spots não significa banda fechada.
+- Kp, SFI, Bz, vento solar e raios X são contexto físico global; confirmação geográfica exige dados espaciais/observacionais.
 
-Executáveis sem assinatura Authenticode. Não há dados de demonstração misturados ao mapa. O PSK Reporter depende dos participantes, modos e localização informados; até 3.000 relatórios por consulta não representam cobertura mundial completa.
+## Limites e roteiro
 
-Antena e potência são registradas e ainda não entram em um modelo físico. IA generativa, VOACAP, MapLibre e fontes adicionais permanecem no [roteiro de desenvolvimento](docs/BACKLOG.md). FT8 não é extrapolado para garantia de contato em SSB/CW. Kp global não confirma abertura local.
+A v0.2.2 ainda não possui modelo físico completo que use potência, ganho, altura, polarização e azimute da antena. **MUF/foF2, VOACAP, D-RAP, GloTEC/TEC, aurora espacial, WSPR independente, DX Cluster e outras fontes** continuam no [roteiro](docs/BACKLOG.md).
 
-A publicação é condicionada a testes do motor, traduções e integridade de downloads, inicialização real do Electron no Windows, instalação/desinstalação, execução dos dois pacotes e cenários de substituição/recuperação do portátil. O fluxo entre releases futuras deve continuar sendo verificado; disponibilidade de localização e notificações depende do computador. Consulte o [resultado dos testes nativos](https://github.com/alexpmr/PT2VHF-Prop-Tool/actions) da release.
+Os dados RBN chegam por uma API pública de agregação e podem ter Grid ausente, especialmente para alguns indicativos internacionais. O PSK Reporter também depende de participantes, modos e localização fornecida. O aplicativo rejeita dados sem posição quando ela é necessária para inferência geográfica.
 
-As telas do manual são capturas do mesmo renderer em prévia local, identificada na interface; os campos da estação são exemplos. Não representam recepções ao vivo nem a localização exata da antena do autor.
+Executáveis ainda sem assinatura Authenticode. Confirme sempre a origem e os hashes SHA-256 publicados.
 
 ## Desenvolvimento
 
-Node.js 24, dependências fixadas no lockfile. Electron com HTML/CSS, módulos JavaScript e SVG; sem servidor local exposto na edição desktop.
+Node.js 24, Electron, HTML/CSS, módulos JavaScript e SVG. O workflow Windows executa validação de sintaxe, testes do motor, QA da interface, geração do manual, smoke test Electron, build do instalador/portátil, validação nativa dos pacotes e checksums antes de publicar.
 
 ```powershell
 npm ci
@@ -66,14 +76,14 @@ npm start
 npm run dist:win
 ```
 
-`npm run check` sincroniza README e metadados com a versão do pacote e valida as fontes. O manual da versão corrente deve ser gerado antes do check; o workflow Windows faz essa etapa automaticamente. O template é `docs/README.template.md`. `dist:win` usa electron-builder para o runtime e o compilador nativo NSIS, sem Wine. O workflow publica os executáveis, manual, `latest.yml` e checksums somente depois dos testes. Releases existentes não são sobrescritas; uma distribuição nova exige versão nova. O manual é produzido por `scripts/make-manual.py` a partir das capturas em `docs/screenshots`.
-
 ## Fontes e contato
 
-- [PSK Reporter — API](https://www.pskreporter.info/pskdev.html).
-- [NOAA SWPC — Kp](https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json).
-- [Natural Earth — mapa 1:110m](https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_110m_land.geojson), domínio público.
-- [Projeto](https://github.com/alexpmr/PT2VHF-Prop-Tool) · [Problemas e sugestões](https://github.com/alexpmr/PT2VHF-Prop-Tool/issues) · [Perfil do autor](https://github.com/alexpmr).
+- [PSK Reporter — API](https://www.pskreporter.info/pskdev.html)
+- [NOAA Space Weather Prediction Center](https://services.swpc.noaa.gov/)
+- [Reverse Beacon Network](https://www.reversebeacon.net/)
+- [Vail ReRBN — API pública de spots RBN](https://vailrerbn.com/docs)
+- [Natural Earth — mapa 1:110m](https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_110m_land.geojson)
+- [Projeto](https://github.com/alexpmr/PT2VHF-Prop-Tool) · [Problemas e sugestões](https://github.com/alexpmr/PT2VHF-Prop-Tool/issues) · [Perfil do autor](https://github.com/alexpmr)
 
 Licença do projeto a definir antes da distribuição pública definitiva. As licenças das dependências/runtime são preservadas.
 

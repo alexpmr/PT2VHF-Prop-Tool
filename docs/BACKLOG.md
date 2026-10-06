@@ -1,5 +1,19 @@
 # Backlog consolidado — PT2VHF Prop Tool
 
+## Entregue na v0.2.2
+
+- Propagação da região como visão padrão; a estação configurada define a origem geográfica, sem exigir atividade própria para alimentar a análise.
+- PSK Reporter regional por Grid, separando enlaces de saída e de entrada da região.
+- Reverse Beacon Network como segunda fonte observacional, via Vail ReRBN.
+- NOAA SWPC ampliado com Kp, F10.7/SFI, Bz/Bt, vento solar e raios X GOES.
+- “Bandas agora” simplificado para Grande chance / Boa chance / Possível / Chance baixa.
+- Motor de chance multifuente, separando evidência observada da estimativa operacional.
+- Polígonos por banda em dois estados: Confirmada (sólido) e Previsão (tracejado/translúcido).
+- Controles independentes para exibir/ocultar Confirmada e Previsão.
+- Painel de clima espacial com Kp, SFI, Bz, vento solar e raios X.
+- Minha estação mantida como visão diagnóstica opcional.
+- LOGs e indicadores RX/TX passam a registrar também o tráfego RBN e as consultas NOAA adicionais.
+
 ## Entregue na v0.2.1
 
 - Corrigido o fluxo de coleta/atualização que podia deixar a v0.2.0 sem dados visíveis no mapa e no painel lateral.
@@ -54,9 +68,9 @@ As descrições abaixo preservam os critérios acordados. Esses itens recentes e
 
 ## Motor e novas fontes
 
-- Adapters WSPR, RBN, DX Cluster/HamQTH, GIRO/KC2G e NOAA completo.
+- Adapters WSPR independente, DX Cluster/HamQTH, GIRO/KC2G e complementos NOAA (D-RAP, GloTEC/TEC, aurora e demais produtos espaciais).
 - Confirmar acesso, condições de uso, quotas e disponibilidade antes de ativar cada fonte. Não redistribuir mapas DXMaps sem autorização.
-- MUF/foF2, fluxo F10.7, vento solar/Bz, raios X, prótons, D-RAP e aurora.
+- MUF/foF2, prótons, D-RAP, GloTEC/TEC, aurora e demais camadas espaciais. F10.7, vento solar/Bz e raios X já entram no motor desde a v0.2.2.
 - VOACAP para circuitos HF: considerar potência, antena, altura, ganho, polarização e azimute por banda.
 - Prop Score calibrado por banda/região; separar força de evidência, cobertura amostral, qualidade do enlace e probabilidade modelada.
 - Separar recepção unilateral de QSO confirmado. Analisar modos sem converter automaticamente FT8 em SSB/CW.
@@ -78,7 +92,7 @@ As descrições abaixo preservam os critérios acordados. Esses itens recentes e
 - Tradução integral de toda a aplicação: abas, menus, botões, configurações, tooltips, validações, mensagens de estado/erro, alertas, notas exibidas pela interface e aba Ajuda. Evitar textos fixos que permaneçam em português ao mudar o idioma.
 - Persistir o idioma escolhido, iniciar em Português (Brasil) por padrão e atualizar a interface inteira ao trocar o idioma. Revisar as seis traduções e testar Ajuda e mensagens dinâmicas.
 
-- Visão global com fontes próprias, separada das evidências relativas à estação.
+- Visão global com fontes próprias, separada da propagação regional e da visão diagnóstica da estação.
 - MapLibre, camadas independentes e legenda Observado / Medido / Previsto.
 - Polígonos amorfos por densidade/contornos, com limite de interpolação e indicação de incerteza geográfica. As células da v0.1 são implementação conservadora inicial.
 - Terminação dia/noite e gray line; MUF, absorção, aurora e meteorologia.
