@@ -23,7 +23,23 @@ VIAddVersionKey /LANG=1046 "LegalCopyright" "Alex Rodrigues, PT2VHF"
     System::Call 'kernel32::GetCurrentProcessId() i.r0'
     System::Call 'kernel32::SetEnvironmentVariable(t "PORTABLE_LAUNCHER_PID", t r0) i.r1'
     ${GetParameters} $0
+    ${If} $0 == "--smoke-test"
+      FileOpen $2 "$EXEDIR\portable-launch.log" w
+      FileWrite $2 'extract=$PLUGINSDIR\app$\r$\nargs=$0$\r$\n'
+      ReadEnvStr $3 PORTABLE_EXECUTABLE_DIR
+      FileWrite $2 'data-dir=$3$\r$\n'
+      FileClose $2
+    ${EndIf}
+    ClearErrors
     ExecWait '"$PLUGINSDIR\app\PT2VHF Prop Tool.exe" $0' $1
+    ${If} ${Errors}
+      StrCpy $1 1
+    ${EndIf}
+    ${If} $0 == "--smoke-test"
+      FileOpen $2 "$EXEDIR\portable-launch.log" a
+      FileWrite $2 'exit=$1$\r$\n'
+      FileClose $2
+    ${EndIf}
     SetErrorLevel $1
     SetOutPath "$TEMP"
     RMDir /r "$PLUGINSDIR\app"

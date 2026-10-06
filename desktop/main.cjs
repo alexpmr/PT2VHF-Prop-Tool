@@ -6,6 +6,7 @@ const {downloadAsset,launchHandoff}=require('./portable-update.cjs');
 let win,state,file,domain,sources,alerts,i18n,versions,refreshing=false,checkingUpdate=false,downloadingUpdate=false;
 let scope='station',lastUpdateCheck=0,persistQueue=Promise.resolve(),update={state:'idle',notes:'',version:null},updater,asset,pendingFile;
 const portable=Boolean(process.env.PORTABLE_EXECUTABLE_DIR),smoke=process.argv.includes('--smoke-test');
+if(smoke&&process.env.PROP_SMOKE_LOG){const {appendFileSync}=require('node:fs');const log=value=>{try{appendFileSync(process.env.PROP_SMOKE_LOG,value+'\n');}catch{}};log(JSON.stringify({argv:process.argv,portable,dir:process.env.PORTABLE_EXECUTABLE_DIR}));for(const name of ['log','error']){const original=console[name];console[name]=(...values)=>{log(values.map(v=>v?.stack||String(v)).join(' '));original(...values);};}}
 const repo='https://github.com/alexpmr/PT2VHF-Prop-Tool',mainURL=pathToFileURL(path.join(__dirname,'../ui/index.html')).href;
 const t=(key,vars)=>i18n.translate(state?.settings.language||'pt-BR',key,vars);
 if(!app.requestSingleInstanceLock()){app.quit();}else{

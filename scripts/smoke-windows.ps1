@@ -34,8 +34,11 @@ if (Test-Path "$install/PT2VHF Prop Tool.exe") { throw 'Uninstall failed' }
 if (-not (Test-Path $sentinel)) { throw 'Uninstall deleted unrelated file' }
 $directFolder = Join-Path $root 'portable-direct'; New-Item -ItemType Directory -Path $directFolder -Force | Out-Null
 $direct = Join-Path $directFolder 'portable.exe'; Copy-Item $portable $direct
+$env:PROP_SMOKE_LOG = Join-Path $directFolder 'electron-smoke.log'
 $p = Run-CheckedProcess $direct "--smoke-test" "portable-startup"
-if ($p.ExitCode -ne 0 -or -not (Test-Path "$directFolder/data/state.json")) { throw 'Portable smoke or data persistence failed' }
+Get-Content "$directFolder/portable-launch.log",$env:PROP_SMOKE_LOG -ErrorAction SilentlyContinue | Write-Host
+Remove-Item Env:PROP_SMOKE_LOG
+if ($p.ExitCode -ne 0 -or -not (Test-Path "$directFolder/data/state.json")) { throw "Portable smoke or data persistence failed: exit=$($p.ExitCode)" }
 foreach ($scenario in @('success','rollback')) {
   $dir = Join-Path $root $scenario; $updates = Join-Path $dir 'data/updates'; New-Item -ItemType Directory -Path $updates -Force | Out-Null
   $original = Join-Path $dir 'previous-portable.exe'; Copy-Item $portable $original
