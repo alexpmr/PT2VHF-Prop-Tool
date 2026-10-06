@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.2.5 — 2026-10-06
+
+- O período do mapa passa a ser identificado como **Janela de observação**, separando claramente duração da análise e intervalo de atualização das fontes.
+- A consulta inicial do PSK Reporter deixa de usar 1 hora fixa e passa a solicitar o período correspondente à Janela de observação: 15, 30 ou 60 minutos.
+- Se a Janela de observação for ampliada e o histórico local não cobrir o novo período, a aplicação executa **carga retroativa imediata**.
+- Depois da cobertura inicial, as consultas PSK usam janela incremental com pequena sobreposição, reduzindo downloads repetidos e preservando deduplicação.
+- Status e LOGs registram carga retroativa/incremental, período consultado e atingimento do limite de reports quando aplicável.
+- A banda selecionada passa a aparecer em **letras grandes laranja** logo abaixo do indicativo no mapa; sem filtro, aparece Todas as bandas no idioma ativo.
+- Ajuda, manual, README, traduções e testes atualizados.
+
 ## v0.2.4 — 2026-10-06
 
 - Heatmap refeito como **mapa de densidade multicolor**: azul/ciano/verde representam menor a média concentração e amarelo/laranja/vermelho representam hotspots mais intensos.
