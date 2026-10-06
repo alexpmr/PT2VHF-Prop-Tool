@@ -80,3 +80,10 @@ test('Fetching rejects arbitrary hosts and oversized streamed responses',async()
   await assert.rejects(boundedFetch('https://example.com/private'));
   await assert.rejects(boundedFetch('https://services.swpc.noaa.gov/large','text',async()=>new Response(new Uint8Array(6000001))));
 });
+test('Fetching follows only authorized redirects and reports TX/RX activity',async()=>{
+  const events=[],xml='<receptionReports/>';
+  const mock=async url=>url.endsWith('/query')?new Response(null,{status:302,headers:{location:'/query/latest'}}):new Response(xml,{status:200,headers:{'content-type':'application/xml'}});
+  assert.equal(await boundedFetch('https://retrieve.pskreporter.info/query','text',mock,e=>events.push(e)),xml);
+  assert.deepEqual(events.map(e=>e.direction),['TX','INFO','RX']);
+  await assert.rejects(boundedFetch('https://retrieve.pskreporter.info/query','text',async()=>new Response(null,{status:302,headers:{location:'https://evil.example/query'}})));
+});
