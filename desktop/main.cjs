@@ -1,9 +1,10 @@
 const {app,BrowserWindow,ipcMain,session,dialog,Notification,shell}=require('electron');
 const fs=require('node:fs/promises'),path=require('node:path'),crypto=require('node:crypto');
 const {createReadStream,realpathSync}=require('node:fs');
+const {spawn}=require('node:child_process');
 const {pathToFileURL,fileURLToPath}=require('node:url');
 const {downloadAsset,launchHandoff}=require('./portable-update.cjs');
-let win,state,file,domain,sources,alerts,i18n,versions,refreshing=false,checkingUpdate=false,downloadingUpdate=false;
+let win,state,file,dataDir,domain,sources,alerts,i18n,versions,refreshing=false,checkingUpdate=false,downloadingUpdate=false;
 let scope='nearby',lastUpdateCheck=0,persistQueue=Promise.resolve(),update={state:'idle',notes:'',version:null},updater,asset,pendingFile;
 let trafficLogs=[],trafficSeq=0,activity={rx:0,tx:0};const TRAFFIC_LIMIT=300;
 const portable=Boolean(process.env.PORTABLE_EXECUTABLE_DIR),smoke=process.argv.includes('--smoke-test');
@@ -33,11 +34,12 @@ async function refresh(){
   try{
     const now=Date.now(),hasPosition=domain.coordinates(state.settings.lat,state.settings.lon),canQuery=hasPosition;
     const dataInterval=Math.max(sources.PSK_INTERVAL,state.settings.dataRefreshMinutes*60000),noaaInterval=Math.max(sources.NOAA_INTERVAL,state.settings.dataRefreshMinutes*60000);
-    const rbnInterval=Math.max(sources.RBN_INTERVAL,state.settings.dataRefreshMinutes*60000),grid=canQuery?domain.toGrid(state.settings.lat,state.settings.lon):'',grid4=grid.slice(0,4);
-    const pskPlan=canQuery?sources.pskQueryPlan(state.settings,state.status.psk?.coverage,now,dataInterval,grid4):null;
+    const rbnInterval=Math.max(sources.RBN_INTERVAL,state.settings.dataRefreshMinutes*60000),wsprInterval=Math.max(sources.WSPR_INTERVAL,state.settings.dataRefreshMinutes*60000),grid=canQuery?domain.toGrid(state.settings.lat,state.settings.lon):'',grid4=grid.slice(0,4);
+    const pskPlan=canQuery?sources.pskQueryPlan(state.settings,state.status.psk?.coverage,now,dataInterval,grid4):null,wsprPlan=canQuery?sources.pskQueryPlan(state.settings,state.status.wspr?.coverage,now,wsprInterval,grid4):null;
     const forceBackfill=Boolean(pskPlan?.mode==='backfill'&&(state.status.psk?.requestedWindowMinutes!==state.settings.windowMinutes||state.status.psk?.requestedGrid!==grid4));
-    const duePSK=canQuery&&(state.attemptPSK===0||now-state.attemptPSK>=dataInterval||forceBackfill),dueRBN=hasPosition&&now-(state.attemptRBN||0)>=rbnInterval,dueNOAA=now-state.attemptKp>=noaaInterval;
-    if(duePSK)state.attemptPSK=now;if(dueRBN)state.attemptRBN=now;if(dueNOAA)state.attemptKp=now;await persist();const work=[];
+    const forceWSPRBackfill=Boolean(wsprPlan?.mode==='backfill'&&(state.status.wspr?.requestedWindowMinutes!==state.settings.windowMinutes||state.status.wspr?.requestedGrid!==grid4));
+    const duePSK=canQuery&&(state.attemptPSK===0||now-state.attemptPSK>=dataInterval||forceBackfill),dueRBN=hasPosition&&now-(state.attemptRBN||0)>=rbnInterval,dueWSPR=hasPosition&&(state.attemptWSPR===0||now-state.attemptWSPR>=wsprInterval||forceWSPRBackfill),dueNOAA=now-state.attemptKp>=noaaInterval;
+    if(duePSK)state.attemptPSK=now;if(dueRBN)state.attemptRBN=now;if(dueWSPR)state.attemptWSPR=now;if(dueNOAA)state.attemptKp=now;await persist();const work=[];
     if(duePSK){
       const querySettings={...state.settings},queryScope='nearby',plan=sources.pskQueryPlan(querySettings,state.status.psk?.coverage,now,dataInterval,grid4);
       state.status.psk={...state.status.psk,state:'loading',requestedWindowMinutes:querySettings.windowMinutes,requestedGrid:grid4};
@@ -59,6 +61,18 @@ async function refresh(){
         recordTraffic({direction:'INFO',source:'Reverse Beacon Network',event:'parsed',detail:`${spots.length} RBN spots parsed`});
       }catch(e){state.status.rbn={...state.status.rbn,state:'error',detail:e.message};}})());
     }
+    if(dueWSPR){
+      const querySettings={...state.settings,grid},plan=sources.pskQueryPlan(state.settings,state.status.wspr?.coverage,now,wsprInterval,grid4);
+      state.status.wspr={...state.status.wspr,state:'loading',requestedWindowMinutes:querySettings.windowMinutes,requestedGrid:grid4};
+      work.push((async()=>{try{
+        const spots=await sources.loadWSPR(querySettings,plan.seconds,undefined,recordTraffic);state.spots=domain.mergeSpots(state.spots,spots);
+        const truncated=spots.length>=sources.WSPR_REPORT_LIMIT,previous=state.status.wspr?.coverage;
+        const coverage={grid:grid4,windowMinutes:querySettings.windowMinutes,from:plan.mode==='incremental'&&previous?.grid===grid4?Math.min(previous.from,plan.from):plan.from,to:Date.now(),complete:!truncated,requestedSeconds:plan.seconds};
+        const coverageText=`${plan.mode==='backfill'?'carga retroativa':'incremental'} ${Math.round(plan.seconds/60)} min${truncated?' · limite '+sources.WSPR_REPORT_LIMIT+' atingido':''}`;
+        state.status.wspr={state:'online',updated:Date.now(),count:spots.length,detail:`Grid ${grid4} · ${coverageText}`,coverage,requestedWindowMinutes:querySettings.windowMinutes,requestedGrid:grid4};
+        recordTraffic({direction:'INFO',source:'WSPR.live',event:plan.mode==='backfill'?'backfill':'parsed',detail:`${spots.length} WSPR reports parsed · regional grid ${grid4} · ${coverageText}`});
+      }catch(e){state.status.wspr={...state.status.wspr,state:'error',detail:e.message,requestedWindowMinutes:querySettings.windowMinutes,requestedGrid:grid4};}})());
+    }
     if(dueNOAA){
       state.status.noaa={...state.status.noaa,state:'loading'};
       work.push((async()=>{try{
@@ -69,7 +83,7 @@ async function refresh(){
       }catch(e){state.status.noaa={...state.status.noaa,state:'error',detail:e.message};}})());
     }
     emit();await Promise.all(work);state.spots=domain.mergeSpots(state.spots,[]);await persist();
-    const snap=snapshot(),healthy=(state.status.psk.state==='online'&&Date.now()-state.status.psk.updated<6*60000)||(state.status.rbn?.state==='online'&&Date.now()-state.status.rbn.updated<6*60000);
+    const snap=snapshot(),healthy=(state.status.psk.state==='online'&&Date.now()-state.status.psk.updated<6*60000)||(state.status.rbn?.state==='online'&&Date.now()-state.status.rbn.updated<6*60000)||(state.status.wspr?.state==='online'&&Date.now()-state.status.wspr.updated<6*60000);
     for(const b of alerts.update(snap.bands,state.settings,Date.now(),healthy)){
       const metric=b.chance??b.score;if(Notification.isSupported())new Notification({title:t('opening')+' — '+b.band,body:t('alertText',{band:b.band,n:metric})}).show();
       win.webContents.send('state',{...snapshot(),alert:{band:b.band,score:metric}});
@@ -122,23 +136,47 @@ async function runUpdateFlow(){
   if(update.state==='downloaded')await installUpdate();
   return update;
 }
+async function factoryReset(){
+  if(smoke)throw Error('Factory reset unavailable in smoke mode');
+  const restart=portable?process.env.PORTABLE_EXECUTABLE_FILE:process.execPath;
+  if(!restart)throw Error('Restart executable unavailable');
+  await persistQueue.catch(()=>{});
+  await session.defaultSession.clearCache().catch(()=>{});
+  await session.defaultSession.clearStorageData().catch(()=>{});
+  trafficLogs=[];activity={rx:0,tx:0};
+  const script=path.join(app.getPath('temp'),`pt2vhf-factory-reset-${process.pid}.ps1`);
+  const body=`param([int]$ParentPid,[string]$DataDir,[string]$RestartExe)
+$ErrorActionPreference='SilentlyContinue'
+try { Wait-Process -Id $ParentPid -Timeout 30 } catch {}
+$ok=$false
+for($i=0;$i -lt 30;$i++){
+  try { if(Test-Path -LiteralPath $DataDir){Remove-Item -LiteralPath $DataDir -Recurse -Force -ErrorAction Stop}; $ok=$true; break } catch { Start-Sleep -Milliseconds 500 }
+}
+if($ok){ Start-Process -FilePath $RestartExe }
+Remove-Item -LiteralPath $PSCommandPath -Force -ErrorAction SilentlyContinue
+`;
+  await fs.writeFile(script,body,'utf8');
+  spawn('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-WindowStyle','Hidden','-File',script,String(process.pid),dataDir,restart],{detached:true,stdio:'ignore',windowsHide:true}).unref();
+  setTimeout(()=>app.exit(0),120);
+  return true;
+}
 async function rendererReady(){return win.webContents.executeJavaScript(`new Promise((resolve,reject)=>{const deadline=Date.now()+15000;const poll=setInterval(()=>{if(document.documentElement.dataset.ready==='true'){clearInterval(poll);const bands=document.querySelectorAll('.bandRow').length,land=document.querySelectorAll('#land path').length;if(bands===${state.settings.visible.length}&&document.querySelector('#band').options.length===${domain.BANDS.length+1}&&land>100&&typeof window.propTool.snapshot==='function'&&typeof window.propTool.runUpdateFlow==='function'&&typeof window.propTool.clearLogs==='function')resolve(true);else reject(new Error('Interface, bridge or map failed'));}else if(Date.now()>deadline){clearInterval(poll);reject(new Error('Renderer timeout'));}},100);})`);}
 async function start(){
   if(smoke)console.log('Smoke startup: Electron ready');
   if(process.platform==='win32')app.setAppUserModelId('br.pt2vhf.proptool');[domain,sources,i18n,versions]=await Promise.all([import('../src/domain.mjs'),import('../src/sources.mjs'),import('../src/i18n.mjs'),import('../src/updates.mjs')]);alerts=new domain.AlertMachine();
-  const dir=portable?path.join(process.env.PORTABLE_EXECUTABLE_DIR,'data'):smoke?path.join(app.getPath('temp'),'pt2vhf-smoke-'+process.pid):app.getPath('userData');file=path.join(dir,'state.json');
-  state={schemaVersion:4,settings:domain.validateSettings(domain.DEFAULT_SETTINGS),spots:[],kp:null,spaceWeather:null,attemptPSK:0,attemptRBN:0,attemptKp:0,status:{psk:{state:'idle'},rbn:{state:'idle'},noaa:{state:'idle'}},lastSeenVersion:app.getVersion(),pendingNews:null,startupNews:null};
-  try{const loaded=JSON.parse((await fs.readFile(file,'utf8')).replace(/^\uFEFF/,''));const previousSchema=loaded.schemaVersion||1;state={...state,...loaded,schemaVersion:4,settings:domain.migrateSettings(loaded.settings,previousSchema),spots:domain.mergeSpots(Array.isArray(loaded.spots)?loaded.spots:[],[]),status:{...state.status,...(loaded.status||{})}};if(state.pendingNews?.version===app.getVersion())state.startupNews=state.pendingNews;else if(!loaded.lastSeenVersion&&previousSchema<4)state.startupNews={version:app.getVersion(),notes:''};else if(loaded.lastSeenVersion&&loaded.lastSeenVersion!==app.getVersion())state.startupNews={version:app.getVersion(),notes:''};}catch(e){if(e.code!=='ENOENT'){console.error('Settings load failed:',e);if(smoke)throw e;await dialog.showMessageBox({type:'warning',message:t('settingsLoadError')});await fs.rename(file,file+'.invalid-'+Date.now()).catch(()=>{});}}
+  dataDir=portable?path.join(process.env.PORTABLE_EXECUTABLE_DIR,'data'):smoke?path.join(app.getPath('temp'),'pt2vhf-smoke-'+process.pid):app.getPath('userData');file=path.join(dataDir,'state.json');
+  state={schemaVersion:5,settings:domain.validateSettings(domain.DEFAULT_SETTINGS),spots:[],kp:null,spaceWeather:null,attemptPSK:0,attemptRBN:0,attemptWSPR:0,attemptKp:0,status:{psk:{state:'idle'},rbn:{state:'idle'},wspr:{state:'idle'},noaa:{state:'idle'}},lastSeenVersion:app.getVersion(),pendingNews:null,startupNews:null};
+  try{const loaded=JSON.parse((await fs.readFile(file,'utf8')).replace(/^\uFEFF/,''));const previousSchema=loaded.schemaVersion||1;state={...state,...loaded,schemaVersion:5,settings:domain.migrateSettings(loaded.settings,previousSchema),spots:domain.mergeSpots(Array.isArray(loaded.spots)?loaded.spots:[],[]),status:{...state.status,...(loaded.status||{})}};if(state.pendingNews?.version===app.getVersion())state.startupNews=state.pendingNews;else if(!loaded.lastSeenVersion&&previousSchema<4)state.startupNews={version:app.getVersion(),notes:''};else if(loaded.lastSeenVersion&&loaded.lastSeenVersion!==app.getVersion())state.startupNews={version:app.getVersion(),notes:''};}catch(e){if(e.code!=='ENOENT'){console.error('Settings load failed:',e);if(smoke)throw e;await dialog.showMessageBox({type:'warning',message:t('settingsLoadError')});await fs.rename(file,file+'.invalid-'+Date.now()).catch(()=>{});}}
   if(smoke)console.log('Smoke startup: settings loaded',file,state.settings.visible.length);
   win=new BrowserWindow({width:1440,height:980,minWidth:1050,minHeight:760,show:!smoke,backgroundColor:state.settings.theme==='light'?'#edf2f7':'#09111d',title:'PT2VHF Prop Tool v'+app.getVersion(),webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,webSecurity:true}});
   win.setMenuBarVisibility(false);win.webContents.setWindowOpenHandler(()=>({action:'deny'}));win.webContents.on('will-navigate',(e,url)=>{if(!isMainURL(url))e.preventDefault();});
   session.defaultSession.setPermissionRequestHandler((contents,permission,callback)=>callback(contents===win.webContents&&permission==='geolocation'&&isMainURL(contents.getURL())));session.defaultSession.setPermissionCheckHandler((contents,permission)=>contents===win.webContents&&permission==='geolocation'&&isMainURL(contents.getURL()));
   const handle=(name,fn)=>ipcMain.handle(name,(event,...args)=>{if(event.sender!==win.webContents||event.senderFrame!==win.webContents.mainFrame||!isMainURL(event.senderFrame.url))throw Error('Invalid origin');return fn(...args);});
   handle('snapshot',snapshot);handle('configure',async input=>{const settings=domain.validateSettings(input),old=state.settings;state.settings=settings;try{await persist();}catch(e){state.settings=old;throw e;}if(['callsign','lat','lon','alertMinScore','alertMinDistance','alertCooldown','alertBands'].some(k=>JSON.stringify(old[k])!==JSON.stringify(settings[k])))alerts=new domain.AlertMachine();emit();return snapshot();});
-  handle('refresh',refresh);handle('clear-logs',clearLogs);handle('export-logs',exportLogs);handle('ack-news',acknowledgeNews);handle('check-update',()=>checkUpdate(true));handle('run-update-flow',runUpdateFlow);handle('download-update',downloadUpdate);handle('install-update',installUpdate);
+  handle('refresh',refresh);handle('clear-logs',clearLogs);handle('export-logs',exportLogs);handle('factory-reset',factoryReset);handle('ack-news',acknowledgeNews);handle('check-update',()=>checkUpdate(true));handle('run-update-flow',runUpdateFlow);handle('download-update',downloadUpdate);handle('install-update',installUpdate);
   const openLink=target=>{const links={project:repo,issues:repo+'/issues',profile:'https://github.com/alexpmr',releases:repo+'/releases',manual:`${repo}/releases/download/v${app.getVersion()}/PT2VHF-Prop-Tool-${app.getVersion()}-Manual.pdf`};if(!Object.hasOwn(links,target))throw Error('Invalid link');return shell.openExternal(links[target]);};handle('open-link',openLink);handle('open-releases',()=>openLink('releases'));
   setupUpdater();await win.loadFile(path.join(__dirname,'../ui/index.html'));if(smoke)console.log('Smoke startup: renderer loaded');await rendererReady();
-  if(process.env.PROP_UPDATE_CONFIRM_FILE&&path.resolve(process.env.PROP_UPDATE_CONFIRM_FILE)===path.join(dir,'updates','update-ready.json'))await fs.writeFile(process.env.PROP_UPDATE_CONFIRM_FILE,JSON.stringify({version:app.getVersion()}),'utf8');
+  if(process.env.PROP_UPDATE_CONFIRM_FILE&&path.resolve(process.env.PROP_UPDATE_CONFIRM_FILE)===path.join(dataDir,'updates','update-ready.json'))await fs.writeFile(process.env.PROP_UPDATE_CONFIRM_FILE,JSON.stringify({version:app.getVersion()}),'utf8');
   if(smoke){try{await win.webContents.executeJavaScript(`(async()=>{const old=await window.propTool.snapshot();for(const language of ['pt-BR','en','es','fr','de','it']){await window.propTool.configure({...old.settings,language});await new Promise(r=>setTimeout(r,60));if(document.documentElement.lang!==language||document.querySelectorAll('#languages img').length!==6)throw Error('Language failed');document.getElementById('helpTab').click();if(document.getElementById('helpPage').classList.contains('hidden'))throw Error('Help failed');}await window.propTool.configure({...old.settings,theme:'light'});await new Promise(r=>setTimeout(r,60));if(document.documentElement.dataset.theme!=='light')throw Error('Theme failed');await window.propTool.configure(old.settings);})()`);console.log('Electron smoke test: 14 bands, six languages, Help, themes, IPC and offline map OK');app.exit(0);}catch(e){console.error(e);app.exit(1);}return;}
   refresh().catch(e=>{state.status.psk={state:'error',detail:e.message};emit();});const poll=setInterval(()=>{refresh().catch(e=>{state.status.psk={state:'error',detail:e.message};emit();});if(Date.now()-lastUpdateCheck>=state.settings.updateMinutes*60000)checkUpdate();},30000),firstCheck=setTimeout(checkUpdate,10000);app.on('before-quit',()=>{clearInterval(poll);clearTimeout(firstCheck);});
 }
