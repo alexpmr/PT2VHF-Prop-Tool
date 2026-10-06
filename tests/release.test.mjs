@@ -8,6 +8,7 @@ import {BANDS,DEFAULT_SETTINGS,validateSettings,migrateSettings,bandFor,parsePSK
 import {LANGUAGES,MESSAGES,translate} from '../src/i18n.mjs';
 import {compareVersions,releaseAsset,trustedDownloadURL} from '../src/updates.mjs';
 import {normalizeReleaseNotes} from '../src/release-notes.mjs';
+import {aggregateHeatSamples,heatColor,kernelRadius} from '../src/heatmap.mjs';
 import updater from '../desktop/portable-update.cjs';
 test('14 bands including 11 m, vertical antennas, 100 W, 5-minute data refresh and 30-minute version check',()=>{
  assert.equal(BANDS.length,14);assert.equal(bandFor(27555000),'11 m');assert.equal(bandFor(28074000),'10 m');assert.equal(DEFAULT_SETTINGS.power,100);assert.equal(DEFAULT_SETTINGS.updateMinutes,30);assert.equal(DEFAULT_SETTINGS.dataRefreshMinutes,5);assert.equal(DEFAULT_SETTINGS.mapView,'heatmap');
@@ -26,6 +27,13 @@ test('All six catalogs cover the same keys and interpolation parameters, includi
  for(const {code} of LANGUAGES){assert.deepEqual(Object.keys(MESSAGES[code]).sort(),base);for(const key of base){assert.ok(MESSAGES[code][key].trim());const params=v=>[...v.matchAll(/\{\w+\}/g)].map(m=>m[0]).sort();assert.deepEqual(params(MESSAGES[code][key]),params(MESSAGES['pt-BR'][key]),`${code}/${key}`);}assert.ok(translate(code,'helpUpdate').length>150);assert.ok(translate(code,'invalidSettings'));}
  assert.equal(translate('en','minutes',{n:5}),'5 minutes');assert.throws(()=>translate('en','missingKey'));
 });
+test('Density heatmap uses a multicolor scale and smaller kernels as zoom increases',()=>{
+ const cold=heatColor(.08),mid=heatColor(.55),hot=heatColor(1);
+ assert.notDeepEqual(cold,mid);assert.notDeepEqual(mid,hot);assert.notDeepEqual(hot,[255,255,255]);
+ assert.ok(kernelRadius(1)>kernelRadius(3));assert.ok(kernelRadius(3)>kernelRadius(6));assert.ok(kernelRadius(6)>=12);
+ const bins=aggregateHeatSamples([{x:10,y:10,weight:1},{x:11,y:11,weight:2},{x:80,y:80,weight:1}],8);
+ assert.equal(bins.length,2);assert.equal(bins[0].count,2);assert.equal(bins[0].weight,3);
+});
 test('Release notes sanitize HTML, Markdown and plain text without exposing raw tags',()=>{
  const html='<h2>What\'s Changed</h2><ul><li>Fix by <a class="user-mention" data-hovercard-type="user" href="https://github.com/alexpmr">@alexpmr</a></li></ul><script>alert(1)</script>';
  const clean=normalizeReleaseNotes(html);assert.match(clean,/What's Changed/);assert.match(clean,/• Fix by @alexpmr/);assert.match(clean,/https:\/\/github\.com\/alexpmr/);assert.doesNotMatch(clean,/<h2>|data-hovercard|script|alert\(1\)/);
@@ -43,7 +51,7 @@ test('Release checking rejects malformed versions, drafts, missing hashes and su
 test('Portable download verifies SHA-256 and PE header; malicious redirects and corrupt files leave no partials',async()=>{
  const folder=await mkdtemp(join(tmpdir(),'prop-update-test-'));try{
  const bytes=Buffer.from('MZverified executable fixture'),asset={name:'PT2VHF-Prop-Tool-0.3.0-x64-portable.exe',url:release.assets[0].browser_download_url,size:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')};
- const out=await updater.downloadAsset(asset,folder,null,async()=>new Response(bytes));assert.deepEqual(await readFile(out),bytes);
+ const progress=[];const out=await updater.downloadAsset(asset,folder,p=>progress.push(p),async()=>new Response(bytes));assert.deepEqual(await readFile(out),bytes);assert.ok(progress.length);assert.equal(Math.round(progress.at(-1).percent),100);assert.equal(progress.at(-1).transferred,bytes.length);assert.equal(progress.at(-1).total,bytes.length);
  await assert.rejects(updater.downloadAsset({...asset,sha256:'b'.repeat(64)},folder,null,async()=>new Response(bytes)));
  await assert.rejects(updater.downloadAsset(asset,folder,null,async()=>new Response(null,{status:302,headers:{location:'https://evil.example/exe'}})));
  assert.ok(!(await readdir(folder)).some(n=>n.endsWith('.partial')));

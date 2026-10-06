@@ -1,5 +1,16 @@
 # Backlog consolidado — PT2VHF Prop Tool
 
+## Entregue na v0.2.4
+
+- Heatmap multicolor por densidade/intensidade, com escala perceptual frio → quente e normalização para evitar saturação em branco.
+- Heatmap recalculado por viewport/zoom em camada própria, sem ampliar geometricamente a composição anterior.
+- Kernel/raio reduzido progressivamente em zoom alto para revelar hotspots locais e maior detalhe espacial.
+- Marcador e rótulo da estação mantêm tamanho visual constante durante zoom/pan.
+- Atualização com barra de progresso real, percentual, bytes baixados/total e velocidade quando disponível.
+- Instalação/substituição automática após validação, sem perguntas intermediárias, com fechamento e reabertura automáticos.
+- Fluxo aplicado à edição instalada e Portable, preservando versão anterior/rollback em caso de falha.
+- Testes de regressão para gradiente, densidade, zoom, marcador e progresso de atualização.
+
 ## Entregue na v0.2.3
 
 - Mapa de calor como visualização padrão, usando manchas graduais por banda em vez da aparência quadriculada dos polígonos/células.
@@ -70,7 +81,6 @@ As descrições abaixo preservam os critérios acordados. Esses itens recentes e
 
 ## Navegação, Sobre e atualização
 
-- **Atualização automática — progresso e instalação sem perguntas:** ao iniciar uma atualização, abrir um estado/popup de atualização com **barra de progresso real do download** (percentual, bytes baixados/total quando disponíveis e status atual). Enquanto o pacote estiver sendo baixado, manter a interface responsiva e indicar claramente que a atualização está em andamento. Ao concluir e validar o download, **fechar automaticamente a aplicação, instalar/substituir a nova versão sem solicitar confirmações adicionais e reabrir o PT2VHF Prop Tool automaticamente ao término**. Não exibir prompts como “Deseja instalar agora?” ou “Reiniciar?”. Em caso de erro de download, validação, substituição ou instalação, não fechar a versão atual; mostrar o erro e preservar a instalação/Portable existente. Aplicar fluxo equivalente à edição instalada e, quando tecnicamente possível com segurança, à Portable, mantendo rollback/recuperação já previstos.
 - Verificar automaticamente a disponibilidade de novas versões da aplicação a cada `30 minutos` por padrão. Manter o intervalo configurável em `Configurações`, adequar a validação para aceitar 5 minutos e preservar intervalos personalizados salvos pelo usuário. Esse intervalo se refere à atualização do software; consultas às fontes de propagação continuam respeitando seus próprios limites.
 - Na barra superior, manter a ordem `Mapa`, `Configurações`, `LOGs`, `Ajuda` e `Sobre`. Manter os seletores de contexto do mapa como controles independentes da navegação principal.
 - A aba `Sobre` deve apresentar uma breve descrição da aplicação, finalidade, recursos e limitações da versão, autoria `Alex, PT2VHF`, link do projeto e formas de contato fornecidas pelo autor. Traduzir seu conteúdo nos seis idiomas previstos.
@@ -92,8 +102,6 @@ As descrições abaixo preservam os critérios acordados. Esses itens recentes e
 
 ## Mapa e operação
 
-- **Heatmap — gradiente real por densidade/intensidade:** substituir a mancha difusa praticamente monocromática atual por um heatmap de densidade real, com **gradiente multicolor contínuo** dentro de cada banda. Mesmo quando apenas uma banda estiver selecionada, a cor não deve permanecer uniforme: baixa densidade/intensidade deve usar tons frios/suaves, passando por níveis intermediários e chegando a tons quentes/intensos nas áreas de maior concentração. A cor-base da banda pode continuar sendo usada na legenda/identificação, mas o heatmap deve priorizar uma escala perceptual de densidade (por exemplo, frio → intermediário → quente) para comunicar concentração e chance. Normalizar a intensidade por viewport/zoom, aplicar limites para evitar saturação em branco, recalcular kernel/raio conforme o nível de zoom e preservar nitidez. Em zoom alto, reduzir o raio e revelar hotspots locais; em zoom baixo, agregar os pontos. Implementar preferencialmente com camada de heatmap vetorial/WebGL ou algoritmo equivalente, em vez de círculos SVG com gradiente radial sobrepostos.
-- **Heatmap — renderização dependente do zoom:** substituir o comportamento atual que apenas escala geometricamente a camada SVG inteira. Ao aplicar zoom, o mapa deve ser re-renderizado/recalculado no novo nível de escala, preservando nitidez e leitura como em mapas vetoriais/WebGL. O raio das manchas do heatmap deve permanecer definido em pixels/tela ou ser recalculado conforme o zoom, em vez de crescer proporcionalmente com o `transform` do mapa. Marcador da estação, rótulo do indicativo, espessuras de linhas e demais overlays devem manter tamanho visual adequado e não aumentar junto com a geometria mundial. Reamostrar/agrupar os pontos visíveis por nível de zoom para evitar grandes borrões, manchas superdimensionadas e saturação da tela. Em zoom alto, aumentar o detalhe espacial; em zoom baixo, agregar/suavizar. Priorizar arquitetura equivalente à usada em aplicações como o Network Analyzer/Traffic Analyzer, com camada de mapa vetorial e overlays re-renderizados por viewport, em vez de simples ampliação de uma imagem/camada já composta.
 - Potência padrão de `100 W` na configuração inicial da estação. Manter o valor editável e preservar a potência escolhida pelo usuário entre sessões e atualizações. Esse valor inicial já existe na v0.1.0 e deve ser mantido como requisito.
 - Na configuração inicial, habilitar todas as bandas para monitoramento e exibição, incluindo 11 metros quando adicionada, com antena `Vertical` atribuída a cada banda. Permitir alterar posteriormente o tipo de antena por banda e habilitar/desabilitar bandas. Aplicar esses valores somente na inicialização ou a novos campos sem preferência salva, preservando as escolhas existentes do usuário após reiniciar ou atualizar.
 - Corrigir o estado vazio do mapa relatado na v0.1.0: o bloco `Sem evidências para este filtro` mantém o botão `Configurar estação` após salvar a configuração. Exibir esse convite somente quando a configuração da estação estiver incompleta. Com a estação configurada e sem recepções, substituir o bloco central por uma indicação discreta que não cubra o mapa.
@@ -108,7 +116,7 @@ As descrições abaixo preservam os critérios acordados. Esses itens recentes e
 
 - Visão global com fontes próprias, separada da análise regional padrão; não reintroduzir o antigo modo Minha estação no mapa.
 - MapLibre, camadas independentes e legenda Observado / Medido / Previsto.
-- Evoluir o heatmap para densidade/contornos mais sofisticados, com limite de interpolação, indicação de incerteza geográfica e suavização configurável. Manter Polígonos como modo técnico alternativo.
+- Evoluir o heatmap atual com interpolação espacial/contornos mais sofisticados, indicação explícita de incerteza geográfica e suavização configurável. Manter Polígonos como modo técnico alternativo.
 - Terminação dia/noite e gray line; MUF, absorção, aurora e meteorologia.
 - Painel lateral: regiões favorecidas, azimute, intensidade, evidências, mecanismo provável, confiança qualificada, tendência e última atualização de cada fonte.
 - Histórico e reprodução de nascimento, expansão, deslocamento e desaparecimento das zonas.

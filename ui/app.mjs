@@ -2,10 +2,12 @@ import {BANDS,DEFAULT_SETTINGS,validateSettings,toGrid,fromGrid,coordinates,eval
 import {LANGUAGES,translate} from '../src/i18n.mjs';
 import {APP_VERSION} from '../src/version.mjs';
 import {normalizeReleaseNotes} from '../src/release-notes.mjs';
+import {aggregateHeatSamples,heatColor,kernelRadius} from '../src/heatmap.mjs';
 const $=id=>document.getElementById(id),NS='http://www.w3.org/2000/svg';
 const colors=['#bab1dc','#ad9ce5','#738fea','#76a8fa','#6bbee9','#57d3b4','#b0de74','#e4da68','#efbd7a','#ef837a','#dca0f0','#86dbf1','#ecade0','#90cda0'];
 const color=band=>colors[BANDS.findIndex(b=>b.name===band)]||'#6fe2bf';
-let current,alertBand,scale=1,tx=0,ty=0,pointer,page='map',language='pt-BR',toastTimer,toastKey,configErrorKey,logsPaused=false,newsShownFor=null;
+let current,alertBand,scale=1,tx=0,ty=0,pointer,page='map',language='pt-BR',toastTimer,toastKey,configErrorKey,logsPaused=false,newsShownFor=null,heatFrame=0,updateFlowActive=false;
+const heatScratch=document.createElement('canvas');
 let lastActivity={rx:0,tx:0},ledTimers={rx:null,tx:null};
 const listeners=[],conversation=[{key:'welcome'}];
 const t=(key,vars)=>translate(language,key,vars);
@@ -23,25 +25,61 @@ const api=window.propTool||{
 function svgNode(name,attrs={},parent){const node=document.createElementNS(NS,name);for(const [k,v] of Object.entries(attrs))node.setAttribute(k,String(v));if(parent)parent.append(node);return node;}
 const project=([lon,lat])=>[(lon+180)*3,(90-lat)*3];
 function ringPath(ring){return ring.map((v,i)=>`${i?'L':'M'}${project(v).join(',')}`).join(' ')+' Z';}
-function heatGradient(band,kind){
-  const id=`heat-${kind}-${BANDS.findIndex(b=>b.name===band)}`;let gradient=document.getElementById(id);
-  if(gradient)return id;
-  let defs=$('heatDefs');if(!defs){defs=svgNode('defs',{id:'heatDefs'});$('map').insertBefore(defs,$('world'));}
-  gradient=svgNode('radialGradient',{id,cx:'50%',cy:'50%',r:'50%'},defs);
-  const peak=kind==='confirmed'?.58:.34,mid=kind==='confirmed'?.25:.15;
-  svgNode('stop',{offset:'0%','stop-color':color(band),'stop-opacity':peak},gradient);
-  svgNode('stop',{offset:'48%','stop-color':color(band),'stop-opacity':mid},gradient);
-  svgNode('stop',{offset:'100%','stop-color':color(band),'stop-opacity':0},gradient);
-  return id;
-}
 function zoneCenters(zone){
   const centers=[];for(const ring of zone.rings||[]){if(!ring?.length)continue;let lon=0,lat=0,n=0;for(const point of ring){if(!Array.isArray(point)||point.length<2)continue;lon+=point[0];lat+=point[1];n++;}if(n)centers.push({lon:lon/n,lat:lat/n});}return centers;
 }
-function heatCircle(group,band,position,kind,intensity=1){
-  const [cx,cy]=project([position.lon,position.lat]),base=kind==='confirmed'?24:42,r=base*(.8+.4*Math.max(0,Math.min(1,intensity)));
-  svgNode('circle',{class:`heatBlob ${kind}`,cx,cy,r,fill:`url(#${heatGradient(band,kind)})`},group);
+function mapProjector(){
+  const matrix=$('world')?.getScreenCTM(),rect=$('map').getBoundingClientRect();if(!matrix||!rect.width||!rect.height)return null;
+  return position=>{if(!position)return null;const [x,y]=project([position.lon,position.lat]);return {x:matrix.a*x+matrix.c*y+matrix.e-rect.left,y:matrix.b*x+matrix.d*y+matrix.f-rect.top,width:rect.width,height:rect.height};};
 }
-function mapTransform(){$('world').setAttribute('transform',`translate(${tx} ${ty}) scale(${scale})`);}
+function screenPosition(position){const projectScreen=mapProjector();return projectScreen?projectScreen(position):null;}
+function renderDensityHeatmap(){
+  const canvas=$('heatmapCanvas');if(!canvas||!current)return;
+  const rect=$('map').getBoundingClientRect(),width=Math.max(1,Math.round(rect.width)),height=Math.max(1,Math.round(rect.height));
+  if(canvas.width!==width)canvas.width=width;if(canvas.height!==height)canvas.height=height;
+  const ctx=canvas.getContext('2d');ctx.clearRect(0,0,width,height);
+  if((current.settings.mapView||'heatmap')!=='heatmap')return;
+  const selected=$('band').value,shownBands=new Set(current.bands.filter(b=>current.settings.visible.includes(b.band)&&(!selected||b.band===selected)).map(b=>b.band));
+  const showConfirmed=$('showConfirmed')?.checked!==false,showPredicted=$('showPredicted')?.checked!==false,samples=[],projectScreen=mapProjector();if(!projectScreen)return;
+  if(showConfirmed)for(const s of current.spots){
+    if(!shownBands.has(s.band)||!s.endpoint)continue;const p=projectScreen(s.endpoint);if(!p)continue;
+    const snr=Number.isFinite(s.snr)?Math.max(-30,Math.min(20,s.snr)): -10;
+    samples.push({x:p.x,y:p.y,weight:.8+(snr+30)/100});
+  }
+  if(showPredicted)for(const b of current.bands){
+    if(!shownBands.has(b.band))continue;const weight=.22+.38*Math.max(0,Math.min(1,(b.chance??0)/100));
+    for(const zone of b.predictedZones||[])for(const center of zoneCenters(zone)){const p=projectScreen(center);if(p)samples.push({x:p.x,y:p.y,weight});}
+  }
+  const radius=kernelRadius(scale),bins=aggregateHeatSamples(samples,Math.max(4,radius*.28));
+  if(!bins.length)return;
+  const density=heatScratch;if(density.width!==width)density.width=width;if(density.height!==height)density.height=height;
+  const dctx=density.getContext('2d',{willReadFrequently:true});dctx.clearRect(0,0,width,height);dctx.globalCompositeOperation='lighter';
+  for(const bin of bins){
+    if(bin.x<-radius||bin.y<-radius||bin.x>width+radius||bin.y>height+radius)continue;
+    const strength=Math.min(.92,.08+.12*Math.log2(1+bin.weight));
+    const grad=dctx.createRadialGradient(bin.x,bin.y,0,bin.x,bin.y,radius);
+    grad.addColorStop(0,`rgba(0,0,0,${strength})`);grad.addColorStop(.45,`rgba(0,0,0,${strength*.58})`);grad.addColorStop(1,'rgba(0,0,0,0)');
+    dctx.fillStyle=grad;dctx.fillRect(bin.x-radius,bin.y-radius,radius*2,radius*2);
+  }
+  const src=dctx.getImageData(0,0,width,height),hist=new Uint32Array(256);let active=0;
+  for(let i=3;i<src.data.length;i+=4){const a=src.data[i];if(a){hist[a]++;active++;}}
+  if(!active)return;
+  let cumulative=0,threshold=255,target=active*.985;for(let i=1;i<256;i++){cumulative+=hist[i];if(cumulative>=target){threshold=Math.max(18,i);break;}}
+  const out=ctx.createImageData(width,height);
+  for(let i=0;i<src.data.length;i+=4){
+    const a=src.data[i+3];if(!a)continue;let intensity=Math.min(1,a/threshold);if(intensity<.035)continue;intensity=Math.pow(intensity,.72);
+    const [r,g,b]=heatColor(intensity);out.data[i]=r;out.data[i+1]=g;out.data[i+2]=b;out.data[i+3]=Math.round(35+205*Math.pow(intensity,.78));
+  }
+  ctx.putImageData(out,0,0);
+}
+function updateHomeOverlay(){
+  const home=$('homeOverlay');if(!home||!current||!coordinates(current.settings.lat,current.settings.lon)){if(home)home.style.display='none';return;}
+  const p=screenPosition({lat:current.settings.lat,lon:current.settings.lon});if(!p||p.x<-30||p.y<-30||p.x>p.width+30||p.y>p.height+30){home.style.display='none';return;}
+  home.style.display='flex';home.style.left=p.x+'px';home.style.top=p.y+'px';home.querySelector('span').textContent=current.settings.callsign||'';
+}
+function renderMapOverlays(){renderDensityHeatmap();updateHomeOverlay();}
+function scheduleMapOverlays(){cancelAnimationFrame(heatFrame);heatFrame=requestAnimationFrame(renderMapOverlays);}
+function mapTransform(){$('world').setAttribute('transform',`translate(${tx} ${ty}) scale(${scale})`);scheduleMapOverlays();}
 function zoom(f){const next=Math.max(1,Math.min(6,scale*f));tx=540-(540-tx)*next/scale;ty=270-(270-ty)*next/scale;scale=next;mapTransform();}
 for(let lon=-180;lon<=180;lon+=30)svgNode('path',{d:`M${(lon+180)*3},0 V540`},$('graticule'));
 for(let lat=-60;lat<=60;lat+=30)svgNode('path',{d:`M0,${(90-lat)*3} H1080`},$('graticule'));
@@ -100,14 +138,14 @@ function render(snap){
     const state=document.createElement('span');state.className='state';state.textContent=b.chance===null?t('insufficient'):t(bandStates[b.state]||'none')+(b.trend!=='—'?' '+b.trend:'');
     row.append(label,state);$('bands').append(row);
   }
-  $('heatPredicted').replaceChildren();$('heatConfirmed').replaceChildren();$('zones').replaceChildren();$('points').replaceChildren();$('home').replaceChildren();
+  $('zones').replaceChildren();$('points').replaceChildren();
   const displayed=snap.bands.filter(b=>snap.settings.visible.includes(b.band)&&(!$('band').value||b.band===$('band').value));let zoneCount=0,pointCount=0;
   const showConfirmed=$('showConfirmed')?.checked!==false,showPredicted=$('showPredicted')?.checked!==false,mapView=snap.settings.mapView||'heatmap',shownBands=new Set(displayed.map(b=>b.band));
   const shownSpots=snap.spots.filter(p=>shownBands.has(p.band));
   pointCount=shownSpots.length;
   if(mapView==='heatmap'){
-    if(showPredicted)for(const b of displayed)for(const zone of b.predictedZones||[]){zoneCount++;for(const center of zoneCenters(zone))heatCircle($('heatPredicted'),b.band,center,'predicted',(b.chance??0)/100);}
-    if(showConfirmed){zoneCount+=displayed.reduce((n,b)=>n+(b.confirmedZones||b.zones||[]).length,0);for(const s of shownSpots)if(s.endpoint)heatCircle($('heatConfirmed'),s.band,s.endpoint,'confirmed',s.snr===null?0.65:Math.max(.35,Math.min(1,(s.snr+30)/40)));}
+    if(showPredicted)zoneCount+=displayed.reduce((n,b)=>n+(b.predictedZones||[]).length,0);
+    if(showConfirmed)zoneCount+=displayed.reduce((n,b)=>n+(b.confirmedZones||b.zones||[]).length,0);
   }else{
     for(const b of displayed){
       if(showPredicted)for(const zone of b.predictedZones||[]){zoneCount++;const p=svgNode('path',{class:'forecastZone',d:zone.rings.map(ringPath).join(' '),fill:color(b.band),stroke:color(b.band)},$('zones'));svgNode('title',{},p).textContent=`${b.band} · ${t('predicted')} · ${b.chance??'—'}%`;}
@@ -120,22 +158,29 @@ function render(snap){
     }
   }
   const configured=Boolean(snap.settings.callsign)&&coordinates(snap.settings.lat,snap.settings.lon);
-  if(configured){const [cx,cy]=project([snap.settings.lon,snap.settings.lat]);svgNode('circle',{cx,cy,r:3.6},$('home'));svgNode('text',{x:cx+7,y:cy-5},$('home')).textContent=snap.settings.callsign;}
+  scheduleMapOverlays();
   $('empty').classList.toggle('hidden',configured);$('emptyTitle').textContent=t('configure');$('emptyConfigure').hidden=configured;
   $('mapNotice').classList.toggle('hidden',!configured||pointCount>0);$('mapNotice').textContent=status.state==='error'?t('sourceError'):status.state==='loading'?t('loading'):status.state==='preview'?t('previewNotice'):t('emptyTitle');$('mapNotice').title=t('emptyBody');
   $('evidenceCount').textContent=t('counts',{n:pointCount,zones:zoneCount});const query=status.state==='online'?t('queryCount',{n:status.count??0}):sourceLabel(status);
   const rbnQuery=rbnStatus.state==='online'?`OK (${rbnStatus.count??0})`:sourceLabel(rbnStatus);$('freshness').textContent=`PSK: ${query}${status.updated?' · '+age(status.updated):''}${status.detail?' · '+status.detail:''} · RBN: ${rbnQuery}${rbnStatus.updated?' · '+age(rbnStatus.updated):''}${snap.nextPSK>0?' · '+t('nextQuery',{n:Math.ceil(snap.nextPSK/60000)}):''}`;
   const kp=snap.kp,sw=snap.spaceWeather||{};$('kp').textContent=kp?kp.value.toLocaleString(language,{minimumFractionDigits:1,maximumFractionDigits:1}):'—';$('kpState').textContent=kp?t(Date.now()-kp.timestamp>4*3600000?'oldMeasure':kp.value>=5?'elevated':'measurement'):sourceLabel(snap.sourceStatus.noaa);$('kpTime').textContent=kp?`${date(kp.timestamp)} · ${t('kpNote')}`:t('kpWaiting');$('sfi').textContent=sw.f107?.value??'—';$('bz').textContent=sw.bz?`${sw.bz.value} nT`:'—';$('wind').textContent=sw.wind?`${Math.round(sw.wind.value)} km/s`:'—';$('xray').textContent=sw.xray?.class??'—';
   renderUpdate(snap.update);renderLogs();
-  if(snap.startupNews&&newsShownFor!==snap.startupNews.version){newsShownFor=snap.startupNews.version;$('newsVersion').textContent='v'+snap.startupNews.version;const notes=normalizeReleaseNotes(snap.startupNews.notes);$('newsNotes').textContent=notes||t('news023');if(!$('newsDialog').open)$('newsDialog').showModal();}
+  if(snap.startupNews&&newsShownFor!==snap.startupNews.version){newsShownFor=snap.startupNews.version;$('newsVersion').textContent='v'+snap.startupNews.version;const notes=normalizeReleaseNotes(snap.startupNews.notes);$('newsNotes').textContent=notes||t('news024');if(!$('newsDialog').open)$('newsDialog').showModal();}
   if(snap.alert){alertBand=snap.alert.band;$('alertText').textContent=t('alertText',{band:alertBand,n:snap.alert.score});if(!$('alertDialog').open)$('alertDialog').showModal();}
 }
+function formatBytes(value){const n=Number(value);if(!Number.isFinite(n)||n<0)return '';if(n<1024)return n+' B';if(n<1048576)return (n/1024).toFixed(1)+' KB';return (n/1048576).toFixed(n>=104857600?0:1)+' MB';}
 function renderUpdate(u){
-  const key={current:'currentVersion',available:'newVersion',checking:'checking',downloading:'downloading',downloaded:'downloaded',error:'updateError',development:'development'}[u.state]||'checkUpdate';
-  $('version').textContent=t(key,{n:Math.round(u.percent||0)});$('version').classList.toggle('available',u.state==='available');$('version').classList.toggle('current',u.state==='current');$('version').disabled=['checking','downloading'].includes(u.state);
-  $('updateMessage').textContent=t(u.state==='available'?'updateAvailable':key,{version:u.version,n:Math.round(u.percent||0)});
-  $('releaseNotes').textContent=t('noNotes'); // Published release notes are opened in their original language.
-  $('downloadUpdate').classList.toggle('hidden',u.state!=='available');$('installUpdate').classList.toggle('hidden',u.state!=='downloaded');$('updateProgress').classList.toggle('hidden',u.state!=='downloading');$('updateProgress').value=u.percent||0;
+  const key={current:'currentVersion',available:'newVersion',checking:'checking',downloading:'downloading',downloaded:'downloaded',installing:'installingUpdate',error:'updateError',development:'development'}[u.state]||'checkUpdate';
+  const percent=Math.max(0,Math.min(100,Number(u.percent)||0)),busy=updateFlowActive&&['checking','available','downloading','downloaded','installing'].includes(u.state);
+  $('version').textContent=t(key,{n:Math.round(percent)});$('version').classList.toggle('available',u.state==='available');$('version').classList.toggle('current',u.state==='current');$('version').disabled=updateFlowActive||['checking','downloading','installing'].includes(u.state);
+  $('updateMessage').textContent=t(u.state==='available'?'updateAvailable':key,{version:u.version,n:Math.round(percent)});
+  $('releaseNotes').textContent=normalizeReleaseNotes(u.notes)||t('noNotes');
+  $('downloadUpdate').classList.add('hidden');$('installUpdate').classList.add('hidden');
+  const progressVisible=updateFlowActive&&['downloading','downloaded','installing'].includes(u.state);$('updateProgress').classList.toggle('hidden',!progressVisible);$('updateProgress').value=u.state==='installing'?100:percent;
+  const parts=[];if(Number.isFinite(u.transferred)&&u.transferred>=0)parts.push(formatBytes(u.transferred)+(Number.isFinite(u.total)&&u.total>0?' / '+formatBytes(u.total):''));if(Number.isFinite(u.bytesPerSecond)&&u.bytesPerSecond>0)parts.push(formatBytes(u.bytesPerSecond)+'/s');
+  $('updateStats').textContent=parts.join(' · ');$('updateStats').classList.toggle('hidden',!progressVisible||!parts.length);
+  $('updateDialog').dataset.busy=String(busy);
+  if(updateFlowActive&&!$('updateDialog').open)$('updateDialog').showModal();
 }
 function toast(key,vars={}){toastKey={key,vars};clearTimeout(toastTimer);$('toast').textContent=t(key,vars);$('toast').style.display='block';toastTimer=setTimeout(()=>{$('toast').style.display='none';toastKey=null;},6000);}
 const antennaTypes=[['Não informada','unspecified'],['Dipolo','dipole'],['Vertical','vertical'],['Yagi',null],['Log-periódica','logPeriodic'],['Loop','loop'],['End Fed',null],['Hexbeam',null],['Cobweb',null],['Discone',null],['Colinear','collinear'],['Outra','other']];
@@ -156,12 +201,21 @@ for(const id of ['showConfirmed','showPredicted'])$(id).onchange=()=>render(curr
 $('band').onchange=()=>render(current);$('mapVisualization').onchange=()=>changePreference('mapView',$('mapVisualization').value);$('period').onchange=async()=>{try{render(await api.configure({...current.settings,windowMinutes:Number($('period').value)}));}catch{toast('appError');}};
 async function refresh(){$('refresh').disabled=true;try{render(await api.refresh());}catch{toast('appError');}finally{$('refresh').disabled=false;}}
 $('refresh').onclick=()=>refresh();
-$('version').onclick=async()=>{try{const u=await api.runUpdateFlow();if(u){current.update=u;renderUpdate(u);}if(u?.state==='current')toast('currentVersion');else if(u?.state==='development')toast('development');else if(u?.state==='error')toast('updateError');}catch{toast('updateError');}};
-$('closeUpdate').onclick=()=>$('updateDialog').close();$('openReleases').onclick=()=>api.openLink('releases');$('downloadUpdate').onclick=()=>api.downloadUpdate().catch(()=>toast('updateError'));$('installUpdate').onclick=()=>api.installUpdate().catch(()=>toast('updateError'));
+$('version').onclick=async()=>{
+  if(updateFlowActive)return;updateFlowActive=true;
+  const checking={...(current.update||{}),state:'checking',percent:0,transferred:0,total:0};renderUpdate(checking);
+  try{
+    const u=await api.runUpdateFlow();if(u){current.update=u;renderUpdate(u);}
+    if(u?.state==='current'){updateFlowActive=false;renderUpdate(u);if($('updateDialog').open)$('updateDialog').close();toast('currentVersion');}
+    else if(u?.state==='development'){updateFlowActive=false;renderUpdate(u);if($('updateDialog').open)$('updateDialog').close();toast('development');}
+    else if(u?.state==='error'){updateFlowActive=false;renderUpdate(u);toast('updateError');}
+  }catch{updateFlowActive=false;renderUpdate({...current.update,state:'error'});toast('updateError');}
+};
+$('closeUpdate').onclick=()=>{if(!updateFlowActive)$('updateDialog').close();};$('openReleases').onclick=()=>api.openLink('releases');$('downloadUpdate').onclick=()=>{};$('installUpdate').onclick=()=>{};
 for(const [id,target] of [['openProject','project'],['openIssues','issues'],['openProfile','profile'],['openManual','manual']])$(id).onclick=()=>api.openLink(target).catch(()=>toast('appError'));
 $('closeNews').onclick=async()=>{try{await api.acknowledgeNews();}finally{$('newsDialog').close();}};
 $('dismissAlert').onclick=()=>$('alertDialog').close();$('viewAlert').onclick=()=>{$('band').value=alertBand;$('alertDialog').close();setPage('map');render(current);};
-$('zoomIn').onclick=()=>zoom(1.4);$('zoomOut').onclick=()=>zoom(1/1.4);$('resetMap').onclick=()=>{scale=1;tx=ty=0;mapTransform();};$('map').addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY<0?1.12:1/1.12);},{passive:false});
+$('zoomIn').onclick=()=>zoom(1.4);$('zoomOut').onclick=()=>zoom(1/1.4);$('resetMap').onclick=()=>{scale=1;tx=ty=0;mapTransform();};window.addEventListener('resize',scheduleMapOverlays);$('map').addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY<0?1.12:1/1.12);},{passive:false});
 function updateCursorReadout(e){
   const info=$('cursorInfo');if(!current||!coordinates(current.settings.lat,current.settings.lon)){info.classList.add('hidden');return;}
   const matrix=$('world').getScreenCTM();if(!matrix){info.classList.add('hidden');return;}const point=$('map').createSVGPoint();point.x=e.clientX;point.y=e.clientY;const p=point.matrixTransform(matrix.inverse());

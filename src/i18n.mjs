@@ -970,3 +970,44 @@ const EXTRA_MESSAGES_V023={
   }
 };
 for(const [code,extra] of Object.entries(EXTRA_MESSAGES_V023))Object.assign(MESSAGES[code],extra);
+
+
+const EXTRA_MESSAGES_V024={
+  "pt-BR":{
+    "installingUpdate":"Download concluído. Instalando e reiniciando…",
+    "news024":"• Mapa de calor refeito com gradiente multicolor por densidade, sem saturação em branco.\n• O heatmap é recalculado a cada zoom e movimento do mapa, preservando detalhe espacial em vez de ampliar um borrão.\n• Marcador e rótulo da estação mantêm tamanho visual constante ao aplicar zoom.\n• A atualização agora mostra progresso real do download.\n• Ao concluir e validar o pacote, a aplicação fecha, instala a nova versão sem perguntas e abre novamente automaticamente.",
+    "helpMap":"O mapa opera somente a partir da sua região. Selecione a banda exclusivamente no menu superior. Mapa de calor é a visualização padrão e usa um gradiente multicolor de densidade: tons frios indicam menor concentração e tons quentes maior concentração. O heatmap é recalculado conforme zoom e movimento do mapa, revelando mais detalhe ao aproximar. Polígonos permanece como visualização técnica alternativa.",
+    "helpUpdate":"Ative alertas por banda em Configurações. A aplicação verifica novas versões a cada 30 minutos por padrão. Ao iniciar uma atualização, o progresso real do download é exibido; após validação, o programa fecha, instala silenciosamente e abre novamente sem perguntas intermediárias. Em caso de falha, a versão atual é preservada."
+  },
+  "en":{
+    "installingUpdate":"Download complete. Installing and restarting…",
+    "news024":"• Heatmap rebuilt with a multicolor density gradient and no white saturation.\n• The heatmap is recalculated on every zoom and map movement, preserving spatial detail instead of scaling a blur.\n• Station marker and label keep a constant visual size while zooming.\n• Updates now show real download progress.\n• After the package is downloaded and validated, the app closes, installs the new version without prompts and reopens automatically.",
+    "helpMap":"The map operates only from your region. Select the band exclusively from the top menu. Heatmap is the default visualization and uses a multicolor density gradient: cooler tones indicate lower concentration and warmer tones higher concentration. The heatmap is recalculated as the map is zoomed or moved, revealing more detail when zooming in. Polygons remains an alternative technical view.",
+    "helpUpdate":"Enable per-band alerts in Settings. The application checks for new versions every 30 minutes by default. When an update starts, real download progress is shown; after validation the app closes, installs silently and reopens automatically without intermediate prompts. On failure, the current version is preserved."
+  },
+  "es":{
+    "installingUpdate":"Descarga concluida. Instalando y reiniciando…",
+    "news024":"• Mapa de calor reconstruido con gradiente multicolor por densidad y sin saturación en blanco.\n• El heatmap se recalcula en cada zoom y movimiento del mapa, preservando detalle espacial en lugar de ampliar un desenfoque.\n• El marcador y el rótulo de la estación mantienen tamaño visual constante al hacer zoom.\n• Las actualizaciones ahora muestran el progreso real de descarga.\n• Tras descargar y validar el paquete, la aplicación se cierra, instala la nueva versión sin preguntas y se abre automáticamente.",
+    "helpMap":"El mapa funciona únicamente desde su región. Seleccione la banda exclusivamente en el menú superior. El mapa de calor es la vista predeterminada y usa un gradiente multicolor de densidad: tonos fríos indican menor concentración y tonos cálidos mayor concentración. El heatmap se recalcula al hacer zoom o mover el mapa, mostrando más detalle al acercarse. Polígonos permanece como vista técnica alternativa.",
+    "helpUpdate":"Active alertas por banda en Configuración. La aplicación comprueba nuevas versiones cada 30 minutos por defecto. Al iniciar una actualización se muestra el progreso real de descarga; después de validar, el programa se cierra, instala silenciosamente y vuelve a abrirse sin preguntas intermedias. Si falla, se conserva la versión actual."
+  },
+  "fr":{
+    "installingUpdate":"Téléchargement terminé. Installation et redémarrage…",
+    "news024":"• Carte de chaleur reconstruite avec un dégradé multicolore de densité, sans saturation blanche.\n• Le heatmap est recalculé à chaque zoom et déplacement de la carte, afin de conserver le détail spatial au lieu d’agrandir un flou.\n• Le marqueur et le libellé de la station gardent une taille visuelle constante pendant le zoom.\n• Les mises à jour affichent désormais la progression réelle du téléchargement.\n• Après téléchargement et validation, l’application se ferme, installe la nouvelle version sans question et se rouvre automatiquement.",
+    "helpMap":"La carte fonctionne uniquement depuis votre région. Sélectionnez la bande exclusivement dans le menu supérieur. La carte de chaleur est la vue par défaut et utilise un dégradé multicolore de densité : les tons froids indiquent une concentration plus faible et les tons chauds une concentration plus forte. Le heatmap est recalculé lors du zoom ou du déplacement de la carte, révélant davantage de détails en approche. Polygones reste une vue technique alternative.",
+    "helpUpdate":"Activez les alertes par bande dans Paramètres. L’application vérifie les nouvelles versions toutes les 30 minutes par défaut. Lorsqu’une mise à jour démarre, la progression réelle du téléchargement est affichée ; après validation, l’application se ferme, s’installe silencieusement et se rouvre automatiquement sans question intermédiaire. En cas d’échec, la version actuelle est préservée."
+  },
+  "de":{
+    "installingUpdate":"Download abgeschlossen. Installation und Neustart…",
+    "news024":"• Heatmap mit mehrfarbigem Dichteverlauf neu aufgebaut, ohne Weißsättigung.\n• Die Heatmap wird bei jedem Zoom und jeder Kartenbewegung neu berechnet, sodass räumliche Details erhalten bleiben statt ein unscharfes Bild zu vergrößern.\n• Stationsmarker und Beschriftung behalten beim Zoomen eine konstante Bildschirmgröße.\n• Updates zeigen nun den tatsächlichen Downloadfortschritt.\n• Nach Download und Prüfung schließt sich die Anwendung, installiert die neue Version ohne Rückfragen und öffnet sich automatisch wieder.",
+    "helpMap":"Die Karte arbeitet ausschließlich aus Ihrer Region. Das Band wird nur im oberen Menü gewählt. Heatmap ist die Standarddarstellung und verwendet einen mehrfarbigen Dichteverlauf: kühle Töne zeigen geringere, warme Töne höhere Konzentration. Die Heatmap wird beim Zoomen oder Verschieben neu berechnet und zeigt beim Hineinzoomen mehr Details. Polygone bleibt als technische Alternative erhalten.",
+    "helpUpdate":"Aktivieren Sie bandbezogene Warnungen in den Einstellungen. Standardmäßig wird alle 30 Minuten nach neuen Versionen gesucht. Beim Start eines Updates wird der tatsächliche Downloadfortschritt angezeigt; nach der Prüfung schließt sich das Programm, installiert still und öffnet sich automatisch wieder, ohne Zwischenfragen. Bei einem Fehler bleibt die aktuelle Version erhalten."
+  },
+  "it":{
+    "installingUpdate":"Download completato. Installazione e riavvio…",
+    "news024":"• Mappa di calore ricostruita con gradiente multicolore di densità, senza saturazione in bianco.\n• L’heatmap viene ricalcolata a ogni zoom e spostamento della mappa, mantenendo il dettaglio spaziale invece di ingrandire una sfocatura.\n• Marcatore e indicativo della stazione mantengono una dimensione visiva costante durante lo zoom.\n• Gli aggiornamenti ora mostrano il progresso reale del download.\n• Dopo download e verifica del pacchetto, l’applicazione si chiude, installa la nuova versione senza domande e si riapre automaticamente.",
+    "helpMap":"La mappa opera esclusivamente dalla propria regione. Selezionare la banda solo dal menu superiore. La mappa di calore è la vista predefinita e usa un gradiente multicolore di densità: i toni freddi indicano minore concentrazione e quelli caldi maggiore concentrazione. L’heatmap viene ricalcolata durante zoom e spostamenti, mostrando più dettaglio quando ci si avvicina. Poligoni resta una vista tecnica alternativa.",
+    "helpUpdate":"Attivare gli avvisi per banda nelle Impostazioni. L’applicazione verifica nuove versioni ogni 30 minuti per impostazione predefinita. Quando parte un aggiornamento viene mostrato il progresso reale del download; dopo la verifica il programma si chiude, installa silenziosamente e si riapre automaticamente senza domande intermedie. In caso di errore, la versione corrente viene preservata."
+  }
+};
+for(const [code,extra] of Object.entries(EXTRA_MESSAGES_V024))Object.assign(MESSAGES[code],extra);
