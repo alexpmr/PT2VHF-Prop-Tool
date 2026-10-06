@@ -102,6 +102,7 @@ As descrições abaixo preservam os critérios acordados. Esses itens recentes e
 
 ## Mapa e operação
 
+- **Mapa — “Janela de observação”:** identificar explicitamente o seletor de período do mapa como **Janela de observação**. Esse controle define por quanto tempo as evidências recentes entram na análise/Heatmap exibido (atualmente 15, 30 ou 60 minutos). Usar a mesma nomenclatura em Ajuda, manual, tooltips e demais textos da interface para evitar confusão com intervalo de atualização/coleta.
 - Potência padrão de `100 W` na configuração inicial da estação. Manter o valor editável e preservar a potência escolhida pelo usuário entre sessões e atualizações. Esse valor inicial já existe na v0.1.0 e deve ser mantido como requisito.
 - Na configuração inicial, habilitar todas as bandas para monitoramento e exibição, incluindo 11 metros quando adicionada, com antena `Vertical` atribuída a cada banda. Permitir alterar posteriormente o tipo de antena por banda e habilitar/desabilitar bandas. Aplicar esses valores somente na inicialização ou a novos campos sem preferência salva, preservando as escolhas existentes do usuário após reiniciar ou atualizar.
 - Corrigir o estado vazio do mapa relatado na v0.1.0: o bloco `Sem evidências para este filtro` mantém o botão `Configurar estação` após salvar a configuração. Exibir esse convite somente quando a configuração da estação estiver incompleta. Com a estação configurada e sem recepções, substituir o bloco central por uma indicação discreta que não cubra o mapa.
