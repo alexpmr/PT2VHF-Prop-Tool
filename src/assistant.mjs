@@ -65,15 +65,15 @@ export function assistantReply(question,snapshot,selectedBand=''){
     return {key:'assistantLatest',vars:{band:band.band,latest:band.latest}};
   }
 
-  const explicit=questionBand(question);
-  if(explicit||/(situacao|condicao|como esta|estado|aberta|fechada|band|banda)/.test(q)){
-    if(!band)return {key:'assistantEmpty',vars:{n:snapshot.settings.windowMinutes}};
-    return {key:'assistantBand',vars:{band:band.band,score:band.chance??'—',reports:band.reports,pairs:band.pairs,trend:band.trend,basisKey:basisKey(band),latest:band.latest}};
-  }
-
-  if(/(melhor|maior chance|qual banda|best|highest|which band|better|agora|now)/.test(q)){
+  if(/(melhor|maior chance|qual banda|best|highest|which band|better)/.test(q)){
     if(!band)return {key:'assistantEmpty',vars:{n:snapshot.settings.windowMinutes}};
     return {key:'assistantBest',vars:{band:band.band,score:band.chance??'—',reports:band.reports,pairs:band.pairs,basisKey:basisKey(band),latest:band.latest}};
+  }
+
+  const explicit=questionBand(question);
+  if(explicit||/(situacao|condicao|como esta|estado|aberta|fechada|band|banda|agora|now)/.test(q)){
+    if(!band)return {key:'assistantEmpty',vars:{n:snapshot.settings.windowMinutes}};
+    return {key:'assistantBand',vars:{band:band.band,score:band.chance??'—',reports:band.reports,pairs:band.pairs,trend:band.trend,basisKey:basisKey(band),latest:band.latest}};
   }
 
   return {key:'assistantUnknown'};
