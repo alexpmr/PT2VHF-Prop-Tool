@@ -6,21 +6,35 @@ New-Item -ItemType Directory -Path $root -Force | Out-Null
 $setup = (Resolve-Path "dist/PT2VHF-Prop-Tool-$version-x64-setup.exe").Path
 $portable = (Resolve-Path "dist/PT2VHF-Prop-Tool-$version-x64-portable.exe").Path
 $script = (Resolve-Path 'desktop/apply-update.ps1').Path
+function Run-CheckedProcess([string]$Exe,[string]$Arguments,[string]$Label,[int]$Seconds=120) {
+  Write-Host "Starting package check: $Label"
+  $stdout = Join-Path $root ($Label + '-stdout.log')
+  $stderr = Join-Path $root ($Label + '-stderr.log')
+  $p = Start-Process -FilePath $Exe -ArgumentList $Arguments -PassThru -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+  if (-not $p.WaitForExit($Seconds * 1000)) {
+    & "$env:SystemRoot\System32\taskkill.exe" /PID $p.Id /T /F 2>$null | Out-Null
+    Get-Content $stdout,$stderr -ErrorAction SilentlyContinue | Write-Host
+    throw "Package check timed out: $Label"
+  }
+  $p.WaitForExit()
+  Get-Content $stdout,$stderr -ErrorAction SilentlyContinue | Write-Host
+  return $p
+}
 $errors = $null; $tokens = $null
 [System.Management.Automation.Language.Parser]::ParseFile($script,[ref]$tokens,[ref]$errors) | Out-Null
 if ($errors.Count -gt 0) { throw ($errors | Out-String) }
-$p = Start-Process -FilePath $setup -ArgumentList "/S /D=$install" -Wait -PassThru
+$p = Run-CheckedProcess $setup "/S /D=$install" "install"
 if ($p.ExitCode -ne 0 -or -not (Test-Path "$install/PT2VHF Prop Tool.exe")) { throw 'Installer failed' }
-$p = Start-Process -FilePath "$install/PT2VHF Prop Tool.exe" -ArgumentList '--smoke-test' -Wait -PassThru
+$p = Run-CheckedProcess "$install/PT2VHF Prop Tool.exe" "--smoke-test" "installed-startup"
 if ($p.ExitCode -ne 0) { throw 'Installed application smoke failed' }
 $sentinel = Join-Path $install 'keep-user-file.txt'; 'preserve unrelated files' | Set-Content $sentinel
-$p = Start-Process -FilePath "$install/Uninstall.exe" -ArgumentList '/S' -Wait -PassThru
+$p = Run-CheckedProcess "$install/Uninstall.exe" "/S" "uninstall"
 for ($i=0;$i -lt 40 -and (Test-Path "$install/PT2VHF Prop Tool.exe");$i++) { Start-Sleep -Milliseconds 250 }
 if (Test-Path "$install/PT2VHF Prop Tool.exe") { throw 'Uninstall failed' }
 if (-not (Test-Path $sentinel)) { throw 'Uninstall deleted unrelated file' }
 $directFolder = Join-Path $root 'portable-direct'; New-Item -ItemType Directory -Path $directFolder -Force | Out-Null
 $direct = Join-Path $directFolder 'portable.exe'; Copy-Item $portable $direct
-$p = Start-Process -FilePath $direct -ArgumentList '--smoke-test' -Wait -PassThru
+$p = Run-CheckedProcess $direct "--smoke-test" "portable-startup"
 if ($p.ExitCode -ne 0 -or -not (Test-Path "$directFolder/data/state.json")) { throw 'Portable smoke or data persistence failed' }
 foreach ($scenario in @('success','rollback')) {
   $dir = Join-Path $root $scenario; $updates = Join-Path $dir 'data/updates'; New-Item -ItemType Directory -Path $updates -Force | Out-Null
@@ -34,7 +48,7 @@ foreach ($scenario in @('success','rollback')) {
   $manifest = Join-Path $updates 'apply-update.json'
   $expected = if ($scenario -eq 'success') { $version } else { '999.0.0' }
   @{Mode='portable';Candidate=$candidate;Sha256=(Get-FileHash $candidate -Algorithm SHA256).Hash.ToLower();ExpectedVersion=$expected;AppPid=0;LauncherPid=0;Original=$original;Target=$target;StateFile=$stateFile;ReadyFile=(Join-Path $updates 'update-ready.json');Smoke=$true} | ConvertTo-Json | Set-Content -LiteralPath $manifest -Encoding UTF8
-  $worker = Start-Process powershell.exe -ArgumentList "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$script`" -Manifest `"$manifest`"" -Wait -PassThru
+  $worker = Run-CheckedProcess "powershell.exe" "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$script`" -Manifest `"$manifest`"" "portable-$scenario" 150
   $result = Get-Content (Join-Path $updates 'update-result.json') -Raw | ConvertFrom-Json
   if ($scenario -eq 'success') {
     if ($worker.ExitCode -ne 0 -or $result.status -ne 'ok' -or -not (Test-Path $target) -or -not (Test-Path "$original.previous")) { throw 'Portable update handoff failed' }

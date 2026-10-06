@@ -50,6 +50,7 @@ jobs:
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
       - name: Validate installed and portable packages
+        timeout-minutes: 10
         shell: pwsh
         run: ./scripts/smoke-windows.ps1
       - name: Include illustrated PDF manual
@@ -98,6 +99,11 @@ jobs:
           test -f "PT2VHF-Prop-Tool-${RELEASE_TAG#v}-x64-portable.exe"
           test -f latest.yml
           test -f "PT2VHF-Prop-Tool-${RELEASE_TAG#v}-Manual.pdf"
+          current_head=$(gh api "repos/$GH_REPO/git/ref/heads/main" --jq .object.sha)
+          if [ "$GITHUB_REF" = "refs/heads/main" ] && [ "$current_head" != "$RELEASE_COMMIT" ]; then
+            echo "A newer main commit exists; preserve artifacts and let its validated build publish."
+            exit 0
+          fi
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             echo "Release $RELEASE_TAG already exists; build artifacts remain available in Actions."
             exit 0

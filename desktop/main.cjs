@@ -10,7 +10,7 @@ const repo='https://github.com/alexpmr/PT2VHF-Prop-Tool',mainURL=pathToFileURL(p
 const t=(key,vars)=>i18n.translate(state?.settings.language||'pt-BR',key,vars);
 if(!app.requestSingleInstanceLock()){app.quit();}else{
   app.on('second-instance',()=>{if(win){if(win.isMinimized())win.restore();win.focus();}});
-  app.whenReady().then(start).catch(error=>{console.error(error);dialog.showErrorBox('PT2VHF Prop Tool',i18n?t('appError'):'Não foi possível iniciar a aplicação.');app.quit();});
+  app.whenReady().then(start).catch(error=>{console.error(error);if(smoke){app.exit(1);return;}dialog.showErrorBox('PT2VHF Prop Tool',i18n?t('appError'):'Não foi possível iniciar a aplicação.');app.quit();});
 }
 app.on('window-all-closed',()=>app.quit());
 function persist(){const payload=JSON.stringify(state);const job=persistQueue.catch(()=>{}).then(async()=>{await fs.mkdir(path.dirname(file),{recursive:true});await fs.writeFile(file+'.tmp',payload,'utf8');await fs.rename(file+'.tmp',file);});persistQueue=job;return job;}
