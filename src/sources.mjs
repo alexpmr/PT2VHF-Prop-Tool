@@ -2,12 +2,15 @@ import {parsePSK} from './domain.mjs';
 import {APP_VERSION} from './version.mjs';
 export const PSK_INTERVAL=300000;
 export const NOAA_INTERVAL=300000;
-export function pskURL(settings,scope) {
+export function pskURL(settings,scope='nearby') {
   const q=new URLSearchParams({flowStartSeconds:'-3600',rronly:'1',noactive:'1',rptlimit:'3000'});
   if(scope==='nearby') {
     if(!settings.grid)throw new Error('Localização da estação necessária');
     q.set('callsign',settings.grid.slice(0,4));q.set('modify','grid');
-  } else {if(!settings.callsign)throw new Error('Informe seu indicativo');q.set('callsign',settings.callsign);}
+  } else {
+    if(!settings.callsign)throw new Error('Informe seu indicativo');
+    q.set('callsign',settings.callsign);
+  }
   return 'https://retrieve.pskreporter.info/query?'+q.toString();
 }
 const AUTHORIZED_HOSTS=new Set(['retrieve.pskreporter.info','services.swpc.noaa.gov','api.github.com']);
@@ -40,6 +43,10 @@ export async function boundedFetch(url,format='text',fetchImpl=fetch,activity=()
     throw error;
   }
 }
+function timestamp(value){
+  if(typeof value!=='string')return NaN;
+  const iso=value.replace(' ','T');return Date.parse(/(?:Z|[+-]\d{2}:?\d{2})$/i.test(iso)?iso:iso+'Z');
+}
 export function parseKp(rows) {
   if(!Array.isArray(rows)||!rows.length)throw new Error('Kp indisponível');
   let data;
@@ -49,12 +56,49 @@ export function parseKp(rows) {
     data=rows.slice(1).map(row=>({time:row[t],raw:row[k]}));
   }else{data=rows.map(row=>({time:row.time_tag,raw:row.Kp??row.kp_index??row.kp}));}
   const valid=data.flatMap(({time,raw})=>{
-    if(raw===null||raw===undefined||raw===''||typeof time!=='string')return [];
-    const value=Number(raw),iso=time.replace(' ','T');
-    const timestamp=Date.parse(/(?:Z|[+-]\d{2}:?\d{2})$/i.test(iso)?iso:iso+'Z');
-    return Number.isFinite(value)&&value>=0&&value<=9&&Number.isFinite(timestamp)?[{value,timestamp,evidence:'measured',source:'NOAA SWPC'}]:[];
+    if(raw===null||raw===undefined||raw==='')return [];
+    const value=Number(raw),when=timestamp(time);
+    return Number.isFinite(value)&&value>=0&&value<=9&&Number.isFinite(when)?[{value,timestamp:when,evidence:'measured',source:'NOAA SWPC'}]:[];
   }).sort((a,b)=>a.timestamp-b.timestamp);
   if(!valid.length)throw new Error('Kp inválido');return valid.at(-1);
 }
+export function parseF107(rows){
+  const row=Array.isArray(rows)?rows.at(-1):null,value=Number(row?.flux),when=timestamp(row?.time_tag);
+  if(!Number.isFinite(value)||value<40||value>500||!Number.isFinite(when))throw new Error('F10.7 inválido');
+  return {value,timestamp:when,evidence:'measured',source:'NOAA SWPC'};
+}
+export function parseSolarWindMag(rows){
+  const row=Array.isArray(rows)?rows.at(-1):null,bz=Number(row?.bz_gsm),bt=Number(row?.bt),when=timestamp(row?.time_tag);
+  if(!Number.isFinite(bz)||!Number.isFinite(bt)||!Number.isFinite(when))throw new Error('Campo magnético solar inválido');
+  return {bz:{value:bz,timestamp:when,evidence:'measured',source:'NOAA SWPC'},bt:{value:bt,timestamp:when,evidence:'measured',source:'NOAA SWPC'}};
+}
+export function parseSolarWindSpeed(rows){
+  const row=Array.isArray(rows)?rows.at(-1):null,value=Number(row?.proton_speed),when=timestamp(row?.time_tag);
+  if(!Number.isFinite(value)||value<0||value>5000||!Number.isFinite(when))throw new Error('Vento solar inválido');
+  return {value,timestamp:when,evidence:'measured',source:'NOAA SWPC'};
+}
+export function parseXray(rows){
+  const row=Array.isArray(rows)?rows.at(-1):null,cls=String(row?.current_class||'').toUpperCase(),when=timestamp(row?.time_tag);
+  if(!/^[ABCMX]\d+(?:\.\d+)?$/.test(cls)||!Number.isFinite(when))throw new Error('Raios X inválidos');
+  return {class:cls,timestamp:when,evidence:'measured',source:'NOAA SWPC'};
+}
 export async function loadPSK(settings,scope,fetchImpl,activity) {return parsePSK(await boundedFetch(pskURL(settings,scope),'text',fetchImpl,activity));}
 export async function loadKp(fetchImpl,activity) {return parseKp(await boundedFetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json','json',fetchImpl,activity));}
+export async function loadSpaceWeather(fetchImpl,activity=()=>{}){
+  const requests=[
+    ['kp','https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json',parseKp],
+    ['f107','https://services.swpc.noaa.gov/products/summary/10cm-flux.json',parseF107],
+    ['mag','https://services.swpc.noaa.gov/products/summary/solar-wind-mag-field.json',parseSolarWindMag],
+    ['wind','https://services.swpc.noaa.gov/products/summary/solar-wind-speed.json',parseSolarWindSpeed],
+    ['xray','https://services.swpc.noaa.gov/json/goes/primary/xray-flares-latest.json',parseXray]
+  ];
+  const settled=await Promise.allSettled(requests.map(async([key,url,parser])=>[key,parser(await boundedFetch(url,'json',fetchImpl,activity))]));
+  const out={},errors=[];
+  for(const result of settled){
+    if(result.status==='rejected'){errors.push(result.reason?.message||String(result.reason));continue;}
+    const [key,value]=result.value;if(key==='mag'){out.bz=value.bz;out.bt=value.bt;}else out[key]=value;
+  }
+  if(!Object.keys(out).length)throw new Error('NOAA SWPC indisponível: '+errors.join('; '));
+  out.updated=Math.max(...Object.values(out).filter(v=>v&&typeof v==='object'&&Number.isFinite(v.timestamp)).map(v=>v.timestamp),0);
+  return out;
+}
