@@ -139,14 +139,14 @@ function render(snap){
     const state=document.createElement('span');state.className='state';state.textContent=b.chance===null?t('insufficient'):t(bandStates[b.state]||'none')+(b.trend!=='—'?' '+b.trend:'');
     row.append(label,state);$('bands').append(row);
   }
-  $('heatPredicted').replaceChildren();$('heatConfirmed').replaceChildren();$('zones').replaceChildren();$('points').replaceChildren();$('home').replaceChildren();
+  $('zones').replaceChildren();$('points').replaceChildren();
   const displayed=snap.bands.filter(b=>snap.settings.visible.includes(b.band)&&(!$('band').value||b.band===$('band').value));let zoneCount=0,pointCount=0;
   const showConfirmed=$('showConfirmed')?.checked!==false,showPredicted=$('showPredicted')?.checked!==false,mapView=snap.settings.mapView||'heatmap',shownBands=new Set(displayed.map(b=>b.band));
   const shownSpots=snap.spots.filter(p=>shownBands.has(p.band));
   pointCount=shownSpots.length;
   if(mapView==='heatmap'){
-    if(showPredicted)for(const b of displayed)for(const zone of b.predictedZones||[]){zoneCount++;for(const center of zoneCenters(zone))heatCircle($('heatPredicted'),b.band,center,'predicted',(b.chance??0)/100);}
-    if(showConfirmed){zoneCount+=displayed.reduce((n,b)=>n+(b.confirmedZones||b.zones||[]).length,0);for(const s of shownSpots)if(s.endpoint)heatCircle($('heatConfirmed'),s.band,s.endpoint,'confirmed',s.snr===null?0.65:Math.max(.35,Math.min(1,(s.snr+30)/40)));}
+    if(showPredicted)zoneCount+=displayed.reduce((n,b)=>n+(b.predictedZones||[]).length,0);
+    if(showConfirmed)zoneCount+=displayed.reduce((n,b)=>n+(b.confirmedZones||b.zones||[]).length,0);
   }else{
     for(const b of displayed){
       if(showPredicted)for(const zone of b.predictedZones||[]){zoneCount++;const p=svgNode('path',{class:'forecastZone',d:zone.rings.map(ringPath).join(' '),fill:color(b.band),stroke:color(b.band)},$('zones'));svgNode('title',{},p).textContent=`${b.band} · ${t('predicted')} · ${b.chance??'—'}%`;}
@@ -159,7 +159,7 @@ function render(snap){
     }
   }
   const configured=Boolean(snap.settings.callsign)&&coordinates(snap.settings.lat,snap.settings.lon);
-  if(configured){const [cx,cy]=project([snap.settings.lon,snap.settings.lat]);svgNode('circle',{cx,cy,r:3.6},$('home'));svgNode('text',{x:cx+7,y:cy-5},$('home')).textContent=snap.settings.callsign;}
+  scheduleMapOverlays();
   $('empty').classList.toggle('hidden',configured);$('emptyTitle').textContent=t('configure');$('emptyConfigure').hidden=configured;
   $('mapNotice').classList.toggle('hidden',!configured||pointCount>0);$('mapNotice').textContent=status.state==='error'?t('sourceError'):status.state==='loading'?t('loading'):status.state==='preview'?t('previewNotice'):t('emptyTitle');$('mapNotice').title=t('emptyBody');
   $('evidenceCount').textContent=t('counts',{n:pointCount,zones:zoneCount});const query=status.state==='online'?t('queryCount',{n:status.count??0}):sourceLabel(status);
