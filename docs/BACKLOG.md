@@ -149,6 +149,8 @@ As descrições abaixo preservam os critérios acordados. Esses itens recentes e
 
 ## IA e integrações futuras
 
+- **Assistente — regiões/países por nome:** complementar a resposta atual de direção/azimute com identificação de regiões e países favorecidos usando uma base geográfica offline apropriada. Não inferir país apenas por quadrante ou azimute; associar os endpoints observados a fronteiras reais e apresentar ranking com quantidade de evidências, banda, distância e fontes.
+- **Fusão — confiança por fonte e envelhecimento:** evoluir a fusão multifuente iniciada com PSK Reporter, WSPR.live, RBN e NOAA para pesos calibrados por fonte, qualidade de localização, idade/freshness, cobertura amostral e independência real das evidências. Evitar que fontes correlacionadas ou o mesmo enlace observado por mais de uma rede sejam interpretados como eventos totalmente independentes.
 - IA generativa abaixo do mapa, consumindo snapshots auditáveis do motor, com fontes, horários, justificativa e limites.
 - Perguntas sobre melhor banda, direção da antena, tendência, causa provável e diagnóstico da própria estação.
 - Credenciais opcionais protegidas e consentimento específico para o envio de localização/dados ao provedor escolhido.
