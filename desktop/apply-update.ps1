@@ -18,7 +18,9 @@ try {
   if ($m.Mode -eq 'installed') {
     $arguments = '/S --updated --force-run /D=' + $m.InstallDir
     $env:PROP_UPDATE_CONFIRM_FILE = $m.ReadyFile
-    $installer = Start-Process -FilePath $m.Candidate -ArgumentList $arguments -PassThru -Wait
+    # Wait for the installer itself; Start-Process -Wait also waits for the relaunched application.
+    $installer = Start-Process -FilePath $m.Candidate -ArgumentList $arguments -PassThru
+    if (-not $installer.WaitForExit(120000)) { throw 'Installer did not finish within two minutes' }
     if ($installer.ExitCode -ne 0) { throw 'Installer failed' }
   } else {
     if ((Split-Path -Parent $m.Target) -ne (Split-Path -Parent $m.Original)) { throw 'Update must stay in the portable folder' }

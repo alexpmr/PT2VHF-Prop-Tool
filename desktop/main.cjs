@@ -1,13 +1,15 @@
 const {app,BrowserWindow,ipcMain,session,dialog,Notification,shell}=require('electron');
 const fs=require('node:fs/promises'),path=require('node:path'),crypto=require('node:crypto');
-const {createReadStream}=require('node:fs');
-const {pathToFileURL}=require('node:url');
+const {createReadStream,realpathSync}=require('node:fs');
+const {pathToFileURL,fileURLToPath}=require('node:url');
 const {downloadAsset,launchHandoff}=require('./portable-update.cjs');
 let win,state,file,domain,sources,alerts,i18n,versions,refreshing=false,checkingUpdate=false,downloadingUpdate=false;
 let scope='station',lastUpdateCheck=0,persistQueue=Promise.resolve(),update={state:'idle',notes:'',version:null},updater,asset,pendingFile;
 const portable=Boolean(process.env.PORTABLE_EXECUTABLE_DIR),smoke=process.argv.includes('--smoke-test');
 if(smoke&&process.env.PROP_SMOKE_LOG){const {appendFileSync}=require('node:fs');const log=value=>{try{appendFileSync(process.env.PROP_SMOKE_LOG,value+'\n');}catch{}};log(JSON.stringify({argv:process.argv,portable,dir:process.env.PORTABLE_EXECUTABLE_DIR}));for(const name of ['log','error']){const original=console[name];console[name]=(...values)=>{log(values.map(v=>v?.stack||String(v)).join(' '));original(...values);};}}
 const repo='https://github.com/alexpmr/PT2VHF-Prop-Tool',mainURL=pathToFileURL(path.join(__dirname,'../ui/index.html')).href;
+const canonicalUI=realpathSync(fileURLToPath(mainURL));
+function isMainURL(value){try{const url=new URL(value);if(url.protocol!=='file:'||url.search||url.hash)return false;const actual=realpathSync(fileURLToPath(url));return process.platform==='win32'?actual.toLowerCase()===canonicalUI.toLowerCase():actual===canonicalUI;}catch{return false;}}
 const t=(key,vars)=>i18n.translate(state?.settings.language||'pt-BR',key,vars);
 if(!app.requestSingleInstanceLock()){app.quit();}else{
   app.on('second-instance',()=>{if(win){if(win.isMinimized())win.restore();win.focus();}});
@@ -69,9 +71,9 @@ async function start(){
   state={schemaVersion:2,settings:domain.validateSettings(domain.DEFAULT_SETTINGS),spots:[],kp:null,attemptPSK:0,attemptKp:0,status:{psk:{state:'idle'},noaa:{state:'idle'}}};
   try{const loaded=JSON.parse(await fs.readFile(file,'utf8'));state={...state,...loaded,schemaVersion:2,settings:domain.migrateSettings(loaded.settings,loaded.schemaVersion||1),spots:domain.mergeSpots(Array.isArray(loaded.spots)?loaded.spots:[])};}catch(e){if(e.code!=='ENOENT'){await dialog.showMessageBox({type:'warning',message:t('settingsLoadError')});await fs.rename(file,file+'.invalid-'+Date.now()).catch(()=>{});}}
   win=new BrowserWindow({width:1440,height:980,minWidth:1050,minHeight:760,show:!smoke,backgroundColor:state.settings.theme==='light'?'#edf2f7':'#09111d',title:'PT2VHF Prop Tool v'+app.getVersion(),webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,webSecurity:true}});
-  win.setMenuBarVisibility(false);win.webContents.setWindowOpenHandler(()=>({action:'deny'}));win.webContents.on('will-navigate',(e,url)=>{if(url!==mainURL)e.preventDefault();});
-  session.defaultSession.setPermissionRequestHandler((contents,permission,callback)=>callback(contents===win.webContents&&permission==='geolocation'&&contents.getURL()===mainURL));session.defaultSession.setPermissionCheckHandler((contents,permission)=>contents===win.webContents&&permission==='geolocation'&&contents.getURL()===mainURL);
-  const handle=(name,fn)=>ipcMain.handle(name,(event,...args)=>{if(event.sender!==win.webContents||event.sender.getURL()!==mainURL)throw Error('Invalid origin');return fn(...args);});
+  win.setMenuBarVisibility(false);win.webContents.setWindowOpenHandler(()=>({action:'deny'}));win.webContents.on('will-navigate',(e,url)=>{if(!isMainURL(url))e.preventDefault();});
+  session.defaultSession.setPermissionRequestHandler((contents,permission,callback)=>callback(contents===win.webContents&&permission==='geolocation'&&isMainURL(contents.getURL())));session.defaultSession.setPermissionCheckHandler((contents,permission)=>contents===win.webContents&&permission==='geolocation'&&isMainURL(contents.getURL()));
+  const handle=(name,fn)=>ipcMain.handle(name,(event,...args)=>{if(event.sender!==win.webContents||event.senderFrame!==win.webContents.mainFrame||!isMainURL(event.senderFrame.url))throw Error('Invalid origin');return fn(...args);});
   handle('snapshot',snapshot);handle('configure',async input=>{const settings=domain.validateSettings(input),old=state.settings;state.settings=settings;try{await persist();}catch(e){state.settings=old;throw e;}if(['callsign','lat','lon','alertMinScore','alertMinDistance','alertCooldown','alertBands'].some(k=>JSON.stringify(old[k])!==JSON.stringify(settings[k])))alerts=new domain.AlertMachine();emit();return snapshot();});
   handle('refresh',refresh);handle('check-update',checkUpdate);handle('download-update',downloadUpdate);handle('install-update',installUpdate);
   const openLink=target=>{const links={project:repo,issues:repo+'/issues',profile:'https://github.com/alexpmr',releases:repo+'/releases',manual:`${repo}/releases/download/v${app.getVersion()}/PT2VHF-Prop-Tool-${app.getVersion()}-Manual.pdf`};if(!Object.hasOwn(links,target))throw Error('Invalid link');return shell.openExternal(links[target]);};handle('open-link',openLink);handle('open-releases',()=>openLink('releases'));
