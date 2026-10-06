@@ -208,7 +208,7 @@ async function start(){
     await win.webContents.executeJavaScript("document.getElementById('mapTab').click();document.getElementById('themeButton').click()");await full('03-mapa-claro.png');
     await win.webContents.executeJavaScript("document.getElementById('helpTab').click()");await element('04-ajuda.png','#helpPage');
     await win.webContents.executeJavaScript("document.querySelector('#languageMenu > summary').click()");await full('05-idiomas.png');
-    await win.webContents.executeJavaScript("document.getElementById('aboutTab').click()");await element('06-sobre.png','#aboutPage');
+    await win.webContents.executeJavaScript("document.querySelector('#languageMenu > summary').click();document.getElementById('aboutTab').click()");await element('06-sobre.png','#aboutPage');
     console.log('Documentation screenshots captured from current renderer');app.exit(0);return;
   }
   if(process.env.PROP_UPDATE_CONFIRM_FILE&&path.resolve(process.env.PROP_UPDATE_CONFIRM_FILE)===path.join(dataDir,'updates','update-ready.json'))await fs.writeFile(process.env.PROP_UPDATE_CONFIRM_FILE,JSON.stringify({version:app.getVersion()}),'utf8');
