@@ -1,5 +1,16 @@
 # Backlog consolidado — PT2VHF Prop Tool
 
+## Entregue na v0.2.3
+
+- Mapa de calor como visualização padrão, usando manchas graduais por banda em vez da aparência quadriculada dos polígonos/células.
+- Alternância Heatmap / Polígonos no menu do mapa, com preferência persistida; Heatmap é o default de novos perfis e perfis antigos sem preferência.
+- Camadas Confirmada e Previsão disponíveis nos dois modos de visualização.
+- Removido o botão/modo Minha estação; o mapa opera somente em Minha região.
+- Bandas agora passa a ser somente informativo; clique nas linhas não altera mais a banda.
+- Seleção da banda exibida exclusivamente pelo seletor do menu superior do mapa.
+- Popup de novidades sanitiza HTML/Markdown/texto simples e não exibe mais tags, atributos ou código bruto do GitHub.
+- Testes de regressão para HTML normal/escapado, Markdown, Heatmap padrão/persistido e interações de banda.
+
 ## Entregue na v0.2.2
 
 - Propagação da região como visão padrão; a estação configurada define a origem geográfica, sem exigir atividade própria para alimentar a análise.
@@ -38,15 +49,6 @@
 - README com downloads diretos; manual PDF com telas.
 
 As descrições abaixo preservam os critérios acordados. Esses itens recentes estão implementados; fontes adicionais, modelos físicos, IA generativa, MapLibre, Alexa e demais evoluções continuam no roteiro.
-
-## Correções da próxima versão
-
-- **Mapa de calor — padrão:** iniciar a aplicação com a visualização `Mapa de calor` ativada por default. Caso exista opção de alternância entre Heatmap e Polígonos, o Heatmap deve ser a visualização inicial, preservando posteriormente a preferência escolhida pelo usuário quando houver persistência dessa configuração.
-- **Mapa — contexto de visualização:** remover o botão `Minha estação` e eliminar a alternância entre visão individual e regional. O mapa deve operar somente no contexto da **minha região**, usando a posição configurada como referência geográfica para análise de propagação regional. A atividade diretamente associada ao indicativo pode continuar disponível apenas em LOGs/diagnóstico, sem ocupar um modo próprio no mapa.
-- **Bandas agora — interação:** remover o comportamento de clique nas linhas de banda do painel lateral direito. Atualmente, clicar em uma banda alterna entre essa banda e `Todas as bandas`. O painel deve permanecer apenas informativo, sem alterar filtros. A seleção da banda exibida no mapa deve ser feita exclusivamente pelo seletor de banda no menu superior do mapa.
-- **Popup de novidades:** corrigir a exibição das notas da release quando o GitHub retornar conteúdo em HTML. Atualmente tags como `<h2>`, `<ul>`, `<li>` e `<a>` aparecem literalmente no popup. O aplicativo deve sanitizar o conteúdo e renderizar uma apresentação legível, preservando títulos, listas, parágrafos e links seguros, sem executar HTML arbitrário nem expor atributos internos do GitHub. Quando não for possível renderizar o formato recebido, converter para texto limpo/Markdown antes de exibir.
-- Garantir que o popup de novidades use o resumo da versão do próprio aplicativo quando disponível e não dependa da formatação HTML automática da página de release do GitHub.
-- Adicionar teste de regressão com release notes contendo HTML, Markdown e texto simples, verificando que nenhuma tag/código bruto apareça na interface.
 
 ## Prioridade imediata: validar v0.1 em Windows
 
@@ -101,9 +103,9 @@ As descrições abaixo preservam os critérios acordados. Esses itens recentes e
 - Tradução integral de toda a aplicação: abas, menus, botões, configurações, tooltips, validações, mensagens de estado/erro, alertas, notas exibidas pela interface e aba Ajuda. Evitar textos fixos que permaneçam em português ao mudar o idioma.
 - Persistir o idioma escolhido, iniciar em Português (Brasil) por padrão e atualizar a interface inteira ao trocar o idioma. Revisar as seis traduções e testar Ajuda e mensagens dinâmicas.
 
-- Visão global com fontes próprias, separada da propagação regional e da visão diagnóstica da estação.
+- Visão global com fontes próprias, separada da análise regional padrão; não reintroduzir o antigo modo Minha estação no mapa.
 - MapLibre, camadas independentes e legenda Observado / Medido / Previsto.
-- Polígonos amorfos por densidade/contornos, com limite de interpolação e indicação de incerteza geográfica. As células da v0.1 são implementação conservadora inicial.
+- Evoluir o heatmap para densidade/contornos mais sofisticados, com limite de interpolação, indicação de incerteza geográfica e suavização configurável. Manter Polígonos como modo técnico alternativo.
 - Terminação dia/noite e gray line; MUF, absorção, aurora e meteorologia.
 - Painel lateral: regiões favorecidas, azimute, intensidade, evidências, mecanismo provável, confiança qualificada, tendência e última atualização de cada fonte.
 - Histórico e reprodução de nascimento, expansão, deslocamento e desaparecimento das zonas.
