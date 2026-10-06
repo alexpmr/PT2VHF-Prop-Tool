@@ -889,3 +889,37 @@ const EXTRA_MESSAGES_V021={
   }
 };
 for(const [code,extra] of Object.entries(EXTRA_MESSAGES_V021))Object.assign(MESSAGES[code],extra);
+
+const UPDATE_FLOW_MESSAGES_V021={
+  "pt-BR":{
+    "whatsNew":"Novidades da versão","updatedVersion":"ATUALIZAÇÃO CONCLUÍDA","continue":"Continuar",
+    "news021":"• Coleta de dados corrigida e diagnóstico explícito de falhas.\n• Nova aba LOGs com tráfego TX/RX, filtros, busca e exportação.\n• LEDs RX verde e TX vermelho na barra superior.\n• Fontes de consulta identificadas em Configurações.\n• Refresh dos dados do mapa a cada 5 minutos por padrão.\n• Checagem de nova versão a cada 30 minutos por padrão.\n• Botão de versão com atualização automática em um único fluxo.\n• Direção, azimute e distância até o ponto sob o cursor no mapa.",
+    "helpUpdate":"Ative alertas por banda em Configurações. Eles exigem múltiplos receptores da sua própria transmissão, dados recentes e os limites escolhidos. A aplicação verifica novas versões a cada trinta minutos por padrão. Ao clicar no botão de versão, a checagem é imediata: se não houver versão nova, você continua usando a aplicação; se houver, o download e a instalação são iniciados automaticamente. Na primeira abertura da nova versão, as novidades são mostradas uma única vez."
+  },
+  "en":{
+    "whatsNew":"What's new in version","updatedVersion":"UPDATE COMPLETE","continue":"Continue",
+    "news021":"• Fixed data retrieval with explicit failure diagnostics.\n• New Logs tab with TX/RX traffic, filters, search and export.\n• Green RX and red TX activity LEDs in the top bar.\n• Data sources identified in Settings.\n• Map data refresh every 5 minutes by default.\n• Version check every 30 minutes by default.\n• One-click version button with automatic update flow.\n• Direction, bearing and distance to the point under the map cursor.",
+    "helpUpdate":"Enable alerts by band in Settings. They require multiple receivers of your own transmission, recent data and the selected limits. The application checks for new versions every thirty minutes by default. Clicking the version button checks immediately: if there is no new version, you simply continue using the application; if there is one, download and installation start automatically. On the first launch of the new version, its changes are shown once."
+  },
+  "es":{
+    "whatsNew":"Novedades de la versión","updatedVersion":"ACTUALIZACIÓN COMPLETADA","continue":"Continuar",
+    "news021":"• Corregida la obtención de datos con diagnóstico explícito de fallos.\n• Nueva pestaña Logs con tráfico TX/RX, filtros, búsqueda y exportación.\n• LEDs de actividad RX verde y TX rojo en la barra superior.\n• Fuentes de datos identificadas en Configuración.\n• Actualización de datos del mapa cada 5 minutos por defecto.\n• Comprobación de versión cada 30 minutos por defecto.\n• Botón de versión con flujo automático de actualización en un solo clic.\n• Dirección, azimut y distancia hasta el punto bajo el cursor del mapa.",
+    "helpUpdate":"Active las alertas por banda en Configuración. Requieren varios receptores de su propia transmisión, datos recientes y los límites elegidos. La aplicación comprueba nuevas versiones cada treinta minutos por defecto. Al pulsar el botón de versión, la comprobación es inmediata: si no hay una nueva versión, se continúa usando la aplicación; si la hay, la descarga y la instalación se inician automáticamente. En el primer inicio de la nueva versión, las novedades se muestran una sola vez."
+  },
+  "fr":{
+    "whatsNew":"Nouveautés de la version","updatedVersion":"MISE À JOUR TERMINÉE","continue":"Continuer",
+    "news021":"• Collecte des données corrigée avec diagnostic explicite des échecs.\n• Nouvel onglet Journaux avec trafic TX/RX, filtres, recherche et export.\n• Voyants d'activité RX vert et TX rouge dans la barre supérieure.\n• Sources de données identifiées dans Paramètres.\n• Actualisation des données de la carte toutes les 5 minutes par défaut.\n• Vérification de version toutes les 30 minutes par défaut.\n• Bouton de version avec mise à jour automatique en un seul flux.\n• Direction, azimut et distance jusqu'au point sous le curseur de la carte.",
+    "helpUpdate":"Activez les alertes par bande dans Paramètres. Elles nécessitent plusieurs récepteurs de votre propre transmission, des données récentes et les seuils choisis. L'application vérifie les nouvelles versions toutes les trente minutes par défaut. Un clic sur le bouton de version lance immédiatement la vérification : s'il n'y a pas de nouvelle version, l'utilisation continue normalement ; sinon, le téléchargement et l'installation démarrent automatiquement. Au premier lancement de la nouvelle version, les nouveautés sont affichées une seule fois."
+  },
+  "de":{
+    "whatsNew":"Neues in Version","updatedVersion":"AKTUALISIERUNG ABGESCHLOSSEN","continue":"Weiter",
+    "news021":"• Datenabruf korrigiert und Fehlerdiagnose sichtbar gemacht.\n• Neue Logs-Registerkarte mit TX/RX-Verkehr, Filtern, Suche und Export.\n• Grüne RX- und rote TX-Aktivitäts-LEDs in der oberen Leiste.\n• Datenquellen in den Einstellungen ausgewiesen.\n• Kartendaten werden standardmäßig alle 5 Minuten aktualisiert.\n• Versionsprüfung standardmäßig alle 30 Minuten.\n• Versionsschaltfläche mit automatischem Ein-Klick-Updateablauf.\n• Richtung, Peilung und Entfernung zum Punkt unter dem Kartenzeiger.",
+    "helpUpdate":"Aktivieren Sie bandbezogene Warnungen in den Einstellungen. Sie erfordern mehrere Empfänger Ihrer eigenen Aussendung, aktuelle Daten und die gewählten Grenzwerte. Die Anwendung prüft standardmäßig alle dreißig Minuten auf neue Versionen. Ein Klick auf die Versionsschaltfläche prüft sofort: Ist keine neue Version vorhanden, arbeiten Sie normal weiter; ist eine vorhanden, starten Download und Installation automatisch. Beim ersten Start der neuen Version werden die Änderungen einmalig angezeigt."
+  },
+  "it":{
+    "whatsNew":"Novità della versione","updatedVersion":"AGGIORNAMENTO COMPLETATO","continue":"Continua",
+    "news021":"• Raccolta dati corretta con diagnostica esplicita degli errori.\n• Nuova scheda Log con traffico TX/RX, filtri, ricerca ed esportazione.\n• LED di attività RX verde e TX rosso nella barra superiore.\n• Fonti dati indicate nelle Impostazioni.\n• Aggiornamento dei dati della mappa ogni 5 minuti per impostazione predefinita.\n• Controllo versione ogni 30 minuti per impostazione predefinita.\n• Pulsante versione con flusso di aggiornamento automatico con un solo clic.\n• Direzione, azimut e distanza fino al punto sotto il cursore della mappa.",
+    "helpUpdate":"Attiva gli avvisi per banda nelle Impostazioni. Richiedono più ricevitori della propria trasmissione, dati recenti e i limiti scelti. L'applicazione controlla nuove versioni ogni trenta minuti per impostazione predefinita. Facendo clic sul pulsante della versione, il controllo è immediato: se non esiste una nuova versione si continua a usare normalmente l'applicazione; se esiste, download e installazione partono automaticamente. Al primo avvio della nuova versione, le novità vengono mostrate una sola volta."
+  }
+};
+for(const [code,extra] of Object.entries(UPDATE_FLOW_MESSAGES_V021))Object.assign(MESSAGES[code],extra);
