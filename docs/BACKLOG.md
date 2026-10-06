@@ -41,6 +41,7 @@ As descrições abaixo preservam os critérios acordados. Esses itens recentes e
 
 ## Correções da próxima versão
 
+- **Bandas agora — interação:** remover o comportamento de clique nas linhas de banda do painel lateral direito. Atualmente, clicar em uma banda alterna entre essa banda e `Todas as bandas`. O painel deve permanecer apenas informativo, sem alterar filtros. A seleção da banda exibida no mapa deve ser feita exclusivamente pelo seletor de banda no menu superior do mapa.
 - **Popup de novidades:** corrigir a exibição das notas da release quando o GitHub retornar conteúdo em HTML. Atualmente tags como `<h2>`, `<ul>`, `<li>` e `<a>` aparecem literalmente no popup. O aplicativo deve sanitizar o conteúdo e renderizar uma apresentação legível, preservando títulos, listas, parágrafos e links seguros, sem executar HTML arbitrário nem expor atributos internos do GitHub. Quando não for possível renderizar o formato recebido, converter para texto limpo/Markdown antes de exibir.
 - Garantir que o popup de novidades use o resumo da versão do próprio aplicativo quando disponível e não dependa da formatação HTML automática da página de release do GitHub.
 - Adicionar teste de regressão com release notes contendo HTML, Markdown e texto simples, verificando que nenhuma tag/código bruto apareça na interface.
