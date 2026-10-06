@@ -21,21 +21,24 @@ Aplicativo experimental para Windows 10/11 x64 que estima **onde há possibilida
 - Barra superior com versão, menu **Mapa / Configurações / LOGs / Ajuda / Sobre** e LEDs reais de tráfego **RX verde / TX vermelho**.
 - **Minha região** é o único contexto operacional do mapa. A posição configurada é a referência; o aplicativo procura enlaces observados envolvendo estações da região, sem depender de transmissões da própria PT2VHF. Atividade diretamente ligada ao indicativo continua acessível pelos LOGs/diagnóstico, sem um modo de mapa separado.
 - **PSK Reporter regional por Grid**, incluindo os modos reportados pela rede, com classificação de enlaces de saída e entrada da região.
-- **Reverse Beacon Network (RBN)** como segunda fonte observacional, consultada por meio da API pública Vail ReRBN. Spots com Grid conhecido são normalizados no mesmo modelo geográfico do PSK Reporter.
+- **Reverse Beacon Network (RBN)** como fonte observacional de spots automáticos, consultada por meio da API pública Vail ReRBN. Spots com Grid conhecido são normalizados no mesmo modelo geográfico.
+- **WSPR.live** como fonte observacional independente de WSPR/WSPRnet. As consultas são limitadas por tempo, bandas habilitadas e Grid regional; os reports entram no mesmo modelo geográfico sem perder a identificação da fonte.
 - **NOAA SWPC ampliado:** Kp, F10.7/SFI, Bz/Bt, velocidade do vento solar e classe de raios X GOES entram no contexto da estimativa.
-- **Bandas agora** mostra somente a leitura operacional: **Grande chance**, **Boa chance**, **Possível** ou **Chance baixa**. O bloco é apenas informativo e não altera filtros; a banda exibida é escolhida exclusivamente no seletor superior.
-- **Janela de observação** identifica explicitamente o período de evidências usado no mapa/análise: 15, 30 ou 60 minutos. Na primeira carga, ou quando a janela aumenta além do histórico local disponível, o PSK Reporter tenta recuperar retroativamente o mesmo período; depois disso as consultas usam sobreposição incremental para evitar downloads repetidos.
-- A **banda corrente** é mostrada em letras grandes laranja logo abaixo do indicativo no mapa. Sem filtro de banda, o mapa mostra **Todas as bandas** no mesmo local.
-- O motor mantém separados o índice de evidência observada e a **chance estimada**. O clima espacial ajusta a chance de forma conservadora; não transforma automaticamente uma medição global em confirmação local.
+- **Bandas agora** mostra somente a leitura operacional: **Grande chance**, **Boa chance**, **Possível** ou **Chance baixa**, indicando também se a base é observada, fundida ou apenas estimada. O bloco é informativo e não altera filtros.
+- A seleção de banda usa **botões compactos na barra superior**, um por banda habilitada, mais **Todas as bandas**. O botão ativo é a única indicação da banda corrente; o nome não é duplicado dentro do mapa.
+- **Janela de observação** usa botões diretos de 15, 30 ou 60 minutos. Na primeira carga, ou quando a janela aumenta além do histórico local disponível, PSK Reporter e WSPR.live tentam recuperar retroativamente o período necessário; depois usam consultas incrementais/limitadas para reduzir repetição.
+- O motor mantém separados **observado**, **medido** e **estimado**. PSK Reporter, RBN e WSPR.live contribuem como observações; NOAA SWPC contribui como condição física. Convergência entre fontes pode aumentar a confiança, mas uma medição global nunca é convertida automaticamente em confirmação geográfica.
+- **11 m / PX:** quando não há fonte observacional compatível, a banda continua recebendo uma estimativa solar/ionosférica conservadora a partir dos dados NOAA, claramente marcada como estimativa e sem inventar regiões no Heatmap.
 - **Mapa de calor** é a visualização padrão e usa um **gradiente multicolor de densidade**: tons frios indicam menor concentração e tons quentes maior concentração. A camada é recalculada conforme zoom e deslocamento, em vez de simplesmente ampliar uma mancha já composta. **Polígonos** permanece disponível como visualização técnica alternativa e a preferência é persistida.
 - **Confirmada** e **Previsão** continuam como camadas independentes. O heatmap agrega pontos por viewport/zoom e normaliza a intensidade para evitar saturação em branco; ao aproximar, o kernel diminui e revela hotspots mais locais. No modo Polígonos, mantêm contornos sólido e tracejado.
 - As áreas previstas permanecem geograficamente conservadoras: dependem de geometria observacional disponível e não inventam continentes/regiões apenas a partir de índices globais. O cursor mostra direção/azimute e distância desde a estação configurada.
 - Painel de clima espacial exibe **Kp, SFI, Bz, Vsw e X-Ray**.
 - Histórico local de até 24 h; análise nos últimos 15, 30 ou 60 minutos. Refresh automático do mapa a cada **5 minutos por padrão**, configurável.
-- Aba **LOGs** registra TX, RX, fonte, endpoint, status, latência, bytes, erros e prévia limitada do payload, incluindo PSK Reporter, RBN, NOAA e GitHub.
-- Verificação de versões a cada **30 minutos** por padrão, configurável. O botão de versão verifica imediatamente e, havendo release nova, inicia o fluxo automático de atualização.
+- Aba **LOGs** registra TX, RX, fonte, endpoint, status, latência, bytes, erros e prévia limitada do payload, incluindo PSK Reporter, WSPR.live, RBN, NOAA e GitHub.
+- Verificação de versões a cada **15 minutos** por padrão, configurável. O botão de versão verifica imediatamente e, havendo release nova, inicia o fluxo automático de atualização.
 - Na primeira abertura após atualizar, um popup mostra as novidades uma única vez. HTML/Markdown recebido do GitHub é convertido para texto seguro e legível, sem exibir tags ou atributos internos.
 - Atualização instalada por electron-updater/NSIS e atualização portátil com substituição segura e recuperação da versão anterior. Ao iniciar a atualização, a aplicação mostra **percentual, bytes transferidos/total e velocidade quando disponíveis**; depois de validar o pacote, fecha, instala/substitui a nova versão **sem perguntas** e abre novamente automaticamente.
+- **Reiniciar de fábrica** em Configurações apaga configurações, estação, preferências, histórico, cache, LOGs e dados locais, preserva a versão instalada e reabre o aplicativo como primeira execução.
 
 ## Instalar e começar
 
@@ -43,7 +46,7 @@ Aplicativo experimental para Windows 10/11 x64 que estima **onde há possibilida
 
 **Portátil:** coloque o executável em uma pasta gravável, inclusive USB. A pasta `data` fica ao lado do executável e contém configurações e histórico.
 
-Abra **Configurações**, informe indicativo e posição da antena, ajuste bandas/antenas/potência e salve. A tela **Mapa** opera somente em **Minha região** e abre em **Mapa de calor**. Selecione uma banda exclusivamente pelo seletor superior ou mantenha **Todas as bandas**. O painel **Bandas agora** não é clicável.
+Abra **Configurações**, informe indicativo e posição da antena, ajuste bandas/antenas/potência e salve. A tela **Mapa** opera somente em **Minha região** e abre em **Mapa de calor**. Selecione a banda diretamente pelos botões compactos da barra superior ou use **Todas as bandas**. O painel **Bandas agora** não é clicável.
 
 ## Como interpretar
 
@@ -52,13 +55,14 @@ Abra **Configurações**, informe indicativo e posição da antena, ajuste banda
 - **Grande chance / Boa chance / Possível / Chance baixa:** síntese operacional do motor, não uma promessa estatística de contato.
 - Recepção digital não comprova QSO bidirecional e não deve ser convertida automaticamente em garantia para SSB/CW.
 - Ausência de spots não significa banda fechada.
+- Em **11 m**, a indicação pode ser uma **estimativa solar/ionosférica**, não uma confirmação por spots. A interface sinaliza essa diferença.
 - Kp, SFI, Bz, vento solar e raios X são contexto físico global; confirmação geográfica exige dados espaciais/observacionais.
 
 ## Limites e roteiro
 
-A v0.2.5 ainda não possui modelo físico completo que use potência, ganho, altura, polarização e azimute da antena. **MUF/foF2, VOACAP, D-RAP, GloTEC/TEC, aurora espacial, WSPR independente, DX Cluster e outras fontes** continuam no [roteiro](docs/BACKLOG.md).
+A v0.2.6 ainda não possui modelo físico completo que use potência, ganho, altura, polarização e azimute da antena. **MUF/foF2, VOACAP, D-RAP, GloTEC/TEC, aurora espacial, DX Cluster e outras fontes** continuam no [roteiro](docs/BACKLOG.md). O WSPR independente já é consultado por meio do WSPR.live.
 
-Os dados RBN chegam por uma API pública de agregação e podem ter Grid ausente, especialmente para alguns indicativos internacionais. O PSK Reporter também depende de participantes, modos e localização fornecida. O aplicativo rejeita dados sem posição quando ela é necessária para inferência geográfica.
+Os dados RBN chegam por uma API pública de agregação e podem ter Grid ausente, especialmente para alguns indicativos internacionais. PSK Reporter e WSPR.live também dependem de participantes e localização reportada. O aplicativo rejeita evidências sem posição quando ela é necessária para inferência geográfica e mantém a origem de cada fonte para evitar dupla interpretação.
 
 Executáveis ainda sem assinatura Authenticode. Confirme sempre a origem e os hashes SHA-256 publicados.
 
@@ -81,6 +85,7 @@ npm run dist:win
 
 - [PSK Reporter — API](https://www.pskreporter.info/pskdev.html)
 - [NOAA Space Weather Prediction Center](https://services.swpc.noaa.gov/)
+- [WSPR.live — banco público WSPR](https://wspr.live/)
 - [Reverse Beacon Network](https://www.reversebeacon.net/)
 - [Vail ReRBN — API pública de spots RBN](https://vailrerbn.com/docs)
 - [Natural Earth — mapa 1:110m](https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_110m_land.geojson)

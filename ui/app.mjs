@@ -3,6 +3,7 @@ import {LANGUAGES,translate} from '../src/i18n.mjs';
 import {APP_VERSION} from '../src/version.mjs';
 import {normalizeReleaseNotes} from '../src/release-notes.mjs';
 import {aggregateHeatSamples,heatColor,kernelRadius} from '../src/heatmap.mjs';
+import {assistantReply} from '../src/assistant.mjs';
 const $=id=>document.getElementById(id),NS='http://www.w3.org/2000/svg';
 const colors=['#bab1dc','#ad9ce5','#738fea','#76a8fa','#6bbee9','#57d3b4','#b0de74','#e4da68','#efbd7a','#ef837a','#dca0f0','#86dbf1','#ecade0','#90cda0'];
 const color=band=>colors[BANDS.findIndex(b=>b.name===band)]||'#6fe2bf';
@@ -13,12 +14,12 @@ const listeners=[],conversation=[{key:'welcome'}];
 const t=(key,vars)=>translate(language,key,vars);
 function previewSnapshot(settings) {
   if(!settings){try{settings=validateSettings(JSON.parse(localStorage.getItem('prop-settings'))||DEFAULT_SETTINGS);}catch{settings=validateSettings(DEFAULT_SETTINGS);}}
-  return {version:APP_VERSION,portable:false,settings,scope:'nearby',spots:[],bands:BANDS.map(b=>evaluateBand([],b.name)),kp:null,spaceWeather:{},sourceStatus:{psk:{state:'preview'},rbn:{state:'preview'},noaa:{state:'preview'}},activity:{rx:0,tx:0},logs:[],startupNews:null,update:{state:'development',notes:''},now:Date.now(),nextPSK:0};
+  return {version:APP_VERSION,portable:false,settings,scope:'nearby',spots:[],bands:BANDS.map(b=>evaluateBand([],b.name)),kp:null,spaceWeather:{},sourceStatus:{psk:{state:'preview'},rbn:{state:'preview'},wspr:{state:'preview'},noaa:{state:'preview'}},activity:{rx:0,tx:0},logs:[],startupNews:null,update:{state:'development',notes:''},now:Date.now(),nextPSK:0};
 }
 const api=window.propTool||{
   snapshot:async()=>previewSnapshot(),
   configure:async s=>{const settings=validateSettings(s);localStorage.setItem('prop-settings',JSON.stringify(settings));current=previewSnapshot(settings);listeners.forEach(fn=>fn(current));return current;},
-  refresh:async()=>{current=previewSnapshot(current.settings);listeners.forEach(fn=>fn(current));return current;},clearLogs:async()=>{current={...current,logs:[]};listeners.forEach(fn=>fn(current));return true;},exportLogs:async()=>false,subscribe:fn=>{listeners.push(fn);return ()=>{};},checkUpdate:async()=>current.update,
+  refresh:async()=>{current=previewSnapshot(current.settings);listeners.forEach(fn=>fn(current));return current;},clearLogs:async()=>{current={...current,logs:[]};listeners.forEach(fn=>fn(current));return true;},exportLogs:async()=>false,factoryReset:async()=>{localStorage.clear();location.reload();return true;},subscribe:fn=>{listeners.push(fn);return ()=>{};},checkUpdate:async()=>current.update,
   runUpdateFlow:async()=>current.update,acknowledgeNews:async()=>true,
   downloadUpdate:async()=>toast('development'),installUpdate:async()=>{},openLink:async target=>window.open({project:'https://github.com/alexpmr/PT2VHF-Prop-Tool',issues:'https://github.com/alexpmr/PT2VHF-Prop-Tool/issues',profile:'https://github.com/alexpmr',releases:'https://github.com/alexpmr/PT2VHF-Prop-Tool/releases',manual:`https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v${APP_VERSION}/PT2VHF-Prop-Tool-${APP_VERSION}-Manual.pdf`}[target],'_blank','noopener')
 };
@@ -86,11 +87,22 @@ for(let lat=-60;lat<=60;lat+=30)svgNode('path',{d:`M0,${(90-lat)*3} H1080`},$('g
 try{const land=await (await fetch('land.geojson')).json();for(const f of land.features){const polygons=f.geometry.type==='MultiPolygon'?f.geometry.coordinates:[f.geometry.coordinates];for(const rings of polygons)svgNode('path',{d:rings.map(ringPath).join(' '),'fill-rule':'evenodd'},$('land'));}}catch{toast('mapError');}
 for(const band of BANDS){const option=document.createElement('option');option.value=option.textContent=band.name;$('band').append(option);}
 for(const item of LANGUAGES){const button=document.createElement('button');button.type='button';button.dataset.language=item.code;const img=document.createElement('img');img.src=`flags/${item.flag}.svg`;img.alt='';button.append(img,document.createTextNode(item.name));button.onclick=()=>{changePreference('language',item.code);$('languageMenu').open=false;};$('languages').append(button);}
+function compactBandLabel(name){return name.replace(/\s+/g,'');}
+function renderBandControls(){
+  if($('band').value&&!current.settings.visible.includes($('band').value))$('band').value='';
+  const selected=$('band').value,host=$('bandButtons');host.replaceChildren();
+  const choices=[['',t('allBands')],...current.settings.visible.map(name=>[name,compactBandLabel(name)])];
+  for(const [value,label] of choices){const b=document.createElement('button');b.type='button';b.dataset.band=value;b.textContent=label;b.classList.toggle('active',selected===value);b.setAttribute('role','radio');b.setAttribute('aria-checked',String(selected===value));b.onclick=()=>{$('band').value=value;render(current);};host.append(b);}
+}
+function renderPeriodControls(){
+  const selected=Number(current.settings.windowMinutes),host=$('periodButtons');host.replaceChildren();
+  for(const n of [15,30,60]){const b=document.createElement('button');b.type='button';b.dataset.minutes=String(n);b.textContent=n===60?t('hour'):t('minutes',{n});b.classList.toggle('active',selected===n);b.setAttribute('role','radio');b.setAttribute('aria-checked',String(selected===n));b.onclick=async()=>{if(Number(current.settings.windowMinutes)===n)return;try{$('period').value=String(n);render(await api.configure({...current.settings,windowMinutes:n}));await refresh();}catch{toast('appError');}};host.append(b);}
+}
 function paintTranslations(){
   document.documentElement.lang=language;document.documentElement.dataset.theme=current.settings.theme;
   for(const [attr,target] of [['data-i18n','textContent'],['data-i18n-title','title'],['data-i18n-aria','aria-label'],['data-i18n-placeholder','placeholder']])for(const node of document.querySelectorAll(`[${attr}]`)){const val=t(node.getAttribute(attr));if(target==='textContent')node.textContent=val;else node.setAttribute(target,val);}
   for(const n of [15,30])$('period').querySelector(`[value="${n}"]`).textContent=t('minutes',{n});
-  $('period').setAttribute('aria-label',t('observationWindow'));
+  $('period').querySelector('[value="60"]').textContent=t('hour');$('period').setAttribute('aria-label',t('observationWindow'));
   const selected=LANGUAGES.find(l=>l.code===language);$('languageFlag').src=`flags/${selected.flag}.svg`;$('currentLanguage').textContent=selected.name;$('languageMenu').querySelector('summary').title=t('language');
   for(const n of $('languages').querySelectorAll('button'))n.setAttribute('aria-pressed',String(n.dataset.language===language));
   $('themeButton').textContent=(current.settings.theme==='dark'?'☀ ':'☾ ')+t(current.settings.theme==='dark'?'light':'dark');$('themeButton').title=t('theme');
@@ -127,17 +139,16 @@ const bandStates={'Sem evidências':'none','Evidência forte':'strong','Evidênc
 function sourceLabel(status){return t({online:'online',loading:'loading',error:'sourceError',preview:'preview'}[status.state]||'waiting');}
 function render(snap){
   current=snap;language=snap.settings.language;paintTranslations();pulseActivity(snap.activity||{});$('appVersion').textContent=$('aboutVersion').textContent=`v${snap.version}`;
-  const status=snap.sourceStatus.psk,rbnStatus=snap.sourceStatus.rbn||{state:'idle'};const obsOnline=status.state==='online'||rbnStatus.state==='online';$('status').textContent=obsOnline?'PSK/RBN OK':sourceLabel(status);$('stationLabel').textContent=snap.settings.callsign||t('configure');
+  const status=snap.sourceStatus.psk,rbnStatus=snap.sourceStatus.rbn||{state:'idle'},wsprStatus=snap.sourceStatus.wspr||{state:'idle'};const obsOnline=status.state==='online'||rbnStatus.state==='online'||wsprStatus.state==='online';$('status').textContent=obsOnline?'PSK/RBN/WSPR OK':sourceLabel(status);$('stationLabel').textContent=snap.settings.callsign||t('configure');
   $('period').value=String(snap.settings.windowMinutes);$('mapVisualization').value=snap.settings.mapView||'heatmap';
-  $('viewNotice').textContent=t('nearbyNotice',{n:snap.settings.nearbyRadius});
-  if($('band').value&&!snap.settings.visible.includes($('band').value))$('band').value='';
-  $('currentBand').textContent=$('band').value||t('allBands');
+  renderBandControls();renderPeriodControls();
   $('bands').replaceChildren();$('bandCount').textContent=t('bandCount',{n:snap.settings.visible.length});
   for(const b of snap.bands.filter(b=>snap.settings.visible.includes(b.band))){
     const row=document.createElement('div');row.className='bandRow';
     const label=document.createElement('strong');label.textContent=b.band;label.style.color=color(b.band);
     const state=document.createElement('span');state.className='state';state.textContent=b.chance===null?t('insufficient'):t(bandStates[b.state]||'none')+(b.trend!=='—'?' '+b.trend:'');
-    row.append(label,state);$('bands').append(row);
+    const basis=document.createElement('small');basis.className='basis';basis.textContent=t({estimated:'basisEstimated',observed:'basisObserved',fused:'basisFused',none:'basisNone'}[b.basis]||'basisNone');
+    row.append(label,state,basis);$('bands').append(row);
   }
   $('zones').replaceChildren();$('points').replaceChildren();
   const displayed=snap.bands.filter(b=>snap.settings.visible.includes(b.band)&&(!$('band').value||b.band===$('band').value));let zoneCount=0,pointCount=0;
@@ -161,12 +172,13 @@ function render(snap){
   const configured=Boolean(snap.settings.callsign)&&coordinates(snap.settings.lat,snap.settings.lon);
   scheduleMapOverlays();
   $('empty').classList.toggle('hidden',configured);$('emptyTitle').textContent=t('configure');$('emptyConfigure').hidden=configured;
-  $('mapNotice').classList.toggle('hidden',!configured||pointCount>0);$('mapNotice').textContent=status.state==='error'?t('sourceError'):status.state==='loading'?t('loading'):status.state==='preview'?t('previewNotice'):t('emptyTitle');$('mapNotice').title=t('emptyBody');
+  const onlyBand=$('band').value?snap.bands.find(b=>b.band===$('band').value):null,estimateOnly=Boolean(onlyBand?.basis==='estimated'&&pointCount===0);
+  $('mapNotice').classList.toggle('hidden',!configured||pointCount>0&&!estimateOnly);$('mapNotice').textContent=estimateOnly?t(onlyBand.band==='11 m'?'elevenMeterEstimateNotice':'estimateOnlyNotice',{band:onlyBand.band,score:onlyBand.chance??'—'}):status.state==='error'?t('sourceError'):status.state==='loading'?t('loading'):status.state==='preview'?t('previewNotice'):t('emptyTitle');$('mapNotice').title=estimateOnly?t('estimateNotConfirmed'):t('emptyBody');
   $('evidenceCount').textContent=t('counts',{n:pointCount,zones:zoneCount});const query=status.state==='online'?t('queryCount',{n:status.count??0}):sourceLabel(status);
-  const rbnQuery=rbnStatus.state==='online'?`OK (${rbnStatus.count??0})`:sourceLabel(rbnStatus);$('freshness').textContent=`PSK: ${query}${status.updated?' · '+age(status.updated):''}${status.detail?' · '+status.detail:''} · RBN: ${rbnQuery}${rbnStatus.updated?' · '+age(rbnStatus.updated):''}${snap.nextPSK>0?' · '+t('nextQuery',{n:Math.ceil(snap.nextPSK/60000)}):''}`;
+  const rbnQuery=rbnStatus.state==='online'?`OK (${rbnStatus.count??0})`:sourceLabel(rbnStatus),wsprQuery=wsprStatus.state==='online'?`OK (${wsprStatus.count??0})`:sourceLabel(wsprStatus);$('freshness').textContent=`PSK: ${query}${status.updated?' · '+age(status.updated):''} · WSPR: ${wsprQuery}${wsprStatus.updated?' · '+age(wsprStatus.updated):''} · RBN: ${rbnQuery}${rbnStatus.updated?' · '+age(rbnStatus.updated):''}${snap.nextPSK>0?' · '+t('nextQuery',{n:Math.ceil(snap.nextPSK/60000)}):''}`;
   const kp=snap.kp,sw=snap.spaceWeather||{};$('kp').textContent=kp?kp.value.toLocaleString(language,{minimumFractionDigits:1,maximumFractionDigits:1}):'—';$('kpState').textContent=kp?t(Date.now()-kp.timestamp>4*3600000?'oldMeasure':kp.value>=5?'elevated':'measurement'):sourceLabel(snap.sourceStatus.noaa);$('kpTime').textContent=kp?`${date(kp.timestamp)} · ${t('kpNote')}`:t('kpWaiting');$('sfi').textContent=sw.f107?.value??'—';$('bz').textContent=sw.bz?`${sw.bz.value} nT`:'—';$('wind').textContent=sw.wind?`${Math.round(sw.wind.value)} km/s`:'—';$('xray').textContent=sw.xray?.class??'—';
   renderUpdate(snap.update);renderLogs();
-  if(snap.startupNews&&newsShownFor!==snap.startupNews.version){newsShownFor=snap.startupNews.version;$('newsVersion').textContent='v'+snap.startupNews.version;const notes=normalizeReleaseNotes(snap.startupNews.notes);$('newsNotes').textContent=notes||t('news025');if(!$('newsDialog').open)$('newsDialog').showModal();}
+  if(snap.startupNews&&newsShownFor!==snap.startupNews.version){newsShownFor=snap.startupNews.version;$('newsVersion').textContent='v'+snap.startupNews.version;const notes=normalizeReleaseNotes(snap.startupNews.notes);$('newsNotes').textContent=notes||t('news026');if(!$('newsDialog').open)$('newsDialog').showModal();}
   if(snap.alert){alertBand=snap.alert.band;$('alertText').textContent=t('alertText',{band:alertBand,n:snap.alert.score});if(!$('alertDialog').open)$('alertDialog').showModal();}
 }
 function formatBytes(value){const n=Number(value);if(!Number.isFinite(n)||n<0)return '';if(n<1024)return n+' B';if(n<1048576)return (n/1024).toFixed(1)+' KB';return (n/1048576).toFixed(n>=104857600?0:1)+' MB';}
@@ -214,6 +226,7 @@ $('version').onclick=async()=>{
 };
 $('closeUpdate').onclick=()=>{if(!updateFlowActive)$('updateDialog').close();};$('openReleases').onclick=()=>api.openLink('releases');$('downloadUpdate').onclick=()=>{};$('installUpdate').onclick=()=>{};
 for(const [id,target] of [['openProject','project'],['openIssues','issues'],['openProfile','profile'],['openManual','manual']])$(id).onclick=()=>api.openLink(target).catch(()=>toast('appError'));
+$('factoryReset').onclick=async()=>{if(!window.confirm(t('factoryResetConfirm')))return;$('factoryReset').disabled=true;try{await api.factoryReset();}catch{$('factoryReset').disabled=false;toast('factoryResetError');}};
 $('closeNews').onclick=async()=>{try{await api.acknowledgeNews();}finally{$('newsDialog').close();}};
 $('dismissAlert').onclick=()=>$('alertDialog').close();$('viewAlert').onclick=()=>{$('band').value=alertBand;$('alertDialog').close();setPage('map');render(current);};
 $('zoomIn').onclick=()=>zoom(1.4);$('zoomOut').onclick=()=>zoom(1/1.4);$('resetMap').onclick=()=>{scale=1;tx=ty=0;mapTransform();};window.addEventListener('resize',scheduleMapOverlays);$('map').addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY<0?1.12:1/1.12);},{passive:false});
@@ -225,7 +238,7 @@ function updateCursorReadout(e){
 }
 $('map').addEventListener('pointerdown',e=>{if(e.button!==0)return;pointer={x:e.clientX,y:e.clientY,tx,ty};$('map').setPointerCapture(e.pointerId);});$('map').addEventListener('pointermove',e=>{updateCursorReadout(e);if(!pointer)return;const rect=$('map').getBoundingClientRect(),ratio=Math.min(rect.width/1080,rect.height/540);tx=pointer.tx+(e.clientX-pointer.x)/ratio;ty=pointer.ty+(e.clientY-pointer.y)/ratio;mapTransform();});$('map').addEventListener('pointerleave',()=>$('cursorInfo').classList.add('hidden'));for(const type of ['pointerup','pointercancel'])$('map').addEventListener(type,()=>pointer=null);
 for(const id of ['logDirection','logSource'])$(id).onchange=renderLogs;$('logSearch').oninput=renderLogs;$('pauseLogs').onclick=()=>{logsPaused=!logsPaused;$('pauseLogs').textContent=t(logsPaused?'resume':'pause');if(!logsPaused)renderLogs();};$('clearLogs').onclick=async()=>{await api.clearLogs();if(current)current.logs=[];renderLogs();};$('exportLogs').onclick=()=>api.exportLogs().then(ok=>{if(ok)toast('exported');}).catch(()=>toast('appError'));
-function answer(question){const s=current,available=s.bands.filter(b=>s.settings.visible.includes(b.band)&&b.chance!==null).sort((a,b)=>b.chance-a.chance);if(/muf|tep|tropo|ssb|cw|predict|previs|prévi|prognos|previsione|por qu[eê]|why|pourquoi|warum|perché/i.test(question))return {key:'answerLimits'};if(!available.length)return {key:'answerEmpty',vars:{n:s.settings.windowMinutes}};const b=available[0];return {key:'answerBest',vars:{band:b.band,score:b.chance,n:b.reports,pairs:b.pairs,tx:b.txReports,rx:b.rxReports,latest:b.latest,scopeKey:'nearby'}};}
-function renderConversation(){$('conversation').replaceChildren();for(const item of conversation){const p=document.createElement('p');p.className=item.user?'userMessage':'assistantMessage';p.textContent=item.user||t(item.key,{...item.vars,age:age(item.vars?.latest),scope:item.vars?.scopeKey?t(item.vars.scopeKey):''});$('conversation').append(p);}}
+function answer(question){return assistantReply(question,current,$('band').value);}
+function renderConversation(){$('conversation').replaceChildren();for(const item of conversation){const p=document.createElement('p');p.className=item.user?'userMessage':'assistantMessage';const vars={...item.vars,age:age(item.vars?.latest),basis:item.vars?.basisKey?t(item.vars.basisKey):'',psk:item.vars?.psk?t('sourceState_'+item.vars.psk):item.vars?.psk,rbn:item.vars?.rbn?t('sourceState_'+item.vars.rbn):item.vars?.rbn,wspr:item.vars?.wspr?t('sourceState_'+item.vars.wspr):item.vars?.wspr,noaa:item.vars?.noaa?t('sourceState_'+item.vars.noaa):item.vars?.noaa};p.textContent=item.user||t(item.key,vars);$('conversation').append(p);}}
 $('chat').onsubmit=e=>{e.preventDefault();const q=$('question').value.trim();if(!q)return;conversation.push({user:q},answer(q));while(conversation.length>41)conversation.splice(1,2);renderConversation();$('conversation').scrollTop=$('conversation').scrollHeight;$('question').value='';};
 api.subscribe(render);render(await api.snapshot());document.documentElement.dataset.ready='true';

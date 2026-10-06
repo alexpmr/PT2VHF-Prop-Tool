@@ -10,16 +10,16 @@ import {compareVersions,releaseAsset,trustedDownloadURL} from '../src/updates.mj
 import {normalizeReleaseNotes} from '../src/release-notes.mjs';
 import {aggregateHeatSamples,heatColor,kernelRadius} from '../src/heatmap.mjs';
 import updater from '../desktop/portable-update.cjs';
-test('14 bands including 11 m, vertical antennas, 100 W, 5-minute data refresh and 30-minute version check',()=>{
- assert.equal(BANDS.length,14);assert.equal(bandFor(27555000),'11 m');assert.equal(bandFor(28074000),'10 m');assert.equal(DEFAULT_SETTINGS.power,100);assert.equal(DEFAULT_SETTINGS.updateMinutes,30);assert.equal(DEFAULT_SETTINGS.dataRefreshMinutes,5);assert.equal(DEFAULT_SETTINGS.mapView,'heatmap');
+test('14 bands including 11 m, vertical antennas, 100 W, 5-minute data refresh and 15-minute version check',()=>{
+ assert.equal(BANDS.length,14);assert.equal(bandFor(27555000),'11 m');assert.equal(bandFor(28074000),'10 m');assert.equal(DEFAULT_SETTINGS.power,100);assert.equal(DEFAULT_SETTINGS.updateMinutes,15);assert.equal(DEFAULT_SETTINGS.dataRefreshMinutes,5);assert.equal(DEFAULT_SETTINGS.mapView,'heatmap');
  for(const b of BANDS)assert.equal(DEFAULT_SETTINGS.antennas[b.name].type,'Vertical');assert.equal(validateSettings(DEFAULT_SETTINGS).language,'pt-BR');
  assert.throws(()=>validateSettings({...DEFAULT_SETTINGS,updateMinutes:4}));assert.throws(()=>validateSettings({...DEFAULT_SETTINGS,dataRefreshMinutes:4}));assert.throws(()=>validateSettings({...DEFAULT_SETTINGS,language:'xx'}));assert.throws(()=>validateSettings({...DEFAULT_SETTINGS,mapView:'tiles'}));
  const xml='<receptionReports><receptionReport senderCallsign="TEST" receiverCallsign="RX" frequency="27555000" flowStartSeconds="1800000000"/></receptionReports>';assert.equal(parsePSK(xml)[0].band,'11 m');
 });
 test('Migration adds 11 m to old all-band profiles, retains custom antennas, power and disabled bands',()=>{
  const old={...DEFAULT_SETTINGS,visible:BANDS.filter(b=>b.name!=='11 m').map(b=>b.name),power:50,updateMinutes:5,antennas:{'20 m':{type:'Yagi'}}};
- const moved=migrateSettings(old,1);assert.ok(moved.visible.includes('11 m'));assert.equal(moved.antennas['20 m'].type,'Yagi');assert.equal(moved.antennas['11 m'].type,'Vertical');assert.equal(moved.power,50);assert.equal(moved.updateMinutes,30);
- assert.deepEqual(migrateSettings({...old,visible:['20 m']},1).visible,['20 m']);assert.ok(!migrateSettings(old,2).visible.includes('11 m'));assert.equal(migrateSettings({...old,updateMinutes:45},3).updateMinutes,45);
+ const moved=migrateSettings(old,1);assert.ok(moved.visible.includes('11 m'));assert.equal(moved.antennas['20 m'].type,'Yagi');assert.equal(moved.antennas['11 m'].type,'Vertical');assert.equal(moved.power,50);assert.equal(moved.updateMinutes,15);
+ assert.deepEqual(migrateSettings({...old,visible:['20 m']},1).visible,['20 m']);assert.ok(!migrateSettings(old,2).visible.includes('11 m'));assert.equal(migrateSettings({...old,updateMinutes:45},3).updateMinutes,45);assert.equal(migrateSettings({...DEFAULT_SETTINGS,updateMinutes:30},4).updateMinutes,15);
  const a=validateSettings(DEFAULT_SETTINGS);a.antennas['20 m'].type='Yagi';assert.equal(DEFAULT_SETTINGS.antennas['20 m'].type,'Vertical');
 });
 test('All six catalogs cover the same keys and interpolation parameters, including Help and errors',()=>{
