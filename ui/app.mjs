@@ -107,7 +107,7 @@ function render(snap){
   pointCount=shownSpots.length;
   if(mapView==='heatmap'){
     if(showPredicted)for(const b of displayed)for(const zone of b.predictedZones||[]){zoneCount++;for(const center of zoneCenters(zone))heatCircle($('heatPredicted'),b.band,center,'predicted',(b.chance??0)/100);}
-    if(showConfirmed)for(const s of shownSpots)if(s.endpoint)heatCircle($('heatConfirmed'),s.band,s.endpoint,'confirmed',s.snr===null?.65:Math.max(.35,Math.min(1,(s.snr+30)/40)));
+    if(showConfirmed)for(const s of shownSpots)if(s.endpoint)heatCircle($('heatConfirmed'),s.band,s.endpoint,'confirmed',s.snr===null?0.65:Math.max(.35,Math.min(1,(s.snr+30)/40)));
   }else{
     for(const b of displayed){
       if(showPredicted)for(const zone of b.predictedZones||[]){zoneCount++;const p=svgNode('path',{class:'forecastZone',d:zone.rings.map(ringPath).join(' '),fill:color(b.band),stroke:color(b.band)},$('zones'));svgNode('title',{},p).textContent=`${b.band} · ${t('predicted')} · ${b.chance??'—'}%`;}
