@@ -18,14 +18,16 @@ Aplicativo experimental para Windows 10/11 x64 que reúne evidências de propaga
 - Indicativo, coordenadas, Grid Maidenhead e localização automática quando disponível/autorizada no Windows.
 - {{BANDS}} bandas, de 160 m a 70 cm, incluindo **11 metros**, habilitadas inicialmente com antena **vertical**. Potência inicial **100 W**. Configurações anteriores e valores personalizados são preservados.
 - Português, inglês, espanhol, francês, alemão e italiano, com bandeiras SVG, textos da interface, mensagens, assistente e **Ajuda traduzidos**. Idioma e tema claro/escuro ficam salvos.
-- Barra superior com versão após o nome, navegação Mapa / Ajuda / **Configurações** / **Sobre**, apresentação do software e contato pelo GitHub.
-- Consulta PSK Reporter por indicativo ou Grid; intervalo mínimo de cinco minutos, inclusive após reiniciar. Ausência de dados, especialmente em 11 m, não é interpretada como banda fechada.
+- Barra superior com versão após o nome, navegação **Mapa / LOGs / Configurações / Ajuda / Sobre**, LEDs de atividade **RX verde / TX vermelho**, apresentação do software e contato pelo GitHub.
+- Consulta PSK Reporter por indicativo ou Grid; intervalo mínimo de cinco minutos, inclusive após reiniciar. Redirecionamentos da API são aceitos somente entre destinos HTTPS autorizados. Ausência de dados, especialmente em 11 m, não é interpretada como banda fechada.
 - Separação entre TX recebido por terceiros, RX pela estação e observações de transmissores próximos, sem confundir evidência regional com alcance confirmado da própria estação.
-- Mapa offline com pontos, zoom, movimentação e zonas irregulares conservadoras. Zonas exigem pelo menos três enlaces e duas células adjacentes; pontos esparsos não são unidos artificialmente.
+- Mapa offline com pontos, zoom, movimentação e zonas irregulares conservadoras. Ao mover o cursor, a legenda mostra **azimute/direção e distância** desde a estação configurada. Zonas exigem pelo menos três enlaces e duas células adjacentes; pontos esparsos não são unidos artificialmente.
 - Painel de bandas, contagem de recepções/enlaces, horário e índice de evidências 0–100. **Não é probabilidade de contato** e não equivale a QSO confirmado.
 - Kp NOAA com horário da medição. Alertas por banda exigem múltiplos receptores da própria transmissão, dados recentes, limiar, distância e intervalo de repetição.
-- Histórico local de até 24 h; análise nos últimos 15, 30 ou 60 minutos. Assistente local por regras, sem dados inventados.
+- Histórico local de até 24 h; análise nos últimos 15, 30 ou 60 minutos. **Refresh automático do mapa a cada 5 minutos por padrão**, configurável e respeitando o limite das fontes. Assistente local por regras, sem dados inventados.
 - Após configurar a estação, um aviso discreto de ausência de evidências substitui o bloco central; o botão de configuração não continua cobrindo o mapa.
+- Nova aba **LOGs** para diagnóstico do tráfego real: TX das consultas, RX das respostas, fonte, endpoint, status, latência, volume, erros e prévia limitada do payload; inclui filtros, busca, pausa, limpeza e exportação JSONL.
+- **Configurações → Fontes de consulta** identifica PSK Reporter, NOAA SWPC, Natural Earth e GitHub e separa o intervalo de atualização dos dados do mapa do intervalo de verificação de versões.
 - Verificação de novas versões a cada **cinco minutos** por padrão, configurável. Botão **Última versão** verde após confirmação; **Nova versão disponível** laranja piscando. Download com integridade verificada e atualização/reinício pela aplicação.
 - Atualização instalada com electron-updater e instalador NSIS. A partir da v0.2.0, o portátil usa substituição do lançador em sua pasta, preserva `data` e mantém o executável anterior como `.previous`, com recuperação automática se a nova versão não confirmar inicialização.
 
@@ -35,7 +37,7 @@ Aplicativo experimental para Windows 10/11 x64 que reúne evidências de propaga
 
 **Portátil:** coloque o executável em uma pasta gravável, inclusive em USB. Ele extrai temporariamente o runtime e mantém configurações/histórico na pasta `data`, ao lado do lançador. Mantenha ambos juntos. Não requer Python, Node.js ou Electron instalados.
 
-Abra **Configurações**, preencha indicativo e posição da antena, ajuste bandas/antenas/potência e salve. No mapa, escolha contexto, banda e período. **Atualizar dados** respeita os limites das fontes. Informar um Grid usa o centro da célula, não a posição exata da antena.
+Abra **Configurações**, preencha indicativo e posição da antena, confira as fontes de consulta, ajuste bandas/antenas/potência e salve. No mapa, escolha contexto, banda e período. O refresh automático inicia em **5 minutos** e **Atualizar dados** respeita os limites das fontes. Informar um Grid usa o centro da célula, não a posição exata da antena. Para diagnóstico, abra **LOGs** e confira TX/RX.
 
 A edição portátil **v0.1.0** ainda não tem o novo mecanismo: baixe a v0.2.0 manualmente para a mesma pasta, preservando `data`. As próximas atualizações podem ser iniciadas pela interface da v0.2.0.
 
