@@ -6,6 +6,13 @@ $log = Join-Path $folder 'update-result.json'
 $new = $null
 $backup = $null
 $stateBackup = Join-Path $folder 'state-before-update.json'
+function Get-Sha256([string]$File) {
+  # Use the built-in .NET API even when PowerShell inherits a different module search path.
+  $stream = [System.IO.File]::OpenRead($File)
+  $algorithm = [System.Security.Cryptography.SHA256]::Create()
+  try { return [BitConverter]::ToString($algorithm.ComputeHash($stream)).Replace('-','').ToLowerInvariant() }
+  finally { $algorithm.Dispose(); $stream.Dispose() }
+}
 try {
   if ($m.Mode -notin @('portable','installed') -or $m.ExpectedVersion -notmatch '^\d+\.\d+\.\d+$') { throw 'Invalid update manifest' }
   foreach ($processId in @($m.AppPid,$m.LauncherPid)) {
@@ -14,7 +21,7 @@ try {
       if (Get-Process -Id $processId -ErrorAction SilentlyContinue) { throw 'Previous application is still running' }
     }
   }
-  if ((Get-FileHash -LiteralPath $m.Candidate -Algorithm SHA256).Hash.ToLower() -ne $m.Sha256) { throw 'Update checksum mismatch' }
+  if ((Get-Sha256 $m.Candidate) -ne $m.Sha256) { throw 'Update checksum mismatch' }
   if ($m.Mode -eq 'installed') {
     $arguments = '/S --updated --force-run /D=' + $m.InstallDir
     $env:PROP_UPDATE_CONFIRM_FILE = $m.ReadyFile
@@ -26,7 +33,7 @@ try {
     if ((Split-Path -Parent $m.Target) -ne (Split-Path -Parent $m.Original)) { throw 'Update must stay in the portable folder' }
     if (Test-Path -LiteralPath $m.StateFile) { Copy-Item -LiteralPath $m.StateFile -Destination $stateBackup -Force }
     if (Test-Path -LiteralPath $m.Target) {
-      if ((Get-FileHash -LiteralPath $m.Target -Algorithm SHA256).Hash.ToLower() -ne $m.Sha256) { throw 'Target file has different contents; preserve it' }
+      if ((Get-Sha256 $m.Target) -ne $m.Sha256) { throw 'Target file has different contents; preserve it' }
     } else { Copy-Item -LiteralPath $m.Candidate -Destination $m.Target }
     $backup = $m.Original + '.previous'
     if (Test-Path -LiteralPath $backup) { Remove-Item -LiteralPath $backup -Force }
