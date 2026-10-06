@@ -34,11 +34,11 @@ async function refresh(){
   try{
     const now=Date.now(),hasPosition=domain.coordinates(state.settings.lat,state.settings.lon),canQuery=hasPosition;
     const dataInterval=Math.max(sources.PSK_INTERVAL,state.settings.dataRefreshMinutes*60000),noaaInterval=Math.max(sources.NOAA_INTERVAL,state.settings.dataRefreshMinutes*60000);
-    const rbnInterval=Math.max(sources.RBN_INTERVAL,state.settings.dataRefreshMinutes*60000),wsprInterval=Math.max(sources.WSPR_INTERVAL,state.settings.dataRefreshMinutes*60000),grid=canQuery?domain.toGrid(state.settings.lat,state.settings.lon):'',grid4=grid.slice(0,4);
-    const pskPlan=canQuery?sources.pskQueryPlan(state.settings,state.status.psk?.coverage,now,dataInterval,grid4):null,wsprPlan=canQuery?sources.pskQueryPlan(state.settings,state.status.wspr?.coverage,now,wsprInterval,grid4):null;
+    const rbnInterval=Math.max(sources.RBN_INTERVAL,state.settings.dataRefreshMinutes*60000),wsprInterval=Math.max(sources.WSPR_INTERVAL,state.settings.dataRefreshMinutes*60000),grid=canQuery?domain.toGrid(state.settings.lat,state.settings.lon):'',grid4=grid.slice(0,4),canWSPR=hasPosition&&state.settings.visible.some(b=>b!=='11 m');
+    const pskPlan=canQuery?sources.pskQueryPlan(state.settings,state.status.psk?.coverage,now,dataInterval,grid4):null,wsprPlan=canWSPR?sources.pskQueryPlan(state.settings,state.status.wspr?.coverage,now,wsprInterval,grid4):null;
     const forceBackfill=Boolean(pskPlan?.mode==='backfill'&&(state.status.psk?.requestedWindowMinutes!==state.settings.windowMinutes||state.status.psk?.requestedGrid!==grid4));
     const forceWSPRBackfill=Boolean(wsprPlan?.mode==='backfill'&&(state.status.wspr?.requestedWindowMinutes!==state.settings.windowMinutes||state.status.wspr?.requestedGrid!==grid4));
-    const duePSK=canQuery&&(state.attemptPSK===0||now-state.attemptPSK>=dataInterval||forceBackfill),dueRBN=hasPosition&&now-(state.attemptRBN||0)>=rbnInterval,dueWSPR=hasPosition&&(state.attemptWSPR===0||now-state.attemptWSPR>=wsprInterval||forceWSPRBackfill),dueNOAA=now-state.attemptKp>=noaaInterval;
+    const duePSK=canQuery&&(state.attemptPSK===0||now-state.attemptPSK>=dataInterval||forceBackfill),dueRBN=hasPosition&&now-(state.attemptRBN||0)>=rbnInterval,dueWSPR=canWSPR&&(state.attemptWSPR===0||now-state.attemptWSPR>=wsprInterval||forceWSPRBackfill),dueNOAA=now-state.attemptKp>=noaaInterval;
     if(duePSK)state.attemptPSK=now;if(dueRBN)state.attemptRBN=now;if(dueWSPR)state.attemptWSPR=now;if(dueNOAA)state.attemptKp=now;await persist();const work=[];
     if(duePSK){
       const querySettings={...state.settings},queryScope='nearby',plan=sources.pskQueryPlan(querySettings,state.status.psk?.coverage,now,dataInterval,grid4);
