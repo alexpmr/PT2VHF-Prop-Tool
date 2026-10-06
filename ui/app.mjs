@@ -4,17 +4,19 @@ import {APP_VERSION} from '../src/version.mjs';
 const $=id=>document.getElementById(id),NS='http://www.w3.org/2000/svg';
 const colors=['#bab1dc','#ad9ce5','#738fea','#76a8fa','#6bbee9','#57d3b4','#b0de74','#e4da68','#efbd7a','#ef837a','#dca0f0','#86dbf1','#ecade0','#90cda0'];
 const color=band=>colors[BANDS.findIndex(b=>b.name===band)]||'#6fe2bf';
-let current,alertBand,scale=1,tx=0,ty=0,pointer,page='map',language='pt-BR',toastTimer,toastKey,configErrorKey,logsPaused=false;\nlet lastActivity={rx:0,tx:0},ledTimers={rx:null,tx:null};
+let current,alertBand,scale=1,tx=0,ty=0,pointer,page='map',language='pt-BR',toastTimer,toastKey,configErrorKey,logsPaused=false,newsShownFor=null;
+let lastActivity={rx:0,tx:0},ledTimers={rx:null,tx:null};
 const listeners=[],conversation=[{key:'welcome'}];
 const t=(key,vars)=>translate(language,key,vars);
 function previewSnapshot(settings,scope='station') {
   if(!settings){try{settings=validateSettings(JSON.parse(localStorage.getItem('prop-settings'))||DEFAULT_SETTINGS);}catch{settings=validateSettings(DEFAULT_SETTINGS);}}
-  return {version:APP_VERSION,portable:false,settings,scope,spots:[],bands:BANDS.map(b=>evaluateBand([],b.name)),kp:null,sourceStatus:{psk:{state:'preview'},noaa:{state:'preview'}},activity:{rx:0,tx:0},logs:[],update:{state:'development',notes:''},now:Date.now(),nextPSK:0};
+  return {version:APP_VERSION,portable:false,settings,scope,spots:[],bands:BANDS.map(b=>evaluateBand([],b.name)),kp:null,sourceStatus:{psk:{state:'preview'},noaa:{state:'preview'}},activity:{rx:0,tx:0},logs:[],startupNews:null,update:{state:'development',notes:''},now:Date.now(),nextPSK:0};
 }
 const api=window.propTool||{
   snapshot:async()=>previewSnapshot(),
   configure:async s=>{const settings=validateSettings(s);localStorage.setItem('prop-settings',JSON.stringify(settings));current=previewSnapshot(settings,current?.scope);listeners.forEach(fn=>fn(current));return current;},
   refresh:async scope=>{current=previewSnapshot(current.settings,scope);listeners.forEach(fn=>fn(current));return current;},clearLogs:async()=>{current={...current,logs:[]};listeners.forEach(fn=>fn(current));return true;},exportLogs:async()=>false,subscribe:fn=>{listeners.push(fn);return ()=>{};},checkUpdate:async()=>current.update,
+  runUpdateFlow:async()=>current.update,acknowledgeNews:async()=>true,
   downloadUpdate:async()=>toast('development'),installUpdate:async()=>{},openLink:async target=>window.open({project:'https://github.com/alexpmr/PT2VHF-Prop-Tool',issues:'https://github.com/alexpmr/PT2VHF-Prop-Tool/issues',profile:'https://github.com/alexpmr',releases:'https://github.com/alexpmr/PT2VHF-Prop-Tool/releases',manual:`https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v${APP_VERSION}/PT2VHF-Prop-Tool-${APP_VERSION}-Manual.pdf`}[target],'_blank','noopener')
 };
 function svgNode(name,attrs={},parent){const node=document.createElementNS(NS,name);for(const [k,v] of Object.entries(attrs))node.setAttribute(k,String(v));if(parent)parent.append(node);return node;}
@@ -92,7 +94,9 @@ function render(snap){
   $('evidenceCount').textContent=t('counts',{n:pointCount,zones:zoneCount});const query=status.state==='online'?t('queryCount',{n:status.count??0}):sourceLabel(status);
   $('freshness').textContent=`PSK: ${query}${status.updated?' · '+age(status.updated):''}${snap.nextPSK>0?' · '+t('nextQuery',{n:Math.ceil(snap.nextPSK/60000)}):''}${status.detail?' · '+status.detail:''}`;
   const kp=snap.kp;$('kp').textContent=kp?kp.value.toLocaleString(language,{minimumFractionDigits:1,maximumFractionDigits:1}):'—';$('kpState').textContent=kp?t(Date.now()-kp.timestamp>4*3600000?'oldMeasure':kp.value>=5?'elevated':'measurement'):sourceLabel(snap.sourceStatus.noaa);$('kpTime').textContent=kp?`${date(kp.timestamp)} · ${t('kpNote')}`:t('kpWaiting');
-  renderUpdate(snap.update);renderLogs();if(snap.alert){alertBand=snap.alert.band;$('alertText').textContent=t('alertText',{band:alertBand,n:snap.alert.score});if(!$('alertDialog').open)$('alertDialog').showModal();}
+  renderUpdate(snap.update);renderLogs();
+  if(snap.startupNews&&newsShownFor!==snap.startupNews.version){newsShownFor=snap.startupNews.version;$('newsVersion').textContent='v'+snap.startupNews.version;$('newsNotes').textContent=snap.startupNews.notes||t('news021');if(!$('newsDialog').open)$('newsDialog').showModal();}
+  if(snap.alert){alertBand=snap.alert.band;$('alertText').textContent=t('alertText',{band:alertBand,n:snap.alert.score});if(!$('alertDialog').open)$('alertDialog').showModal();}
 }
 function renderUpdate(u){
   const key={current:'currentVersion',available:'newVersion',checking:'checking',downloading:'downloading',downloaded:'downloaded',error:'updateError',development:'development'}[u.state]||'checkUpdate';
@@ -119,9 +123,10 @@ $('configForm').onsubmit=async e=>{e.preventDefault();const s={...current.settin
 $('band').onchange=()=>render(current);$('period').onchange=async()=>{try{render(await api.configure({...current.settings,windowMinutes:Number($('period').value)}));}catch{toast('appError');}};
 async function refresh(scope=current.scope){$('refresh').disabled=true;try{render(await api.refresh(scope));}catch{toast('appError');}finally{$('refresh').disabled=false;}}
 $('refresh').onclick=()=>refresh();$('stationView').onclick=()=>refresh('station');$('nearbyView').onclick=()=>refresh('nearby');
-$('version').onclick=async()=>{$('updateDialog').showModal();try{if(current.update.state==='available'){await api.downloadUpdate();}else{const u=await api.checkUpdate();current.update=u;renderUpdate(u);}}catch{toast('updateError');}};
+$('version').onclick=async()=>{try{const u=await api.runUpdateFlow();if(u){current.update=u;renderUpdate(u);}if(u?.state==='current')toast('currentVersion');else if(u?.state==='development')toast('development');else if(u?.state==='error')toast('updateError');}catch{toast('updateError');}};
 $('closeUpdate').onclick=()=>$('updateDialog').close();$('openReleases').onclick=()=>api.openLink('releases');$('downloadUpdate').onclick=()=>api.downloadUpdate().catch(()=>toast('updateError'));$('installUpdate').onclick=()=>api.installUpdate().catch(()=>toast('updateError'));
 for(const [id,target] of [['openProject','project'],['openIssues','issues'],['openProfile','profile'],['openManual','manual']])$(id).onclick=()=>api.openLink(target).catch(()=>toast('appError'));
+$('closeNews').onclick=async()=>{try{await api.acknowledgeNews();}finally{$('newsDialog').close();}};
 $('dismissAlert').onclick=()=>$('alertDialog').close();$('viewAlert').onclick=()=>{$('band').value=alertBand;$('alertDialog').close();setPage('map');render(current);};
 $('zoomIn').onclick=()=>zoom(1.4);$('zoomOut').onclick=()=>zoom(1/1.4);$('resetMap').onclick=()=>{scale=1;tx=ty=0;mapTransform();};$('map').addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY<0?1.12:1/1.12);},{passive:false});
 function updateCursorReadout(e){
