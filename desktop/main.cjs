@@ -33,8 +33,8 @@ async function refresh(nextScope=scope){
   try{
     const now=Date.now(),hasPosition=domain.coordinates(state.settings.lat,state.settings.lon),canQuery=hasPosition&&(scope==='nearby'||Boolean(state.settings.callsign));
     const dataInterval=Math.max(sources.PSK_INTERVAL,state.settings.dataRefreshMinutes*60000),noaaInterval=Math.max(sources.NOAA_INTERVAL,state.settings.dataRefreshMinutes*60000);
-    const duePSK=canQuery&&now-state.attemptPSK>=dataInterval,dueNOAA=now-state.attemptKp>=noaaInterval;
-    if(duePSK)state.attemptPSK=now;if(dueNOAA)state.attemptKp=now;await persist();const work=[];
+    const rbnInterval=Math.max(sources.RBN_INTERVAL,state.settings.dataRefreshMinutes*60000),duePSK=canQuery&&now-state.attemptPSK>=dataInterval,dueRBN=hasPosition&&now-(state.attemptRBN||0)>=rbnInterval,dueNOAA=now-state.attemptKp>=noaaInterval;
+    if(duePSK)state.attemptPSK=now;if(dueRBN)state.attemptRBN=now;if(dueNOAA)state.attemptKp=now;await persist();const work=[];
     if(duePSK){
       state.status.psk={...state.status.psk,state:'loading'};const querySettings={...state.settings},queryScope=scope,grid=domain.toGrid(querySettings.lat,querySettings.lon);
       work.push((async()=>{try{
@@ -43,6 +43,14 @@ async function refresh(nextScope=scope){
         state.status.psk={state:'online',updated:Date.now(),count:spots.length,queryScope,detail:queryScope==='nearby'?'Grid '+grid.slice(0,4):querySettings.callsign};
         recordTraffic({direction:'INFO',source:'PSK Reporter',event:'parsed',detail:`${spots.length} reception reports parsed · ${queryScope==='nearby'?'regional grid '+grid.slice(0,4):'station '+querySettings.callsign}`});
       }catch(e){state.status.psk={...state.status.psk,state:'error',detail:e.message};}})());
+    }
+    if(dueRBN){
+      state.status.rbn={...state.status.rbn,state:'loading'};
+      work.push((async()=>{try{
+        const spots=await sources.loadRBN(undefined,recordTraffic);state.spots=domain.mergeSpots(state.spots,spots);
+        state.status.rbn={state:'online',updated:Date.now(),count:spots.length};
+        recordTraffic({direction:'INFO',source:'Reverse Beacon Network',event:'parsed',detail:`${spots.length} RBN spots parsed`});
+      }catch(e){state.status.rbn={...state.status.rbn,state:'error',detail:e.message};}})());
     }
     if(dueNOAA){
       state.status.noaa={...state.status.noaa,state:'loading'};
@@ -54,7 +62,7 @@ async function refresh(nextScope=scope){
       }catch(e){state.status.noaa={...state.status.noaa,state:'error',detail:e.message};}})());
     }
     emit();await Promise.all(work);state.spots=domain.mergeSpots(state.spots,[]);await persist();
-    const snap=snapshot(),healthy=state.status.psk.state==='online'&&Date.now()-state.status.psk.updated<6*60000;
+    const snap=snapshot(),healthy=(state.status.psk.state==='online'&&Date.now()-state.status.psk.updated<6*60000)||(state.status.rbn?.state==='online'&&Date.now()-state.status.rbn.updated<6*60000);
     for(const b of alerts.update(snap.bands,state.settings,Date.now(),healthy)){
       const metric=b.chance??b.score;if(Notification.isSupported())new Notification({title:t('opening')+' — '+b.band,body:t('alertText',{band:b.band,n:metric})}).show();
       win.webContents.send('state',{...snapshot(),alert:{band:b.band,score:metric}});
@@ -111,7 +119,7 @@ async function start(){
   if(smoke)console.log('Smoke startup: Electron ready');
   if(process.platform==='win32')app.setAppUserModelId('br.pt2vhf.proptool');[domain,sources,i18n,versions]=await Promise.all([import('../src/domain.mjs'),import('../src/sources.mjs'),import('../src/i18n.mjs'),import('../src/updates.mjs')]);alerts=new domain.AlertMachine();
   const dir=portable?path.join(process.env.PORTABLE_EXECUTABLE_DIR,'data'):smoke?path.join(app.getPath('temp'),'pt2vhf-smoke-'+process.pid):app.getPath('userData');file=path.join(dir,'state.json');
-  state={schemaVersion:4,settings:domain.validateSettings(domain.DEFAULT_SETTINGS),spots:[],kp:null,spaceWeather:null,attemptPSK:0,attemptKp:0,status:{psk:{state:'idle'},noaa:{state:'idle'}},lastSeenVersion:app.getVersion(),pendingNews:null,startupNews:null};
+  state={schemaVersion:4,settings:domain.validateSettings(domain.DEFAULT_SETTINGS),spots:[],kp:null,spaceWeather:null,attemptPSK:0,attemptRBN:0,attemptKp:0,status:{psk:{state:'idle'},rbn:{state:'idle'},noaa:{state:'idle'}},lastSeenVersion:app.getVersion(),pendingNews:null,startupNews:null};
   try{const loaded=JSON.parse((await fs.readFile(file,'utf8')).replace(/^\uFEFF/,''));const previousSchema=loaded.schemaVersion||1;state={...state,...loaded,schemaVersion:4,settings:domain.migrateSettings(loaded.settings,previousSchema),spots:domain.mergeSpots(Array.isArray(loaded.spots)?loaded.spots:[],[])};if(state.pendingNews?.version===app.getVersion())state.startupNews=state.pendingNews;else if(!loaded.lastSeenVersion&&previousSchema<4)state.startupNews={version:app.getVersion(),notes:''};else if(loaded.lastSeenVersion&&loaded.lastSeenVersion!==app.getVersion())state.startupNews={version:app.getVersion(),notes:''};}catch(e){if(e.code!=='ENOENT'){console.error('Settings load failed:',e);if(smoke)throw e;await dialog.showMessageBox({type:'warning',message:t('settingsLoadError')});await fs.rename(file,file+'.invalid-'+Date.now()).catch(()=>{});}}
   if(smoke)console.log('Smoke startup: settings loaded',file,state.settings.visible.length);
   win=new BrowserWindow({width:1440,height:980,minWidth:1050,minHeight:760,show:!smoke,backgroundColor:state.settings.theme==='light'?'#edf2f7':'#09111d',title:'PT2VHF Prop Tool v'+app.getVersion(),webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,webSecurity:true}});
