@@ -91,6 +91,7 @@ test('PSK query plan backfills missing observation history and then uses increme
   const coverage={grid,windowMinutes:30,from:now-1800000,to:now-300000,complete:true};
   const incremental=pskQueryPlan(cfg,coverage,now,300000,grid);assert.equal(incremental.mode,'incremental');assert.equal(incremental.seconds,420);
   const enlarged=pskQueryPlan({...cfg,windowMinutes:60},coverage,now,300000,grid);assert.equal(enlarged.mode,'backfill');assert.equal(enlarged.seconds,3600);
+  const widerCoverage={...coverage,windowMinutes:60,from:now-3600000};const reduced=pskQueryPlan({...cfg,windowMinutes:15},widerCoverage,now,300000,grid);assert.equal(reduced.mode,'incremental');
   const stale=pskQueryPlan(cfg,{...coverage,to:now-3600000},now,300000,grid);assert.equal(stale.mode,'backfill');
   const changedGrid=pskQueryPlan(cfg,{...coverage,grid:'GG00'},now,300000,grid);assert.equal(changedGrid.mode,'backfill');
 });
