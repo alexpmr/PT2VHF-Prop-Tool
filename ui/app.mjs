@@ -8,9 +8,9 @@ let current,alertBand,scale=1,tx=0,ty=0,pointer,page='map',language='pt-BR',toas
 let lastActivity={rx:0,tx:0},ledTimers={rx:null,tx:null};
 const listeners=[],conversation=[{key:'welcome'}];
 const t=(key,vars)=>translate(language,key,vars);
-function previewSnapshot(settings,scope='station') {
+function previewSnapshot(settings,scope='nearby') {
   if(!settings){try{settings=validateSettings(JSON.parse(localStorage.getItem('prop-settings'))||DEFAULT_SETTINGS);}catch{settings=validateSettings(DEFAULT_SETTINGS);}}
-  return {version:APP_VERSION,portable:false,settings,scope,spots:[],bands:BANDS.map(b=>evaluateBand([],b.name)),kp:null,sourceStatus:{psk:{state:'preview'},noaa:{state:'preview'}},activity:{rx:0,tx:0},logs:[],startupNews:null,update:{state:'development',notes:''},now:Date.now(),nextPSK:0};
+  return {version:APP_VERSION,portable:false,settings,scope,spots:[],bands:BANDS.map(b=>evaluateBand([],b.name)),kp:null,spaceWeather:{},sourceStatus:{psk:{state:'preview'},noaa:{state:'preview'}},activity:{rx:0,tx:0},logs:[],startupNews:null,update:{state:'development',notes:''},now:Date.now(),nextPSK:0};
 }
 const api=window.propTool||{
   snapshot:async()=>previewSnapshot(),
@@ -78,22 +78,30 @@ function render(snap){
   for(const b of snap.bands.filter(b=>snap.settings.visible.includes(b.band))){
     const row=document.createElement('button');row.className='bandRow';if($('band').value===b.band)row.classList.add('selected');
     const label=document.createElement('strong');label.textContent=b.band;label.style.color=color(b.band);
-    const desc=document.createElement('div'),state=document.createElement('span');state.className='state';state.textContent=t(bandStates[b.state]||'none')+' '+b.trend;
-    const detail=document.createElement('small');detail.textContent=b.reports?t('reports',{n:b.reports,pairs:b.pairs})+' · '+age(b.latest):t('insufficient');
-    const index=document.createElement('span');index.className='score';index.textContent=b.score??'—';desc.append(state,detail);row.append(label,desc,index);row.onclick=()=>{$('band').value=$('band').value===b.band?'':b.band;render(current);};$('bands').append(row);
+    const state=document.createElement('span');state.className='state';state.textContent=b.chance===null?t('insufficient'):t(bandStates[b.state]||'none')+(b.trend!=='—'?' '+b.trend:'');
+    row.append(label,state);row.onclick=()=>{$('band').value=$('band').value===b.band?'':b.band;render(current);};$('bands').append(row);
   }
   $('zones').replaceChildren();$('points').replaceChildren();$('home').replaceChildren();
   const displayed=snap.bands.filter(b=>snap.settings.visible.includes(b.band)&&(!$('band').value||b.band===$('band').value));let zoneCount=0,pointCount=0;
-  for(const b of displayed)for(const zone of b.zones){zoneCount++;const p=svgNode('path',{d:zone.rings.map(ringPath).join(' '),fill:color(b.band),stroke:color(b.band)},$('zones'));svgNode('title',{},p).textContent=t('zoneTip',{band:b.band,n:zone.reportCount,pairs:zone.pairs});}
+  const showConfirmed=$('showConfirmed')?.checked!==false,showPredicted=$('showPredicted')?.checked!==false;
+  for(const b of displayed){
+    if(showPredicted)for(const zone of b.predictedZones||[]){zoneCount++;const p=svgNode('path',{class:'forecastZone',d:zone.rings.map(ringPath).join(' '),fill:color(b.band),stroke:color(b.band)},$('zones'));svgNode('title',{},p).textContent=`${b.band} · ${t('predicted')} · ${b.chance??'—'}%`;}
+    if(showConfirmed)for(const zone of b.confirmedZones||b.zones||[]){zoneCount++;const p=svgNode('path',{class:'confirmedZone',d:zone.rings.map(ringPath).join(' '),fill:color(b.band),stroke:color(b.band)},$('zones'));svgNode('title',{},p).textContent=t('zoneTip',{band:b.band,n:zone.reportCount,pairs:zone.pairs});}
+  }
   const shownBands=new Set(displayed.map(b=>b.band));
-  for(const s of snap.spots.filter(p=>shownBands.has(p.band))){pointCount++;const [cx,cy]=project([s.endpoint.lon,s.endpoint.lat]);const c=svgNode('circle',{cx,cy,r:1.8,fill:color(s.band)},$('points'));const mode=s.mode==='Não informado'?t('unknownMode'):s.mode;const direction=t({'direct-tx':'txReceived','direct-rx':'rxHome',nearby:'rxNearby'}[s.origin]||'observed');svgNode('title',{},c).textContent=`${s.tx} → ${s.rx} · ${s.band} · ${mode}\n${direction} · ${Math.round(s.distance)} km · ${Math.round(s.bearing)}°\n${date(s.timestamp)} · ${s.source}${s.snr===null?'':` · SNR ${s.snr} dB`}`;}
+  for(const s of snap.spots.filter(p=>shownBands.has(p.band))){
+    pointCount++;const [cx,cy]=project([s.endpoint.lon,s.endpoint.lat]);const c=svgNode('circle',{cx,cy,r:1.8,fill:color(s.band)},$('points'));
+    const mode=s.mode==='Não informado'?t('unknownMode'):s.mode;
+    const direction=t({'direct-tx':'txReceived','direct-rx':'rxHome','regional-out':'rxNearby','regional-in':'rxNearby'}[s.origin]||'observed');
+    svgNode('title',{},c).textContent=`${s.tx} → ${s.rx} · ${s.band} · ${mode}\n${direction} · ${Math.round(s.distance)} km · ${Math.round(s.bearing)}°\n${date(s.timestamp)} · ${s.source}${s.snr===null?'':` · SNR ${s.snr} dB`}`;
+  }
   const configured=Boolean(snap.settings.callsign)&&coordinates(snap.settings.lat,snap.settings.lon);
   if(configured){const [cx,cy]=project([snap.settings.lon,snap.settings.lat]);svgNode('circle',{cx,cy,r:3.6},$('home'));svgNode('text',{x:cx+7,y:cy-5},$('home')).textContent=snap.settings.callsign;}
   $('empty').classList.toggle('hidden',configured);$('emptyTitle').textContent=t('configure');$('emptyConfigure').hidden=configured;
   $('mapNotice').classList.toggle('hidden',!configured||pointCount>0);$('mapNotice').textContent=status.state==='error'?t('sourceError'):status.state==='loading'?t('loading'):status.state==='preview'?t('previewNotice'):t('emptyTitle');$('mapNotice').title=t('emptyBody');
   $('evidenceCount').textContent=t('counts',{n:pointCount,zones:zoneCount});const query=status.state==='online'?t('queryCount',{n:status.count??0}):sourceLabel(status);
   $('freshness').textContent=`PSK: ${query}${status.updated?' · '+age(status.updated):''}${snap.nextPSK>0?' · '+t('nextQuery',{n:Math.ceil(snap.nextPSK/60000)}):''}${status.detail?' · '+status.detail:''}`;
-  const kp=snap.kp;$('kp').textContent=kp?kp.value.toLocaleString(language,{minimumFractionDigits:1,maximumFractionDigits:1}):'—';$('kpState').textContent=kp?t(Date.now()-kp.timestamp>4*3600000?'oldMeasure':kp.value>=5?'elevated':'measurement'):sourceLabel(snap.sourceStatus.noaa);$('kpTime').textContent=kp?`${date(kp.timestamp)} · ${t('kpNote')}`:t('kpWaiting');
+  const kp=snap.kp,sw=snap.spaceWeather||{};$('kp').textContent=kp?kp.value.toLocaleString(language,{minimumFractionDigits:1,maximumFractionDigits:1}):'—';$('kpState').textContent=kp?t(Date.now()-kp.timestamp>4*3600000?'oldMeasure':kp.value>=5?'elevated':'measurement'):sourceLabel(snap.sourceStatus.noaa);$('kpTime').textContent=kp?`${date(kp.timestamp)} · ${t('kpNote')}`:t('kpWaiting');$('sfi').textContent=sw.f107?.value??'—';$('bz').textContent=sw.bz?`${sw.bz.value} nT`:'—';$('wind').textContent=sw.wind?`${Math.round(sw.wind.value)} km/s`:'—';$('xray').textContent=sw.xray?.class??'—';
   renderUpdate(snap.update);renderLogs();
   if(snap.startupNews&&newsShownFor!==snap.startupNews.version){newsShownFor=snap.startupNews.version;$('newsVersion').textContent='v'+snap.startupNews.version;$('newsNotes').textContent=snap.startupNews.notes||t('news021');if(!$('newsDialog').open)$('newsDialog').showModal();}
   if(snap.alert){alertBand=snap.alert.band;$('alertText').textContent=t('alertText',{band:alertBand,n:snap.alert.score});if(!$('alertDialog').open)$('alertDialog').showModal();}
@@ -120,6 +128,7 @@ $('grid').onchange=()=>{const p=fromGrid($('grid').value.trim());if(p){$('lat').
 $('locate').onclick=()=>{if(!navigator.geolocation){toast('locationError');return;}$('locate').disabled=true;navigator.geolocation.getCurrentPosition(p=>{$('lat').value=p.coords.latitude;$('lon').value=p.coords.longitude;$('grid').value=toGrid(p.coords.latitude,p.coords.longitude);$('locate').disabled=false;toast('locationFilled',{n:Math.round(p.coords.accuracy)});},()=>{$('locate').disabled=false;toast('locationError');},{timeout:15000,maximumAge:300000,enableHighAccuracy:true});};
 for(const input of $('configForm').querySelectorAll('input')){input.addEventListener('invalid',()=>input.setCustomValidity(t('invalidSettings')));input.addEventListener('input',()=>input.setCustomValidity(''));}
 $('configForm').onsubmit=async e=>{e.preventDefault();const s={...current.settings};try{for(const id of ['lat','lon','power','alertMinScore','alertMinDistance','alertCooldown','updateMinutes','dataRefreshMinutes'])s[id]=Number($(id).value);s.callsign=$('callsign').value;for(const kind of ['visible','alertBands'])s[kind]=[...$('bandSettings').querySelectorAll(`input[data-kind="${kind}"]:checked`)].map(n=>n.dataset.band);s.antennas={...s.antennas};for(const n of $('bandSettings').querySelectorAll('select'))s.antennas[n.dataset.antenna]={...s.antennas[n.dataset.antenna],type:n.value};render(await api.configure(s));setPage('map');toast('saved');await refresh();}catch{configErrorKey='invalidSettings';$('configError').textContent=t(configErrorKey);}};
+for(const id of ['showConfirmed','showPredicted'])$(id).onchange=()=>render(current);
 $('band').onchange=()=>render(current);$('period').onchange=async()=>{try{render(await api.configure({...current.settings,windowMinutes:Number($('period').value)}));}catch{toast('appError');}};
 async function refresh(scope=current.scope){$('refresh').disabled=true;try{render(await api.refresh(scope));}catch{toast('appError');}finally{$('refresh').disabled=false;}}
 $('refresh').onclick=()=>refresh();$('stationView').onclick=()=>refresh('station');$('nearbyView').onclick=()=>refresh('nearby');
@@ -137,7 +146,7 @@ function updateCursorReadout(e){
 }
 $('map').addEventListener('pointerdown',e=>{if(e.button!==0)return;pointer={x:e.clientX,y:e.clientY,tx,ty};$('map').setPointerCapture(e.pointerId);});$('map').addEventListener('pointermove',e=>{updateCursorReadout(e);if(!pointer)return;const rect=$('map').getBoundingClientRect(),ratio=Math.min(rect.width/1080,rect.height/540);tx=pointer.tx+(e.clientX-pointer.x)/ratio;ty=pointer.ty+(e.clientY-pointer.y)/ratio;mapTransform();});$('map').addEventListener('pointerleave',()=>$('cursorInfo').classList.add('hidden'));for(const type of ['pointerup','pointercancel'])$('map').addEventListener(type,()=>pointer=null);
 for(const id of ['logDirection','logSource'])$(id).onchange=renderLogs;$('logSearch').oninput=renderLogs;$('pauseLogs').onclick=()=>{logsPaused=!logsPaused;$('pauseLogs').textContent=t(logsPaused?'resume':'pause');if(!logsPaused)renderLogs();};$('clearLogs').onclick=async()=>{await api.clearLogs();if(current)current.logs=[];renderLogs();};$('exportLogs').onclick=()=>api.exportLogs().then(ok=>{if(ok)toast('exported');}).catch(()=>toast('appError'));
-function answer(question){const s=current,available=s.bands.filter(b=>s.settings.visible.includes(b.band)&&b.score!==null).sort((a,b)=>b.score-a.score);if(/muf|tep|tropo|ssb|cw|predict|previs|prévi|prognos|previsione|por qu[eê]|why|pourquoi|warum|perché/i.test(question))return {key:'answerLimits'};if(!available.length)return {key:'answerEmpty',vars:{n:s.settings.windowMinutes}};const b=available[0];return {key:'answerBest',vars:{band:b.band,score:b.score,n:b.reports,pairs:b.pairs,tx:b.txReports,rx:b.rxReports,latest:b.latest,scopeKey:s.scope==='station'?'station':'nearby'}};}
+function answer(question){const s=current,available=s.bands.filter(b=>s.settings.visible.includes(b.band)&&b.chance!==null).sort((a,b)=>b.chance-a.chance);if(/muf|tep|tropo|ssb|cw|predict|previs|prévi|prognos|previsione|por qu[eê]|why|pourquoi|warum|perché/i.test(question))return {key:'answerLimits'};if(!available.length)return {key:'answerEmpty',vars:{n:s.settings.windowMinutes}};const b=available[0];return {key:'answerBest',vars:{band:b.band,score:b.chance,n:b.reports,pairs:b.pairs,tx:b.txReports,rx:b.rxReports,latest:b.latest,scopeKey:s.scope==='station'?'station':'nearby'}};}
 function renderConversation(){$('conversation').replaceChildren();for(const item of conversation){const p=document.createElement('p');p.className=item.user?'userMessage':'assistantMessage';p.textContent=item.user||t(item.key,{...item.vars,age:age(item.vars?.latest),scope:item.vars?.scopeKey?t(item.vars.scopeKey):''});$('conversation').append(p);}}
 $('chat').onsubmit=e=>{e.preventDefault();const q=$('question').value.trim();if(!q)return;conversation.push({user:q},answer(q));while(conversation.length>41)conversation.splice(1,2);renderConversation();$('conversation').scrollTop=$('conversation').scrollHeight;$('question').value='';};
 api.subscribe(render);render(await api.snapshot());document.documentElement.dataset.ready='true';
