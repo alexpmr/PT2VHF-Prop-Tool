@@ -33,3 +33,12 @@
 #updateDialog[data-busy=true] #openReleases{display:none}
 #updateDialog[data-busy=true]{cursor:progress}
 :root[data-theme=light] #homeOverlay span{color:#183044;filter:drop-shadow(0 1px 1px #fff) drop-shadow(0 0 2px #fff)}
+
+/* v0.2.5 observation window and current-band emphasis */
+.mapToolField{display:flex;align-items:center;gap:6px;padding:3px 6px;border:1px solid var(--border);border-radius:7px;background:#0b1523}
+.mapToolField>span{font-size:9px;line-height:1.15;color:var(--muted);white-space:nowrap;text-transform:uppercase;letter-spacing:.45px}
+.mapToolField select{border:0;padding:6px 7px;background:transparent}
+.mapTitle .currentBand{font-size:26px;line-height:1;color:#ff9e43;letter-spacing:.5px;margin-top:1px}
+:root[data-theme=light] .mapToolField{background:#f7fafc}
+:root[data-theme=light] .mapTitle .currentBand{color:#d96a00}
+@media(max-width:1100px){.mapToolField>span{display:none}.mapToolField{padding:0}.mapToolField select{border:1px solid #34445b}:root[data-theme=light] .mapToolField select{border-color:#adbece}.mapTitle .currentBand{font-size:22px}}
