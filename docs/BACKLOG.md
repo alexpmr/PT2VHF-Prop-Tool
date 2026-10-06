@@ -32,6 +32,8 @@
 
 ## Mapa e operação
 
+- Corrigir o estado vazio do mapa relatado na v0.1.0: o bloco `Sem evidências para este filtro` mantém o botão `Configurar estação` após salvar a configuração. Exibir esse convite somente quando a configuração da estação estiver incompleta. Com a estação configurada e sem recepções, substituir o bloco central por uma indicação discreta que não cubra o mapa.
+- Diferenciar visualmente configuração pendente, consulta em andamento, fonte indisponível e ausência de evidências para o período/bandas selecionados. Configuração salva não garante spots disponíveis; continuar indicando que ausência de dados não significa banda fechada.
 - Exibir a versão atual imediatamente após o nome da aplicação na barra superior, por exemplo: `PT2VHF Prop Tool v0.1.0`. Obter o número dos metadados da versão em execução para mantê-lo correto após cada atualização.
 - Adicionar seletor de tema claro/escuro e persistir a escolha do usuário entre sessões. Aplicar o tema a toda a interface, incluindo abas, painéis, configurações, Ajuda e mapa, garantindo legibilidade e preservando o significado das cores das evidências e da legenda.
 - Adicionar a banda de 11 metros à tabela de bandas, aos seletores e filtros, às configurações por banda e às análises do mapa e alertas. Verificar a cobertura das fontes; quando não houver evidências disponíveis, indicar ausência de dados, sem gerar atividade ou conclusões artificiais.
