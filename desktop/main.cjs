@@ -147,12 +147,20 @@ async function factoryReset(){
   const script=path.join(app.getPath('temp'),`pt2vhf-factory-reset-${process.pid}.ps1`);
   const body=`param([int]$ParentPid,[string]$DataDir,[string]$RestartExe)
 $ErrorActionPreference='SilentlyContinue'
+$log=Join-Path $env:TEMP 'PT2VHF-Prop-Tool-factory-reset.log'
 try { Wait-Process -Id $ParentPid -Timeout 30 } catch {}
 $ok=$false
+$lastError=''
 for($i=0;$i -lt 30;$i++){
-  try { if(Test-Path -LiteralPath $DataDir){Remove-Item -LiteralPath $DataDir -Recurse -Force -ErrorAction Stop}; $ok=$true; break } catch { Start-Sleep -Milliseconds 500 }
+  try { if(Test-Path -LiteralPath $DataDir){Remove-Item -LiteralPath $DataDir -Recurse -Force -ErrorAction Stop}; $ok=$true; break } catch { $lastError=$_.Exception.Message; Start-Sleep -Milliseconds 500 }
 }
-if($ok){ Start-Process -FilePath $RestartExe }
+if($ok){
+  Remove-Item -LiteralPath $log -Force -ErrorAction SilentlyContinue
+  Start-Process -FilePath $RestartExe
+}else{
+  ('Factory reset failed: '+$lastError) | Set-Content -LiteralPath $log -Encoding UTF8
+  Start-Process -FilePath $RestartExe -ArgumentList ('--factory-reset-error='+$log)
+}
 Remove-Item -LiteralPath $PSCommandPath -Force -ErrorAction SilentlyContinue
 `;
   await fs.writeFile(script,body,'utf8');
@@ -160,7 +168,7 @@ Remove-Item -LiteralPath $PSCommandPath -Force -ErrorAction SilentlyContinue
   setTimeout(()=>app.exit(0),120);
   return true;
 }
-async function rendererReady(){return win.webContents.executeJavaScript(`new Promise((resolve,reject)=>{const deadline=Date.now()+15000;const poll=setInterval(()=>{if(document.documentElement.dataset.ready==='true'){clearInterval(poll);const bands=document.querySelectorAll('.bandRow').length,land=document.querySelectorAll('#land path').length;if(bands===${state.settings.visible.length}&&document.querySelector('#band').options.length===${domain.BANDS.length+1}&&land>100&&typeof window.propTool.snapshot==='function'&&typeof window.propTool.runUpdateFlow==='function'&&typeof window.propTool.clearLogs==='function')resolve(true);else reject(new Error('Interface, bridge or map failed'));}else if(Date.now()>deadline){clearInterval(poll);reject(new Error('Renderer timeout'));}},100);})`);}
+async function rendererReady(){return win.webContents.executeJavaScript(`new Promise((resolve,reject)=>{const deadline=Date.now()+15000;const poll=setInterval(()=>{if(document.documentElement.dataset.ready==='true'){clearInterval(poll);const bands=document.querySelectorAll('.bandRow').length,land=document.querySelectorAll('#land path').length;if(bands===${state.settings.visible.length}&&document.querySelector('#band').options.length===${domain.BANDS.length+1}&&document.querySelectorAll('#bandButtons button').length===${state.settings.visible.length+1}&&document.querySelectorAll('#periodButtons button').length===3&&land>100&&typeof window.propTool.snapshot==='function'&&typeof window.propTool.runUpdateFlow==='function'&&typeof window.propTool.clearLogs==='function'&&typeof window.propTool.factoryReset==='function')resolve(true);else reject(new Error('Interface, bridge or map failed'));}else if(Date.now()>deadline){clearInterval(poll);reject(new Error('Renderer timeout'));}},100);})`);}
 async function start(){
   if(smoke)console.log('Smoke startup: Electron ready');
   if(process.platform==='win32')app.setAppUserModelId('br.pt2vhf.proptool');[domain,sources,i18n,versions]=await Promise.all([import('../src/domain.mjs'),import('../src/sources.mjs'),import('../src/i18n.mjs'),import('../src/updates.mjs')]);alerts=new domain.AlertMachine();
@@ -175,7 +183,7 @@ async function start(){
   handle('snapshot',snapshot);handle('configure',async input=>{const settings=domain.validateSettings(input),old=state.settings;state.settings=settings;try{await persist();}catch(e){state.settings=old;throw e;}if(['callsign','lat','lon','alertMinScore','alertMinDistance','alertCooldown','alertBands'].some(k=>JSON.stringify(old[k])!==JSON.stringify(settings[k])))alerts=new domain.AlertMachine();emit();return snapshot();});
   handle('refresh',refresh);handle('clear-logs',clearLogs);handle('export-logs',exportLogs);handle('factory-reset',factoryReset);handle('ack-news',acknowledgeNews);handle('check-update',()=>checkUpdate(true));handle('run-update-flow',runUpdateFlow);handle('download-update',downloadUpdate);handle('install-update',installUpdate);
   const openLink=target=>{const links={project:repo,issues:repo+'/issues',profile:'https://github.com/alexpmr',releases:repo+'/releases',manual:`${repo}/releases/download/v${app.getVersion()}/PT2VHF-Prop-Tool-${app.getVersion()}-Manual.pdf`};if(!Object.hasOwn(links,target))throw Error('Invalid link');return shell.openExternal(links[target]);};handle('open-link',openLink);handle('open-releases',()=>openLink('releases'));
-  setupUpdater();await win.loadFile(path.join(__dirname,'../ui/index.html'));if(smoke)console.log('Smoke startup: renderer loaded');await rendererReady();
+  setupUpdater();await win.loadFile(path.join(__dirname,'../ui/index.html'));if(smoke)console.log('Smoke startup: renderer loaded');await rendererReady();const factoryResetError=process.argv.find(v=>v.startsWith('--factory-reset-error='));if(factoryResetError&&!smoke)await dialog.showMessageBox(win,{type:'error',title:'PT2VHF Prop Tool',message:t('factoryResetError'),detail:factoryResetError.slice(factoryResetError.indexOf('=')+1)});
   if(process.env.PROP_UPDATE_CONFIRM_FILE&&path.resolve(process.env.PROP_UPDATE_CONFIRM_FILE)===path.join(dataDir,'updates','update-ready.json'))await fs.writeFile(process.env.PROP_UPDATE_CONFIRM_FILE,JSON.stringify({version:app.getVersion()}),'utf8');
   if(smoke){try{await win.webContents.executeJavaScript(`(async()=>{const old=await window.propTool.snapshot();for(const language of ['pt-BR','en','es','fr','de','it']){await window.propTool.configure({...old.settings,language});await new Promise(r=>setTimeout(r,60));if(document.documentElement.lang!==language||document.querySelectorAll('#languages img').length!==6)throw Error('Language failed');document.getElementById('helpTab').click();if(document.getElementById('helpPage').classList.contains('hidden'))throw Error('Help failed');}await window.propTool.configure({...old.settings,theme:'light'});await new Promise(r=>setTimeout(r,60));if(document.documentElement.dataset.theme!=='light')throw Error('Theme failed');await window.propTool.configure(old.settings);})()`);console.log('Electron smoke test: 14 bands, six languages, Help, themes, IPC and offline map OK');app.exit(0);}catch(e){console.error(e);app.exit(1);}return;}
   refresh().catch(e=>{state.status.psk={state:'error',detail:e.message};emit();});const poll=setInterval(()=>{refresh().catch(e=>{state.status.psk={state:'error',detail:e.message};emit();});if(Date.now()-lastUpdateCheck>=state.settings.updateMinutes*60000)checkUpdate();},30000),firstCheck=setTimeout(checkUpdate,10000);app.on('before-quit',()=>{clearInterval(poll);clearTimeout(firstCheck);});
