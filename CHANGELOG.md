@@ -12,8 +12,6 @@
 - Legenda do mapa mostra dinamicamente **direção cardinal, azimute e distância** entre a estação configurada e o ponto sob o cursor.
 - Estado interno atualizado para schema 3, preservando configurações anteriores por migração.
 
-# Changelog
-
 ## v0.2.0 — 2026-10-06
 
 - Seis idiomas com bandeiras SVG e tradução da interface, Ajuda, Sobre, mensagens, alertas e assistente local.
