@@ -1,7 +1,8 @@
-import {parsePSK} from './domain.mjs';
+import {parsePSK,bandFor,fromGrid} from './domain.mjs';
 import {APP_VERSION} from './version.mjs';
 export const PSK_INTERVAL=300000;
 export const NOAA_INTERVAL=300000;
+export const RBN_INTERVAL=300000;
 export function pskURL(settings,scope='nearby') {
   const q=new URLSearchParams({flowStartSeconds:'-3600',rronly:'1',noactive:'1',rptlimit:'3000'});
   if(scope==='nearby') {
@@ -13,9 +14,9 @@ export function pskURL(settings,scope='nearby') {
   }
   return 'https://retrieve.pskreporter.info/query?'+q.toString();
 }
-const AUTHORIZED_HOSTS=new Set(['retrieve.pskreporter.info','services.swpc.noaa.gov','api.github.com']);
+const AUTHORIZED_HOSTS=new Set(['retrieve.pskreporter.info','services.swpc.noaa.gov','api.github.com','vailrerbn.com']);
 const MAX_RESPONSE_BYTES=6e6,MAX_REDIRECTS=3,LOG_PREVIEW_BYTES=8192;
-function sourceName(host){return host==='retrieve.pskreporter.info'?'PSK Reporter':host==='services.swpc.noaa.gov'?'NOAA SWPC':host==='api.github.com'?'GitHub':'HTTP';}
+function sourceName(host){return host==='retrieve.pskreporter.info'?'PSK Reporter':host==='services.swpc.noaa.gov'?'NOAA SWPC':host==='api.github.com'?'GitHub':host==='vailrerbn.com'?'Reverse Beacon Network':'HTTP';}
 function validateEndpoint(value){const u=value instanceof URL?value:new URL(value);if(u.protocol!=='https:'||u.username||u.password||!AUTHORIZED_HOSTS.has(u.hostname))throw new Error('Fonte não autorizada');return u;}
 export async function boundedFetch(url,format='text',fetchImpl=fetch,activity=()=>{}) {
   let current=validateEndpoint(url),response,redirects=0;const started=Date.now(),method='GET';
@@ -83,6 +84,25 @@ export function parseXray(rows){
   return {class:cls,timestamp:when,evidence:'measured',source:'NOAA SWPC'};
 }
 export async function loadPSK(settings,scope,fetchImpl,activity) {return parsePSK(await boundedFetch(pskURL(settings,scope),'text',fetchImpl,activity));}
+export function parseRBN(payload){
+  const rows=Array.isArray(payload)?payload:Array.isArray(payload?.spots)?payload.spots:[];
+  const out=[];
+  for(const row of rows){
+    const frequency=Number(row.frequency)*1000,when=Date.parse(row.timestamp),band=bandFor(frequency);
+    const tx=String(row.callsign||'').trim().toUpperCase(),rx=String(row.spotter||'').trim().toUpperCase();
+    if(!band||!Number.isFinite(when)||!tx||!rx)continue;
+    const snr=Number(row.snr),txGrid=String(row.grid||''),rxGrid=String(row.spotter_grid||'');
+    out.push({source:'Reverse Beacon Network',evidence:'observed',timestamp:when,frequency,band,tx,rx,
+      txGrid,rxGrid,txPosition:fromGrid(txGrid),rxPosition:fromGrid(rxGrid),mode:String(row.mode||'CW'),snr:Number.isFinite(snr)?snr:null,
+      id:'RBN|'+String(row.id??[tx,rx,frequency,when,row.mode||''].join('|'))});
+  }
+  return out;
+}
+export async function loadRBN(fetchImpl,activity){
+  const data=await boundedFetch('https://vailrerbn.com/api/v1/spots?limit=1000','json',fetchImpl,activity);
+  return parseRBN(data);
+}
+
 export async function loadKp(fetchImpl,activity) {return parseKp(await boundedFetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json','json',fetchImpl,activity));}
 export async function loadSpaceWeather(fetchImpl,activity=()=>{}){
   const requests=[
