@@ -7,18 +7,19 @@
 </head>
 <body>
   <header>
-    <div class="topLine"><div class="brand"><span class="logo">◉</span><div><strong>PT2VHF <span>PROP TOOL</span> <span id="appVersion">v0.2.2</span></strong><small data-i18n="subtitle"></small></div></div>
+    <div class="topLine"><div class="brand"><span class="logo">◉</span><div><strong>PT2VHF <span>PROP TOOL</span> <span id="appVersion">v0.2.3</span></strong><small data-i18n="subtitle"></small></div></div>
       <div class="headerActions"><div class="trafficLights" data-i18n-title="trafficActivity"><span><i id="rxLed" class="trafficLed rx"></i>RX</span><span><i id="txLed" class="trafficLed tx"></i>TX</span></div><span id="status" class="pill"></span><details id="languageMenu"><summary><img id="languageFlag" src="flags/br.svg" alt=""><span id="currentLanguage">Português (Brasil)</span></summary><div id="languages"></div></details><button id="themeButton"></button></div>
     </div>
     <div class="navLine"><nav data-i18n-aria="navigation"><button id="mapTab" data-page="map" data-i18n="map" class="selected"></button><button id="settingsButton" data-page="settings" data-i18n="settings"></button><button id="logsTab" data-page="logs" data-i18n="logs"></button><button id="helpTab" data-page="help" data-i18n="help"></button><button id="aboutTab" data-page="about" data-i18n="about"></button></nav><button id="version" class="updateButton" data-i18n="checkUpdate"></button></div>
   </header>
   <main id="mapPage">
     <section class="mapPanel">
-      <nav class="mapTools"><div class="segmented"><button id="nearbyView" class="selected" data-i18n="nearby"></button><button id="stationView" data-i18n="station"></button></div>
+      <nav class="mapTools"><span id="regionMode" class="regionMode" data-i18n="nearby"></span>
         <select id="band" data-i18n-aria="allBands"><option value="" data-i18n="allBands"></option></select>
         <select id="period" data-i18n-aria="minutes"><option value="15"></option><option value="30" selected></option><option value="60" data-i18n="hour"></option></select>
+        <select id="mapVisualization" data-i18n-aria="mapVisualization"><option value="heatmap" data-i18n="heatmap"></option><option value="polygons" data-i18n="polygons"></option></select>
         <button id="refresh" data-i18n="refresh"></button><button id="resetMap" data-i18n-title="world">◎</button></nav>
-      <div id="mapWrap"><svg id="map" viewBox="0 0 1080 540" data-i18n-aria="mapCaption" role="img"><rect id="ocean" width="1080" height="540"/><g id="world"><g id="graticule"></g><g id="land"></g><g id="zones"></g><g id="points"></g><g id="home"></g></g></svg>
+      <div id="mapWrap"><svg id="map" viewBox="0 0 1080 540" data-i18n-aria="mapCaption" role="img"><rect id="ocean" width="1080" height="540"/><g id="world"><g id="graticule"></g><g id="land"></g><g id="heatPredicted"></g><g id="heatConfirmed"></g><g id="zones"></g><g id="points"></g><g id="home"></g></g></svg>
         <div class="mapTitle"><span data-i18n="mapCaption"></span><strong id="stationLabel"></strong><small id="viewNotice"></small></div>
         <div id="empty"><span>⌁</span><strong id="emptyTitle"></strong><p data-i18n="setupBody"></p><button id="emptyConfigure" data-i18n="configure"></button></div>
         <div id="mapNotice" class="hidden" role="status"></div>
@@ -64,7 +65,7 @@
       <label><span data-i18n="updateMinutes"></span><input id="updateMinutes" type="number" min="5" max="1440" required></label></div></details>
     <p class="help" data-i18n="alertHelp"></p><div class="dialogFoot"><span id="configError" role="alert"></span><button type="submit" data-i18n="save"></button></div>
   </form></section>
-  <section id="aboutPage" class="page hidden"><h1>PT2VHF Prop Tool <span id="aboutVersion"></span></h1><p data-i18n="aboutText"></p><p data-i18n="author"></p><article><h2 data-i18n="contact"></h2><div class="contactLinks"><button id="openProject" data-i18n="project"></button><button id="openIssues" data-i18n="issues"></button><button id="openProfile" data-i18n="profile"></button></div></article><p class="help" data-i18n="limits"></p><p>PSK Reporter · NOAA SWPC · Natural Earth · Electron · NSIS</p></section>
+  <section id="aboutPage" class="page hidden"><h1>PT2VHF Prop Tool <span id="aboutVersion"></span></h1><p data-i18n="aboutText"></p><p data-i18n="author"></p><article><h2 data-i18n="contact"></h2><div class="contactLinks"><button id="openProject" data-i18n="project"></button><button id="openIssues" data-i18n="issues"></button><button id="openProfile" data-i18n="profile"></button></div></article><p class="help" data-i18n="limits"></p><p>PSK Reporter · Reverse Beacon Network · NOAA SWPC · Natural Earth · Electron · NSIS</p></section>
   <dialog id="updateDialog"><div class="dialogHead"><h2 data-i18n="update"></h2><button id="closeUpdate" data-i18n="close"></button></div><p id="updateMessage"></p><pre id="releaseNotes"></pre><progress id="updateProgress" max="100" value="0" class="hidden"></progress><div class="dialogFoot"><button id="openReleases" data-i18n="releases"></button><button id="downloadUpdate" data-i18n="download"></button><button id="installUpdate" data-i18n="install"></button></div></dialog>
   <dialog id="alertDialog"><h2 data-i18n="opening"></h2><p id="alertText"></p><div class="dialogFoot"><button id="dismissAlert" data-i18n="close"></button><button id="viewAlert" data-i18n="viewMap"></button></div></dialog>
   <dialog id="newsDialog"><div class="dialogHead"><div><small data-i18n="updatedVersion"></small><h2><span data-i18n="whatsNew"></span> <span id="newsVersion"></span></h2></div></div><pre id="newsNotes"></pre><div class="dialogFoot"><button id="closeNews" data-i18n="continue"></button></div></dialog>
