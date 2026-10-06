@@ -8,7 +8,7 @@ export const DEFAULT_SETTINGS = {
   callsign:'',lat:null,lon:null,power:100,antennas:Object.fromEntries(BANDS.map(b=>[b.name,{type:'Vertical'}])),
   visible:BANDS.map(b=>b.name),alertBands:[],alertMinScore:65,
   alertMinDistance:800,alertCooldown:30,windowMinutes:30,
-  updateMinutes:30,dataRefreshMinutes:5,nearbyRadius:300,mapView:'heatmap',language:'pt-BR',theme:'dark'
+  updateMinutes:15,dataRefreshMinutes:5,nearbyRadius:300,mapView:'heatmap',language:'pt-BR',theme:'dark'
 };
 export function coordinates(lat,lon) {
   return typeof lat==='number' && typeof lon==='number' && Number.isFinite(lat) && Number.isFinite(lon) && lat>=-90 && lat<=90 && lon>=-180 && lon<=180;
@@ -65,6 +65,7 @@ export function migrateSettings(input,schemaVersion=1) {
   const s={...input,antennas:{...input.antennas}};
   if(schemaVersion<2&&input.visible?.length===13&&BANDS.filter(b=>b.name!=='11 m').every(b=>input.visible.includes(b.name)))s.visible=[...input.visible,'11 m'];
   if(schemaVersion<4&&s.updateMinutes===5)s.updateMinutes=30;
+  if(schemaVersion<5&&s.updateMinutes===30)s.updateMinutes=15;
   return validateSettings(s);
 }
 function unescapeXML(v) {
@@ -199,15 +200,16 @@ export function evaluateBand(spots,band,now=Date.now(),spaceWeather={}) {
   if(score!==null&&spaceScore!==null)chance=Math.round(clamp(score*.72+spaceScore*.28+Math.min(8,data.length/4)));
   else if(score!==null)chance=score;
   else if(spaceScore!==null){
-    const weight=['6 m'].includes(band)?.35:['2 m','70 cm'].includes(band)?.18:.55;
+    const weight=band==='11 m'?.78:['6 m'].includes(band)?.35:['2 m','70 cm'].includes(band)?.18:.55;
     chance=Math.round(clamp(spaceScore*weight));
   }
+  const basis=data.length?(spaceScore!==null?'fused':'observed'):(spaceScore!==null?'estimated':'none');
   const state=chance===null?'Sem evidências':chance>=75?'Evidência forte':chance>=50?'Evidência moderada':chance>=25?'Evidência limitada':'Sem evidências';
   const recent=data.filter(s=>s.timestamp>=now-10*60000).length;
   const previous=data.filter(s=>s.timestamp>=now-20*60000&&s.timestamp<now-10*60000).length;
   const trend=previous>=3?(recent>previous*1.25?'↑':recent<previous*.75?'↓':'→'):'—';
   const confirmedZones=zonesFor(data,band),predictedZones=forecastZonesFor(data,band,chance);
-  return {band,state,score,chance,spaceScore,pairs:pairs.size,reports:data.length,latest,trend,
+  return {band,state,score,chance,spaceScore,basis,pairs:pairs.size,reports:data.length,latest,trend,
     txReports:data.filter(s=>s.origin==='regional-out'||s.origin==='direct-tx').length,
     rxReports:data.filter(s=>s.origin==='regional-in'||s.origin==='direct-rx').length,
     zones:confirmedZones,confirmedZones,predictedZones};
