@@ -19,6 +19,7 @@ function clean(value){
 export function normalizeReleaseNotes(raw){
   let value=String(raw??'').trim();
   if(!value)return '';
+  value=decodeEntities(value);
   value=value
     .replace(/<!--[\s\S]*?-->/g,'')
     .replace(/<(script|style|noscript)\b[^>]*>[\s\S]*?<\/\1>/gi,'')
