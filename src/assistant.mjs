@@ -66,8 +66,9 @@ export function assistantReply(question,snapshot,selectedBand=''){
   }
 
   if(/(melhor|maior chance|qual banda|best|highest|which band|better)/.test(q)){
-    if(!band)return {key:'assistantEmpty',vars:{n:snapshot.settings.windowMinutes}};
-    return {key:'assistantBest',vars:{band:band.band,score:band.chance??'—',reports:band.reports,pairs:band.pairs,basisKey:basisKey(band),latest:band.latest}};
+    const best=snapshot.bands.filter(b=>snapshot.settings.visible.includes(b.band)&&b.chance!==null).sort((a,b)=>(b.chance??-1)-(a.chance??-1))[0]||null;
+    if(!best)return {key:'assistantEmpty',vars:{n:snapshot.settings.windowMinutes}};
+    return {key:'assistantBest',vars:{band:best.band,score:best.chance??'—',reports:best.reports,pairs:best.pairs,basisKey:basisKey(best),latest:best.latest}};
   }
 
   const explicit=questionBand(question);
