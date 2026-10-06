@@ -46,7 +46,7 @@
 
 /* v0.2.6 direct band controls, observation window, dark selects and factory reset */
 .controlState{display:none!important}
-.bandButtons,.periodButtons{display:flex;gap:3px;align-items:center;flex-wrap:wrap}
+.bandButtons,.periodButtons{display:flex;gap:3px;align-items:center}.bandButtons{flex-wrap:nowrap;overflow-x:auto;max-width:680px;padding-bottom:2px;scrollbar-width:thin}.periodButtons{flex-wrap:nowrap}
 .bandButtons button,.periodButtons button{padding:6px 8px;min-width:0;border-radius:5px;font-size:10px;line-height:1;white-space:nowrap}
 .bandButtons button.active,.periodButtons button.active{background:#245d50;color:#c8ffec;border-color:#69e1c2;box-shadow:inset 0 0 0 1px #69e1c255}
 .bandButtons button[data-band=""]{padding-inline:10px}
