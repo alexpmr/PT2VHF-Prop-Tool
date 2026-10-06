@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.2.3 — 2026-10-06
+
+- **Mapa de calor** passa a ser a visualização padrão, com intensidade acumulada das evidências e cores preservadas por banda.
+- **Polígonos** permanece como visualização técnica alternativa; a preferência Heatmap/Polígonos é salva nas configurações.
+- O mapa passa a operar exclusivamente em **Minha região**; o botão/modo **Minha estação** foi removido.
+- O painel **Bandas agora** deixa de ser clicável e passa a ser somente informativo. A seleção da banda é feita exclusivamente no seletor superior.
+- Camadas **Confirmada** e **Previsão** continuam independentes no heatmap e no modo Polígonos.
+- O popup de novidades agora sanitiza/converte notas de release em HTML, Markdown ou texto simples para conteúdo seguro e legível, sem exibir tags, atributos internos ou scripts.
+- Notas HTML escapadas também são tratadas antes da exibição.
+- Testes de regressão cobrem o popup de novidades, Heatmap como padrão, persistência da visualização, remoção do modo Minha estação e painel Bandas agora não clicável.
+- Manual, README, Ajuda e traduções nos seis idiomas atualizados.
+
 ## v0.2.2 — 2026-10-06
 
 - A visão padrão passa a ser **Propagação da região**, usando a posição configurada como referência geográfica em vez de depender dos contatos de PT2VHF.
