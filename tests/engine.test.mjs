@@ -64,7 +64,7 @@ test('Regional observations dominate chance and produce confirmed/forecast polyg
   assert.ok(b.chance>=50);assert.equal(b.confirmedZones.length,1);assert.ok(b.predictedZones.length>=1);assert.equal(b.confirmedZones[0].type,'confirmed');assert.equal(b.predictedZones[0].type,'predicted');
 });
 test('Independent observation sources are identified without multiplying the same link pair',()=>{
-  const a=spot('fusion-a',{source:'PSK Reporter'}),b=spot('fusion-b',{source:'WSPR.live',tx:a.tx,rx:a.rx,txPosition:a.txPosition,rxPosition:a.rxPosition,timestamp:a.timestamp});
+  const a=spot('10',{source:'PSK Reporter'}),b=spot('11',{source:'WSPR.live',tx:a.tx,rx:a.rx,txPosition:a.txPosition,rxPosition:a.rxPosition,timestamp:a.timestamp});
   const data=relevantSpots([a,b],settings,'nearby',now),result=evaluateBand(data,'20 m',now,{kp:{value:2},f107:{value:150},bz:{value:1},wind:{value:400},xray:{class:'C1.0'}});
   assert.equal(result.sourceCount,2);assert.equal(result.pairs,1);assert.equal(result.reports,2);assert.equal(result.basis,'fused');
 });
