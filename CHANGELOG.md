@@ -6,7 +6,7 @@
 - PSK Reporter passa a aceitar redirecionamentos HTTPS somente entre destinos autorizados, com limite de redirecionamentos e validação de tamanho/resposta.
 - Nova aba **LOGs** com tráfego TX/RX, fonte, endpoint, status, duração, volume, erros, prévia limitada do payload, filtros, busca, pausa, limpeza e exportação JSONL.
 - LEDs na barra superior: **RX verde** e **TX vermelho**, pulsando somente quando há tráfego real.
-- Navegação reorganizada para **Mapa / LOGs / Configurações / Ajuda / Sobre**.
+- Navegação reorganizada para **Mapa / Configurações / LOGs / Ajuda / Sobre**.
 - Configurações agora identifica as fontes efetivamente utilizadas: PSK Reporter, NOAA SWPC, Natural Earth e GitHub.
 - Atualização automática dos dados do mapa a cada **5 minutos por padrão**, configurável separadamente da verificação de novas versões.
 - Legenda do mapa mostra dinamicamente **direção cardinal, azimute e distância** entre a estação configurada e o ponto sob o cursor.
