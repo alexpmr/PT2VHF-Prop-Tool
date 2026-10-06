@@ -39,6 +39,12 @@
 
 As descrições abaixo preservam os critérios acordados. Esses itens recentes estão implementados; fontes adicionais, modelos físicos, IA generativa, MapLibre, Alexa e demais evoluções continuam no roteiro.
 
+## Correções da próxima versão
+
+- **Popup de novidades:** corrigir a exibição das notas da release quando o GitHub retornar conteúdo em HTML. Atualmente tags como `<h2>`, `<ul>`, `<li>` e `<a>` aparecem literalmente no popup. O aplicativo deve sanitizar o conteúdo e renderizar uma apresentação legível, preservando títulos, listas, parágrafos e links seguros, sem executar HTML arbitrário nem expor atributos internos do GitHub. Quando não for possível renderizar o formato recebido, converter para texto limpo/Markdown antes de exibir.
+- Garantir que o popup de novidades use o resumo da versão do próprio aplicativo quando disponível e não dependa da formatação HTML automática da página de release do GitHub.
+- Adicionar teste de regressão com release notes contendo HTML, Markdown e texto simples, verificando que nenhuma tag/código bruto apareça na interface.
+
 ## Prioridade imediata: validar v0.1 em Windows
 
 - [x] Criar repositório `alexpmr/PT2VHF-Prop-Tool`, publicar código e executar o workflow Windows.
