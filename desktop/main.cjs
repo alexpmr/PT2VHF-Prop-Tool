@@ -28,20 +28,20 @@ function recordTraffic(event){const item={id:++trafficSeq,timestamp:Date.now(),.
 function clearLogs(){trafficLogs=[];emit();return true;}
 async function exportLogs(){const result=await dialog.showSaveDialog(win,{title:'PT2VHF Prop Tool - LOGs',defaultPath:`PT2VHF-Prop-Tool-traffic-${new Date().toISOString().replace(/[:.]/g,'-')}.jsonl`,filters:[{name:'JSON Lines',extensions:['jsonl']},{name:'Text',extensions:['txt']}]});if(result.canceled||!result.filePath)return false;await fs.writeFile(result.filePath,trafficLogs.map(v=>JSON.stringify(v)).join('\n')+'\n','utf8');return true;}
 async function acknowledgeNews(){state.lastSeenVersion=app.getVersion();state.pendingNews=null;state.startupNews=null;await persist();emit();return true;}
-async function refresh(nextScope=scope){
-  if(!['station','nearby'].includes(nextScope))throw Error('Invalid view');scope=nextScope;if(refreshing){emit();return snapshot();}refreshing=true;
+async function refresh(){
+  scope='nearby';if(refreshing){emit();return snapshot();}refreshing=true;
   try{
-    const now=Date.now(),hasPosition=domain.coordinates(state.settings.lat,state.settings.lon),canQuery=hasPosition&&(scope==='nearby'||Boolean(state.settings.callsign));
+    const now=Date.now(),hasPosition=domain.coordinates(state.settings.lat,state.settings.lon),canQuery=hasPosition;
     const dataInterval=Math.max(sources.PSK_INTERVAL,state.settings.dataRefreshMinutes*60000),noaaInterval=Math.max(sources.NOAA_INTERVAL,state.settings.dataRefreshMinutes*60000);
     const rbnInterval=Math.max(sources.RBN_INTERVAL,state.settings.dataRefreshMinutes*60000),duePSK=canQuery&&now-state.attemptPSK>=dataInterval,dueRBN=hasPosition&&now-(state.attemptRBN||0)>=rbnInterval,dueNOAA=now-state.attemptKp>=noaaInterval;
     if(duePSK)state.attemptPSK=now;if(dueRBN)state.attemptRBN=now;if(dueNOAA)state.attemptKp=now;await persist();const work=[];
     if(duePSK){
-      state.status.psk={...state.status.psk,state:'loading'};const querySettings={...state.settings},queryScope=scope,grid=domain.toGrid(querySettings.lat,querySettings.lon);
+      state.status.psk={...state.status.psk,state:'loading'};const querySettings={...state.settings},queryScope='nearby',grid=domain.toGrid(querySettings.lat,querySettings.lon);
       work.push((async()=>{try{
         const spots=await sources.loadPSK({...querySettings,grid},queryScope,undefined,recordTraffic);
         state.spots=domain.mergeSpots(state.spots,spots);
-        state.status.psk={state:'online',updated:Date.now(),count:spots.length,queryScope,detail:queryScope==='nearby'?'Grid '+grid.slice(0,4):querySettings.callsign};
-        recordTraffic({direction:'INFO',source:'PSK Reporter',event:'parsed',detail:`${spots.length} reception reports parsed · ${queryScope==='nearby'?'regional grid '+grid.slice(0,4):'station '+querySettings.callsign}`});
+        state.status.psk={state:'online',updated:Date.now(),count:spots.length,queryScope,detail:'Grid '+grid.slice(0,4)};
+        recordTraffic({direction:'INFO',source:'PSK Reporter',event:'parsed',detail:`${spots.length} reception reports parsed · regional grid ${grid.slice(0,4)}`});
       }catch(e){state.status.psk={...state.status.psk,state:'error',detail:e.message};}})());
     }
     if(dueRBN){
