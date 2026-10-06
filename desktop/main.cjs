@@ -33,16 +33,23 @@ async function refresh(){
   try{
     const now=Date.now(),hasPosition=domain.coordinates(state.settings.lat,state.settings.lon),canQuery=hasPosition;
     const dataInterval=Math.max(sources.PSK_INTERVAL,state.settings.dataRefreshMinutes*60000),noaaInterval=Math.max(sources.NOAA_INTERVAL,state.settings.dataRefreshMinutes*60000);
-    const rbnInterval=Math.max(sources.RBN_INTERVAL,state.settings.dataRefreshMinutes*60000),duePSK=canQuery&&now-state.attemptPSK>=dataInterval,dueRBN=hasPosition&&now-(state.attemptRBN||0)>=rbnInterval,dueNOAA=now-state.attemptKp>=noaaInterval;
+    const rbnInterval=Math.max(sources.RBN_INTERVAL,state.settings.dataRefreshMinutes*60000),grid=canQuery?domain.toGrid(state.settings.lat,state.settings.lon):'',grid4=grid.slice(0,4);
+    const pskPlan=canQuery?sources.pskQueryPlan(state.settings,state.status.psk?.coverage,now,dataInterval,grid4):null;
+    const forceBackfill=Boolean(pskPlan?.mode==='backfill'&&(state.status.psk?.requestedWindowMinutes!==state.settings.windowMinutes||state.status.psk?.requestedGrid!==grid4));
+    const duePSK=canQuery&&(state.attemptPSK===0||now-state.attemptPSK>=dataInterval||forceBackfill),dueRBN=hasPosition&&now-(state.attemptRBN||0)>=rbnInterval,dueNOAA=now-state.attemptKp>=noaaInterval;
     if(duePSK)state.attemptPSK=now;if(dueRBN)state.attemptRBN=now;if(dueNOAA)state.attemptKp=now;await persist();const work=[];
     if(duePSK){
-      state.status.psk={...state.status.psk,state:'loading'};const querySettings={...state.settings},queryScope='nearby',grid=domain.toGrid(querySettings.lat,querySettings.lon);
+      const querySettings={...state.settings},queryScope='nearby',plan=sources.pskQueryPlan(querySettings,state.status.psk?.coverage,now,dataInterval,grid4);
+      state.status.psk={...state.status.psk,state:'loading',requestedWindowMinutes:querySettings.windowMinutes,requestedGrid:grid4};
       work.push((async()=>{try{
-        const spots=await sources.loadPSK({...querySettings,grid},queryScope,undefined,recordTraffic);
+        const spots=await sources.loadPSK({...querySettings,grid},queryScope,plan.seconds,undefined,recordTraffic);
         state.spots=domain.mergeSpots(state.spots,spots);
-        state.status.psk={state:'online',updated:Date.now(),count:spots.length,queryScope,detail:'Grid '+grid.slice(0,4)};
-        recordTraffic({direction:'INFO',source:'PSK Reporter',event:'parsed',detail:`${spots.length} reception reports parsed · regional grid ${grid.slice(0,4)}`});
-      }catch(e){state.status.psk={...state.status.psk,state:'error',detail:e.message};}})());
+        const truncated=spots.length>=sources.PSK_REPORT_LIMIT,previous=state.status.psk?.coverage;
+        const coverage={grid:grid4,windowMinutes:querySettings.windowMinutes,from:plan.mode==='incremental'&&previous?.grid===grid4?Math.min(previous.from,plan.from):plan.from,to:Date.now(),complete:!truncated,requestedSeconds:plan.seconds};
+        const coverageText=`${plan.mode==='backfill'?'carga retroativa':'incremental'} ${Math.round(plan.seconds/60)} min${truncated?' · limite '+sources.PSK_REPORT_LIMIT+' atingido':''}`;
+        state.status.psk={state:'online',updated:Date.now(),count:spots.length,queryScope,detail:`Grid ${grid4} · ${coverageText}`,coverage,requestedWindowMinutes:querySettings.windowMinutes,requestedGrid:grid4};
+        recordTraffic({direction:'INFO',source:'PSK Reporter',event:plan.mode==='backfill'?'backfill':'parsed',detail:`${spots.length} reception reports parsed · regional grid ${grid4} · ${coverageText}`});
+      }catch(e){state.status.psk={...state.status.psk,state:'error',detail:e.message,requestedWindowMinutes:querySettings.windowMinutes,requestedGrid:grid4};}})());
     }
     if(dueRBN){
       state.status.rbn={...state.status.rbn,state:'loading'};
