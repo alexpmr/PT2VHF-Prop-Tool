@@ -1,6 +1,7 @@
 Unicode true
 !include "MUI2.nsh"
 !include "LogicLib.nsh"
+!include "FileFunc.nsh"
 Name "PT2VHF Prop Tool"
 OutFile "${OUTPUT}"
 RequestExecutionLevel user
@@ -18,7 +19,12 @@ VIAddVersionKey /LANG=1046 "LegalCopyright" "Alex Rodrigues, PT2VHF"
     SetOutPath "$PLUGINSDIR\app"
     File /r "${APP_FILES}"
     System::Call 'kernel32::SetEnvironmentVariable(t "PORTABLE_EXECUTABLE_DIR", t "$EXEDIR") i.r0'
-    ExecWait '"$PLUGINSDIR\app\PT2VHF Prop Tool.exe"'
+    System::Call 'kernel32::SetEnvironmentVariable(t "PORTABLE_EXECUTABLE_FILE", t "$EXEPATH") i.r0'
+    System::Call 'kernel32::GetCurrentProcessId() i.r0'
+    System::Call 'kernel32::SetEnvironmentVariable(t "PORTABLE_LAUNCHER_PID", t r0) i.r1'
+    ${GetParameters} $0
+    ExecWait '"$PLUGINSDIR\app\PT2VHF Prop Tool.exe" $0' $1
+    SetErrorLevel $1
     SetOutPath "$TEMP"
     RMDir /r "$PLUGINSDIR\app"
   SectionEnd
@@ -27,14 +33,26 @@ VIAddVersionKey /LANG=1046 "LegalCopyright" "Alex Rodrigues, PT2VHF"
   InstallDirRegKey HKCU "Software\PT2VHF\PropTool" "InstallDir"
   !define MUI_ABORTWARNING
   !define MUI_FINISHPAGE_RUN "$INSTDIR\PT2VHF Prop Tool.exe"
-  !define MUI_FINISHPAGE_RUN_TEXT "Abrir PT2VHF Prop Tool"
   !insertmacro MUI_PAGE_WELCOME
   !insertmacro MUI_PAGE_DIRECTORY
   !insertmacro MUI_PAGE_INSTFILES
   !insertmacro MUI_PAGE_FINISH
   !insertmacro MUI_UNPAGE_CONFIRM
   !insertmacro MUI_UNPAGE_INSTFILES
+  !define MUI_LANGDLL_REGISTRY_ROOT HKCU
+  !define MUI_LANGDLL_REGISTRY_KEY "Software\PT2VHF\PropTool"
+  !define MUI_LANGDLL_REGISTRY_VALUENAME "InstallerLanguage"
   !insertmacro MUI_LANGUAGE "PortugueseBR"
+  !insertmacro MUI_LANGUAGE "English"
+  !insertmacro MUI_LANGUAGE "Spanish"
+  !insertmacro MUI_LANGUAGE "French"
+  !insertmacro MUI_LANGUAGE "German"
+  !insertmacro MUI_LANGUAGE "Italian"
+  Function .onInit
+    IfSilent skipLanguage
+    !insertmacro MUI_LANGDLL_DISPLAY
+    skipLanguage:
+  FunctionEnd
   Section "Aplicativo"
     SetShellVarContext current
     SetOutPath "$INSTDIR"
@@ -54,6 +72,9 @@ VIAddVersionKey /LANG=1046 "LegalCopyright" "Alex Rodrigues, PT2VHF"
   SectionEnd
   Function .onInstSuccess
     IfSilent 0 done
+    ${GetParameters} $0
+    ${GetOptions} $0 "--force-run" $1
+    IfErrors done
     Exec '"$INSTDIR\PT2VHF Prop Tool.exe"'
     done:
   FunctionEnd

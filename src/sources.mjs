@@ -1,4 +1,5 @@
 import {parsePSK} from './domain.mjs';
+import {APP_VERSION} from './version.mjs';
 export const PSK_INTERVAL=300000;
 export const NOAA_INTERVAL=300000;
 export function pskURL(settings,scope) {
@@ -12,7 +13,7 @@ export function pskURL(settings,scope) {
 export async function boundedFetch(url,format='text',fetchImpl=fetch) {
   const host=new URL(url).hostname;
   if(!['retrieve.pskreporter.info','services.swpc.noaa.gov','api.github.com'].includes(host))throw new Error('Fonte não autorizada');
-  const response=await fetchImpl(url,{signal:AbortSignal.timeout(15000),redirect:'error',headers:{'User-Agent':'PT2VHF-Prop-Tool/0.1.0','Accept':format==='json'?'application/json':'application/xml'}});
+  const response=await fetchImpl(url,{signal:AbortSignal.timeout(15000),redirect:'error',headers:{'User-Agent':'PT2VHF-Prop-Tool/'+APP_VERSION,'Accept':format==='json'?'application/json':'application/xml'}});
   if(!response.ok)throw new Error(`HTTP ${response.status}`);
   if(Number(response.headers.get('content-length')||0)>6e6)throw new Error('Resposta excede o limite');
   const reader=response.body.getReader();let size=0;const chunks=[];

@@ -1,13 +1,24 @@
 # Backlog consolidado — PT2VHF Prop Tool
 
+## Entregue na v0.2.0
+
+- Idiomas PT-BR / EN / ES / FR / DE / IT com bandeiras, Ajuda e Sobre traduzidos.
+- Temas claro/escuro, versão junto ao nome, Configurações penúltima e Sobre última.
+- Padrões: 14 bandas com 11 m, antenas verticais, 100 W e verificação de versões a cada 5 minutos; preferências existentes preservadas.
+- Aviso discreto sem cobrir o mapa após configurar a estação.
+- Atualização instalada e portátil com integridade, reinício e recuperação do portátil.
+- README com downloads diretos; manual PDF com telas.
+
+As descrições abaixo preservam os critérios acordados. Esses itens recentes estão implementados; fontes adicionais, modelos físicos, IA generativa, MapLibre, Alexa e demais evoluções continuam no roteiro.
+
 ## Prioridade imediata: validar v0.1 em Windows
 
-- Criar repositório `alexpmr/PT2VHF-Prop-Tool`, publicar código e executar o workflow Windows.
+- [x] Criar repositório `alexpmr/PT2VHF-Prop-Tool`, publicar código e executar o workflow Windows.
 - Testar instalador, desinstalação, preservação de configurações e portátil em pasta gravável/USB.
 - Confirmar consultas reais do indicativo PT2VHF e de seu Grid; verificar ausência de registros, limite de consulta e recuperação após erro/429.
 - Validar localização automática, precisão e recusa da permissão.
 - Testar alertas com transmissões realmente recebidas, diferentes receptores e múltiplos ciclos de atualização.
-- Validar atualização instalada e portátil v0.1 → próxima versão, notas, checksum, cancelamento, preservação de dados e reinício. Implementar o fluxo automático do portátil descrito em Navegação, Sobre e atualização; na v0.1.0 o download ainda é manual.
+- Validar atualização instalada e portátil v0.1 → próxima versão, notas, checksum, cancelamento, preservação de dados e reinício. O fluxo automático está implementado a partir da v0.2.0; na v0.1.0 o portátil ainda exige download manual.
 - Assinatura Authenticode e ícone próprio.
 - Escolher licença de distribuição.
 
@@ -25,7 +36,7 @@
 - A aba `Sobre` deve apresentar uma breve descrição da aplicação, finalidade, recursos e limitações da versão, autoria `Alex, PT2VHF`, link do projeto e formas de contato fornecidas pelo autor. Traduzir seu conteúdo nos seis idiomas previstos.
 - Na mesma barra, exibir um botão de atualização separado do número da versão exibido após o nome da aplicação. Usar `Última versão` em verde quando uma checagem bem-sucedida confirmar que a versão atual é a mais recente, ou `Nova versão disponível` em laranja piscando quando houver uma versão mais nova. Não apresentar falha de consulta como confirmação de versão atualizada.
 - Ao clicar em `Nova versão disponível`, iniciar o download e a atualização pelo aplicativo, reproduzindo o fluxo solicitado do PT2VHF APRS Client: informar a versão de destino e as novidades, mostrar andamento, validar integridade, atualizar e reiniciar preservando configurações e dados. Impedir downloads concorrentes e informar erros com possibilidade de nova tentativa. O botão verde pode verificar novamente a disponibilidade.
-- Prever esse fluxo para Windows instalado e portátil. Para o portátil, implementar substituição segura do executável após encerrar o processo, preservando a pasta de dados e permitindo recuperar a versão anterior em caso de falha. O mecanismo atual de download manual do portátil deverá ser substituído quando esse recurso for implementado e validado.
+- Prever esse fluxo para Windows instalado e portátil. Para o portátil, implementar substituição segura do executável após encerrar o processo, preservando a pasta de dados e permitindo recuperar a versão anterior em caso de falha. Implementado na v0.2.0; o mecanismo de download manual permanece apenas na v0.1.0.
 
 ## Motor e novas fontes
 

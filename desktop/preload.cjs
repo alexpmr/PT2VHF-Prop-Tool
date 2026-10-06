@@ -7,5 +7,6 @@ contextBridge.exposeInMainWorld('propTool',{
   downloadUpdate:()=>ipcRenderer.invoke('download-update'),
   installUpdate:()=>ipcRenderer.invoke('install-update'),
   openReleases:()=>ipcRenderer.invoke('open-releases'),
+  openLink:target=>ipcRenderer.invoke('open-link',target),
   subscribe:callback=>{const handler=(_,payload)=>callback(payload);ipcRenderer.on('state',handler);return ()=>ipcRenderer.removeListener('state',handler);}
 });

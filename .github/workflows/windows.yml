@@ -49,10 +49,17 @@ jobs:
         run: npm run dist:win
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - name: Validate installed and portable packages
+        shell: pwsh
+        run: ./scripts/smoke-windows.ps1
+      - name: Include illustrated PDF manual
+        shell: pwsh
+        run: |
+          Copy-Item docs/PT2VHF-Prop-Tool-*-Manual.pdf dist/
       - name: Generate SHA-256 sums
         shell: pwsh
         run: |
-          Get-ChildItem dist -File | Where-Object { $_.Extension -in '.exe', '.yml', '.blockmap' } | ForEach-Object {
+          Get-ChildItem dist -File | Where-Object { $_.Extension -in '.exe', '.pdf' -or $_.Name -eq 'latest.yml' } | ForEach-Object {
             $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
             "$hash  $($_.Name)"
           } | Set-Content dist/SHA256SUMS.txt
@@ -61,8 +68,8 @@ jobs:
           name: PT2VHF-Prop-Tool-Windows-x64
           path: |
             dist/*.exe
-            dist/*.yml
-            dist/*.blockmap
+            dist/latest.yml
+            dist/*.pdf
             dist/SHA256SUMS.txt
           if-no-files-found: error
   release:
@@ -90,8 +97,9 @@ jobs:
           test -f "PT2VHF-Prop-Tool-${RELEASE_TAG#v}-x64-setup.exe"
           test -f "PT2VHF-Prop-Tool-${RELEASE_TAG#v}-x64-portable.exe"
           test -f latest.yml
+          test -f "PT2VHF-Prop-Tool-${RELEASE_TAG#v}-Manual.pdf"
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             echo "Release $RELEASE_TAG already exists; build artifacts remain available in Actions."
             exit 0
           fi
-          gh release create "$RELEASE_TAG" ./*.exe latest.yml SHA256SUMS.txt --target "$RELEASE_COMMIT" --title "PT2VHF Prop Tool $RELEASE_TAG" --generate-notes
+          gh release create "$RELEASE_TAG" ./*.exe ./*.pdf latest.yml SHA256SUMS.txt --target "$RELEASE_COMMIT" --title "PT2VHF Prop Tool $RELEASE_TAG" --generate-notes

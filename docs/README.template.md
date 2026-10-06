@@ -1,4 +1,4 @@
-# PT2VHF Prop Tool — v0.2.0
+# PT2VHF Prop Tool — v{{VERSION}}
 
 Aplicativo experimental para Windows 10/11 x64 que reúne evidências de propagação relacionadas à estação, PSK Reporter, Kp da NOAA e mapa offline.
 
@@ -6,17 +6,17 @@ Aplicativo experimental para Windows 10/11 x64 que reúne evidências de propaga
 
 | Arquivo | Download direto |
 | --- | --- |
-| Instalador Windows x64 | [Baixar instalador v0.2.0](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.0/PT2VHF-Prop-Tool-0.2.0-x64-setup.exe) |
-| Portátil Windows x64 | [Baixar portátil v0.2.0](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.0/PT2VHF-Prop-Tool-0.2.0-x64-portable.exe) |
-| Manual ilustrado em PDF | [Baixar manual v0.2.0](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.0/PT2VHF-Prop-Tool-0.2.0-Manual.pdf) |
-| SHA-256 | [Baixar checksums](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.0/SHA256SUMS.txt) |
+| Instalador Windows x64 | [Baixar instalador v{{VERSION}}](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v{{VERSION}}/PT2VHF-Prop-Tool-{{VERSION}}-x64-setup.exe) |
+| Portátil Windows x64 | [Baixar portátil v{{VERSION}}](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v{{VERSION}}/PT2VHF-Prop-Tool-{{VERSION}}-x64-portable.exe) |
+| Manual ilustrado em PDF | [Baixar manual v{{VERSION}}](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v{{VERSION}}/PT2VHF-Prop-Tool-{{VERSION}}-Manual.pdf) |
+| SHA-256 | [Baixar checksums](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v{{VERSION}}/SHA256SUMS.txt) |
 
 [Última release publicada](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/latest) · [Notas da versão](CHANGELOG.md) · [Relatar problema ou sugestão](https://github.com/alexpmr/PT2VHF-Prop-Tool/issues)
 
 ## O que funciona
 
 - Indicativo, coordenadas, Grid Maidenhead e localização automática quando disponível/autorizada no Windows.
-- 14 bandas, de 160 m a 70 cm, incluindo **11 metros**, habilitadas inicialmente com antena **vertical**. Potência inicial **100 W**. Configurações anteriores e valores personalizados são preservados.
+- {{BANDS}} bandas, de 160 m a 70 cm, incluindo **11 metros**, habilitadas inicialmente com antena **vertical**. Potência inicial **100 W**. Configurações anteriores e valores personalizados são preservados.
 - Português, inglês, espanhol, francês, alemão e italiano, com bandeiras SVG, textos da interface, mensagens, assistente e **Ajuda traduzidos**. Idioma e tema claro/escuro ficam salvos.
 - Barra superior com versão após o nome, navegação Mapa / Ajuda / **Configurações** / **Sobre**, apresentação do software e contato pelo GitHub.
 - Consulta PSK Reporter por indicativo ou Grid; intervalo mínimo de cinco minutos, inclusive após reiniciar. Ausência de dados, especialmente em 11 m, não é interpretada como banda fechada.

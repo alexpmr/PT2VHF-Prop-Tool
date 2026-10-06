@@ -1,14 +1,14 @@
 export const BANDS = [
   ['160 m',1.8,2],['80 m',3.5,4],['60 m',5.25,5.45],['40 m',7,7.3],
   ['30 m',10.1,10.15],['20 m',14,14.35],['17 m',18.068,18.168],
-  ['15 m',21,21.45],['12 m',24.89,24.99],['10 m',28,29.7],
+  ['15 m',21,21.45],['12 m',24.89,24.99],['11 m',26.965,27.855],['10 m',28,29.7],
   ['6 m',50,54],['2 m',144,148],['70 cm',430,440]
 ].map(([name,low,high])=>({name,low:low*1e6,high:high*1e6}));
 export const DEFAULT_SETTINGS = {
-  callsign:'',lat:null,lon:null,power:100,antennas:{},
+  callsign:'',lat:null,lon:null,power:100,antennas:Object.fromEntries(BANDS.map(b=>[b.name,{type:'Vertical'}])),
   visible:BANDS.map(b=>b.name),alertBands:[],alertMinScore:65,
   alertMinDistance:800,alertCooldown:30,windowMinutes:30,
-  updateMinutes:60,nearbyRadius:300
+  updateMinutes:5,nearbyRadius:300,language:'pt-BR',theme:'dark'
 };
 export function coordinates(lat,lon) {
   return typeof lat==='number' && typeof lon==='number' && Number.isFinite(lat) && Number.isFinite(lon) && lat>=-90 && lat<=90 && lon>=-180 && lon<=180;
@@ -46,7 +46,7 @@ export function validateSettings(input) {
   s.callsign=String(s.callsign||'').trim().toUpperCase();
   if(s.callsign && !/^[A-Z0-9/]{3,20}$/.test(s.callsign)) throw new Error('Indicativo inválido');
   if((s.lat!==null || s.lon!==null) && !coordinates(s.lat,s.lon)) throw new Error('Informe latitude e longitude válidas');
-  for(const [name,min,max] of [['power',0,10000],['alertMinScore',0,100],['alertMinDistance',0,20040],['alertCooldown',1,1440],['windowMinutes',5,60],['updateMinutes',15,1440],['nearbyRadius',1,500]]) {
+  for(const [name,min,max] of [['power',0,10000],['alertMinScore',0,100],['alertMinDistance',0,20040],['alertCooldown',1,1440],['windowMinutes',5,60],['updateMinutes',5,1440],['nearbyRadius',1,500]]) {
     if(typeof s[name]!=='number' || !Number.isFinite(s[name]) || s[name]<min || s[name]>max) throw new Error(`Valor inválido: ${name}`);
   }
   for(const field of ['visible','alertBands']) {
@@ -54,7 +54,15 @@ export function validateSettings(input) {
     s[field]=[...new Set(s[field])];
   }
   if(!s.antennas || typeof s.antennas!=='object' || Array.isArray(s.antennas)) throw new Error('Antenas inválidas');
+  s.antennas=Object.fromEntries(BANDS.map(b=>[b.name,{type:'Vertical',...s.antennas[b.name]}]));
+  if(!['pt-BR','en','es','fr','de','it'].includes(s.language))throw new Error('Idioma inválido');
+  if(!['dark','light'].includes(s.theme))throw new Error('Tema inválido');
   return s;
+}
+export function migrateSettings(input,schemaVersion=1) {
+  const s={...input,antennas:{...input.antennas}};
+  if(schemaVersion<2&&input.visible?.length===13&&BANDS.filter(b=>b.name!=='11 m').every(b=>input.visible.includes(b.name)))s.visible=[...input.visible,'11 m'];
+  return validateSettings(s);
 }
 function unescapeXML(v) {
   return v.replace(/&(?:amp|lt|gt|quot|apos|#\d+|#x[0-9a-f]+);/gi,m=> {

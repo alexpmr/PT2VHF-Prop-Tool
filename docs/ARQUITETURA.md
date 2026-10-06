@@ -21,3 +21,14 @@ O projeto usa Electron para esta primeira distribuição; o baseline funcional c
 Os dois pacotes são produzidos com NSIS. O portátil extrai em diretório temporário e usa uma pasta de dados ao lado do lançador. O instalador registra apenas no perfil atual e seu desinstalador enumera arquivos próprios. Releases futuras alimentam electron-updater na edição instalada. A atualização entre duas versões ainda requer teste em Windows e publicação remota.
 
 por Alex, PT2VHF
+
+
+## Evolução v0.2.0
+
+- Catálogo compartilhado em `src/i18n.mjs`: seis idiomas, parâmetros de mensagens verificados, bandeiras SVG e localidade para horários.
+- Esquema de estado 2: migração de perfis da v0.1 preserva personalizações e acrescenta 11 m aos perfis que exibiam todas as bandas. Não reativa uma banda desabilitada depois da migração.
+- Escritas de estado serializadas e atômicas; mudanças de idioma/tema não reiniciam a máquina de alertas.
+- Atualização instalada mantém electron-updater, SHA-512 e instalador NSIS. Handoff externo aguarda saída do processo antes de aplicar e exige confirmação de inicialização.
+- Portátil verifica asset do repositório esperado, SHA-256, tamanho e cabeçalho PE. Redirecionamentos ficam limitados aos hosts GitHub previstos. O worker PowerShell espera a aplicação e o lançador encerrarem, mantém backup do lançador e estado, confirma versão do novo renderer e recupera ambos se necessário.
+- Renderer continua sem acesso direto ao sistema de arquivos. Links externos usam destinos fixos no processo principal.
+- O PDF é artefato da release, reproduzido a partir de capturas reais do renderer em prévia local, sem evidências fictícias.

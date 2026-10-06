@@ -1,9 +1,14 @@
 import {execFileSync} from 'node:child_process';
 import {readFileSync,readdirSync} from 'node:fs';
 import {join} from 'node:path';
+import {createHash} from 'node:crypto';
+import {APP_VERSION} from '../src/version.mjs';
 for(const dir of ['desktop','src','ui','scripts','tests'])for(const file of readdirSync(dir))if(/\.(mjs|cjs)$/.test(file))execFileSync(process.execPath,['--check',join(dir,file)],{stdio:'inherit'});
 const land=JSON.parse(readFileSync('ui/land.geojson','utf8'));
 if(land.type!=='FeatureCollection'||land.features.length<100)throw new Error('Mapa inválido');
 const pkg=JSON.parse(readFileSync('package.json','utf8'));
 if(!pkg.build.win.target.includes('nsis')||!pkg.build.win.target.includes('portable'))throw new Error('Targets Windows ausentes');
+if(APP_VERSION!==pkg.version)throw Error('Version metadata mismatch');
+const manual=JSON.parse(readFileSync('docs/manual.json','utf8')),pdf=readFileSync('docs/'+manual.filename);
+if(manual.version!==pkg.version||pdf.subarray(0,4).toString()!=='%PDF'||createHash('sha256').update(pdf).digest('hex')!==manual.sha256)throw Error('Manual missing, corrupt or wrong version');
 console.log('Sintaxe, mapa offline e configuração dos dois pacotes Windows: OK');

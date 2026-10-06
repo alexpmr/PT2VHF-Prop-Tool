@@ -1,55 +1,62 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="dark">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'">
   <title>PT2VHF Prop Tool</title><link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header><div class="brand"><span class="logo">◉</span><div><strong>PT2VHF <span>PROP TOOL</span></strong><small>Propagação a partir da sua estação</small></div></div>
-    <div class="headerActions"><button id="version" title="Verificar atualização">v0.1.0</button><span id="status" class="pill">Aguardando dados</span><button id="settingsButton">⚙ Minha estação</button></div>
+  <header>
+    <div class="topLine"><div class="brand"><span class="logo">◉</span><div><strong>PT2VHF <span>PROP TOOL</span> <span id="appVersion">v0.2.0</span></strong><small data-i18n="subtitle"></small></div></div>
+      <div class="headerActions"><span id="status" class="pill"></span><details id="languageMenu"><summary><img id="languageFlag" src="flags/br.svg" alt=""><span id="currentLanguage">Português (Brasil)</span></summary><div id="languages"></div></details><button id="themeButton"></button></div>
+    </div>
+    <div class="navLine"><nav data-i18n-aria="navigation"><button id="mapTab" data-page="map" data-i18n="map" class="selected"></button><button id="helpTab" data-page="help" data-i18n="help"></button><button id="settingsButton" data-page="settings" data-i18n="settings"></button><button id="aboutTab" data-page="about" data-i18n="about"></button></nav><button id="version" class="updateButton" data-i18n="checkUpdate"></button></div>
   </header>
-  <main>
+  <main id="mapPage">
     <section class="mapPanel">
-      <nav class="mapTools"><div class="segmented"><button id="stationView" class="selected">Minha estação</button><button id="nearbyView">Estações próximas</button></div>
-        <select id="band" aria-label="Banda exibida"><option value="">Todas as bandas</option></select>
-        <select id="period" aria-label="Período"><option value="15">15 minutos</option><option value="30" selected>30 minutos</option><option value="60">1 hora</option></select>
-        <button id="refresh">↻ Atualizar</button><button id="resetMap" title="Visão mundial">◎</button></nav>
-      <div id="mapWrap"><svg id="map" viewBox="0 0 1080 540" aria-label="Mapa-múndi das evidências de propagação" role="img">
-        <rect id="ocean" width="1080" height="540"/><g id="world"><g id="graticule"></g><g id="land"></g><g id="zones"></g><g id="points"></g><g id="home"></g></g>
-      </svg>
-      <div class="mapTitle"><span id="mapCaption">MAPA DE EVIDÊNCIAS</span><strong id="stationLabel">Configure sua estação</strong><small id="viewNotice">Recepções observadas. Não representam garantia de contato.</small></div>
-      <div id="empty"><span>⌁</span><strong>Aguardando evidências</strong><p>Informe indicativo e localização para consultar recepções reais.<br>Sem recepções, o mapa permanece sem zonas.</p><button id="emptyConfigure">Configurar estação</button></div>
-      <div class="legend"><span class="dot observed"></span> Observado <span class="dot measured"></span> Medido <span class="dot predicted"></span> Previsto — em desenvolvimento</div>
-      <div class="zoom"><button id="zoomIn" aria-label="Aproximar mapa">+</button><button id="zoomOut" aria-label="Afastar mapa">−</button></div>
+      <nav class="mapTools"><div class="segmented"><button id="stationView" class="selected" data-i18n="station"></button><button id="nearbyView" data-i18n="nearby"></button></div>
+        <select id="band" data-i18n-aria="allBands"><option value="" data-i18n="allBands"></option></select>
+        <select id="period" data-i18n-aria="minutes"><option value="15"></option><option value="30" selected></option><option value="60" data-i18n="hour"></option></select>
+        <button id="refresh" data-i18n="refresh"></button><button id="resetMap" data-i18n-title="world">◎</button></nav>
+      <div id="mapWrap"><svg id="map" viewBox="0 0 1080 540" data-i18n-aria="mapCaption" role="img"><rect id="ocean" width="1080" height="540"/><g id="world"><g id="graticule"></g><g id="land"></g><g id="zones"></g><g id="points"></g><g id="home"></g></g></svg>
+        <div class="mapTitle"><span data-i18n="mapCaption"></span><strong id="stationLabel"></strong><small id="viewNotice"></small></div>
+        <div id="empty"><span>⌁</span><strong id="emptyTitle"></strong><p data-i18n="setupBody"></p><button id="emptyConfigure" data-i18n="configure"></button></div>
+        <div id="mapNotice" class="hidden" role="status"></div>
+        <div class="legend"><span class="dot observed"></span><span data-i18n="observed"></span><span class="dot measured"></span><span data-i18n="measured"></span><span class="dot predicted"></span><span data-i18n="predicted"></span></div>
+        <div class="zoom"><button id="zoomIn" data-i18n-aria="zoomIn">+</button><button id="zoomOut" data-i18n-aria="zoomOut">−</button></div>
       </div>
-      <div class="mapFoot"><span id="evidenceCount">0 recepções • 0 zonas</span><span id="freshness">PSK Reporter: aguardando</span></div>
+      <div class="mapFoot"><span id="evidenceCount"></span><span id="freshness"></span></div>
     </section>
-    <aside><div class="panelTitle"><div><small>MONITORAMENTO</small><h1>Bandas agora</h1></div><span id="bandCount" class="pill">13 bandas</span></div>
-      <div class="scoreNote">Índice de evidências 0–100.<br>Sem calibração como probabilidade de contato.</div><div id="bands"></div>
-      <div class="solar"><small>CLIMA ESPACIAL · NOAA</small><div><strong>Kp <span id="kp">—</span></strong><span id="kpState">Aguardando</span></div><p id="kpTime">Medição com horário próprio, independente dos spots.</p></div>
+    <aside><div class="panelTitle"><div><small data-i18n="monitoring"></small><h1 data-i18n="bandsNow"></h1></div><span id="bandCount" class="pill"></span></div>
+      <div class="scoreNote" data-i18n="scoreNote"></div><div id="bands"></div>
+      <div class="solar"><small data-i18n="space"></small><div><strong>Kp <span id="kp">—</span></strong><span id="kpState"></span></div><p id="kpTime"></p></div>
     </aside>
-    <section class="assistant"><div class="assistantHead"><strong>✦ Assistente de propagação</strong><span>Análise local · IA generativa prevista</span></div>
-      <div id="conversation" aria-live="polite"><p class="assistantMessage">Consulte as evidências da sua estação. As respostas desta versão são produzidas por regras locais, com os dados disponíveis.</p></div>
-      <form id="chat"><input id="question" placeholder="Qual banda tem mais evidências agora?" aria-label="Pergunta sobre propagação" maxlength="500"><button>Consultar ↗</button></form>
+    <section class="assistant"><div class="assistantHead"><strong data-i18n="assistant"></strong><span data-i18n="localRules"></span></div><div id="conversation" aria-live="polite"></div>
+      <form id="chat"><input id="question" data-i18n-placeholder="question" data-i18n-aria="question" maxlength="500"><button data-i18n="ask"></button></form>
     </section>
   </main>
-  <dialog id="settings"><form id="configForm"><div class="dialogHead"><div><small>CONFIGURAÇÃO</small><h2>Minha estação</h2></div><button type="button" id="closeSettings">✕</button></div>
-    <div class="fields"><label>Indicativo<input id="callsign" maxlength="20" placeholder="PT2VHF"></label><label>Potência máxima (W)<input id="power" type="number" min="0" max="10000" value="100" required></label>
-      <label>Latitude<input id="lat" type="number" min="-90" max="90" step="any" required></label><label>Longitude<input id="lon" type="number" min="-180" max="180" step="any" required></label>
-      <label>Grid Locator<input id="grid" placeholder="GH64" maxlength="8"></label><button type="button" id="locate">📍 Preencher automaticamente</button></div>
-    <p class="help">A localização do Windows pode ser aproximada. Confira a posição da antena. Digitar um Grid usa o centro da célula.</p>
-    <h3>Bandas e antenas</h3><p class="help">Todas aparecem por padrão. Escolha separadamente as bandas que devem gerar alertas.</p>
-    <div id="bandSettings"></div>
-    <details><summary>Critérios de alerta e atualização</summary><div class="fields">
-      <label>Índice mínimo para alertar<input id="alertMinScore" type="number" min="0" max="100" required></label>
-      <label>Distância mínima (km)<input id="alertMinDistance" type="number" min="0" max="20040" required></label>
-      <label>Intervalo entre alertas (min)<input id="alertCooldown" type="number" min="1" max="1440" required></label>
-      <label>Verificar versão a cada (min)<input id="updateMinutes" type="number" min="15" max="1440" required></label></div></details>
-    <p class="help">O alerta inicial exige recepções da sua própria transmissão, múltiplas estações e uma zona sustentada por dados recentes. Antena e potência são registradas; ainda não entram no índice.</p>
-    <div class="dialogFoot"><span id="configError" role="alert"></span><button type="submit">Salvar configuração</button></div>
-  </form></dialog>
-  <dialog id="updateDialog"><div class="dialogHead"><h2>Atualização</h2><button id="closeUpdate">✕</button></div><p id="updateMessage"></p><pre id="releaseNotes"></pre><div class="dialogFoot"><button id="openReleases">Notas e downloads</button><button id="downloadUpdate">Baixar atualização</button><button id="installUpdate">Instalar e reiniciar</button></div></dialog>
-  <dialog id="alertDialog"><h2>Evidência de abertura</h2><p id="alertText"></p><div class="dialogFoot"><button id="dismissAlert">Fechar</button><button id="viewAlert">Ver no mapa</button></div></dialog>
+  <section id="helpPage" class="page hidden"><h1 data-i18n="helpTitle"></h1>
+    <article><h2 data-i18n="helpSetupTitle"></h2><p data-i18n="helpSetup"></p></article>
+    <article><h2 data-i18n="helpMapTitle"></h2><p data-i18n="helpMap"></p></article>
+    <article><h2 data-i18n="helpDataTitle"></h2><p data-i18n="helpData"></p></article>
+    <article><h2 data-i18n="helpUpdateTitle"></h2><p data-i18n="helpUpdate"></p></article>
+    <article><h2 data-i18n="helpStorageTitle"></h2><p data-i18n="helpStorage"></p></article>
+    <button id="openManual" data-i18n="manual"></button>
+  </section>
+  <section id="settingsPage" class="page hidden"><form id="configForm"><div class="dialogHead"><div><small data-i18n="settings"></small><h1 data-i18n="settings"></h1></div></div>
+    <div class="fields"><label><span data-i18n="callsign"></span><input id="callsign" maxlength="20" placeholder="PT2VHF" required pattern="[A-Za-z0-9/]{3,20}"></label><label><span data-i18n="power"></span><input id="power" type="number" min="0" max="10000" value="100" required></label>
+      <label><span data-i18n="latitude"></span><input id="lat" type="number" min="-90" max="90" step="any" required></label><label><span data-i18n="longitude"></span><input id="lon" type="number" min="-180" max="180" step="any" required></label>
+      <label><span data-i18n="grid"></span><input id="grid" placeholder="GH64" maxlength="8"></label><button type="button" id="locate" data-i18n="locate"></button></div>
+    <p class="help" data-i18n="locationHelp"></p><h2 data-i18n="antennas"></h2><p class="help" data-i18n="bandsHelp"></p><div id="bandSettings"></div>
+    <details id="criteria"><summary data-i18n="criteria"></summary><div class="fields">
+      <label><span data-i18n="minScore"></span><input id="alertMinScore" type="number" min="0" max="100" required></label>
+      <label><span data-i18n="minDistance"></span><input id="alertMinDistance" type="number" min="0" max="20040" required></label>
+      <label><span data-i18n="cooldown"></span><input id="alertCooldown" type="number" min="1" max="1440" required></label>
+      <label><span data-i18n="updateMinutes"></span><input id="updateMinutes" type="number" min="5" max="1440" required></label></div></details>
+    <p class="help" data-i18n="alertHelp"></p><div class="dialogFoot"><span id="configError" role="alert"></span><button type="submit" data-i18n="save"></button></div>
+  </form></section>
+  <section id="aboutPage" class="page hidden"><h1>PT2VHF Prop Tool <span id="aboutVersion"></span></h1><p data-i18n="aboutText"></p><p data-i18n="author"></p><article><h2 data-i18n="contact"></h2><div class="contactLinks"><button id="openProject" data-i18n="project"></button><button id="openIssues" data-i18n="issues"></button><button id="openProfile" data-i18n="profile"></button></div></article><p class="help" data-i18n="limits"></p><p>PSK Reporter · NOAA SWPC · Natural Earth · Electron · NSIS</p></section>
+  <dialog id="updateDialog"><div class="dialogHead"><h2 data-i18n="update"></h2><button id="closeUpdate" data-i18n="close"></button></div><p id="updateMessage"></p><pre id="releaseNotes"></pre><progress id="updateProgress" max="100" value="0" class="hidden"></progress><div class="dialogFoot"><button id="openReleases" data-i18n="releases"></button><button id="downloadUpdate" data-i18n="download"></button><button id="installUpdate" data-i18n="install"></button></div></dialog>
+  <dialog id="alertDialog"><h2 data-i18n="opening"></h2><p id="alertText"></p><div class="dialogFoot"><button id="dismissAlert" data-i18n="close"></button><button id="viewAlert" data-i18n="viewMap"></button></div></dialog>
   <div id="toast" role="status"></div><script type="module" src="app.mjs"></script>
 </body></html>

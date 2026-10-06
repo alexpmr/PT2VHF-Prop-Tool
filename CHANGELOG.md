@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.2.0 — 2026-10-06
+
+- Seis idiomas com bandeiras SVG e tradução da interface, Ajuda, Sobre, mensagens, alertas e assistente local.
+- Temas claro/escuro persistidos; versão imediatamente após o nome.
+- Configurações como penúltima aba e Sobre como última, com apresentação e contato pelo GitHub.
+- Banda de 11 metros; 14 bandas habilitadas inicialmente, antenas verticais, 100 W e verificação de versões a cada cinco minutos. Migração preserva escolhas anteriores.
+- Estado vazio do mapa corrigido: sem convite repetido de configuração nem bloco central após configurar.
+- Indicador de atualização verde/laranja, download, validação de integridade e reinício. Portable recebe substituição segura e recuperação da versão anterior quando a inicialização não é confirmada.
+- README com downloads diretos e manual ilustrado em PDF.
+- Testes ampliados para migração, traduções, integridade, estados da interface e pacotes nativos Windows.
+
 ## 0.1.0 — 2026-10-06
 
 - Base inicial Windows x64 com instalador e portátil.
