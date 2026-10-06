@@ -38,10 +38,10 @@ async function refresh(nextScope=scope){
 function setupUpdater(){
   if(portable||!app.isPackaged)return;
   const {autoUpdater}=require('electron-updater');updater=autoUpdater;updater.autoDownload=false;updater.autoInstallOnAppQuit=false;updater.allowPrerelease=false;updater.allowDowngrade=false;updater.installDirectory=path.dirname(app.getPath('exe'));
-  updater.on('update-available',info=>{if(versions.compareVersions(info.version,app.getVersion())<=0)return;update={state:'available',version:info.version,notes:typeof info.releaseNotes==='string'?info.releaseNotes:''};emit();});
+  updater.on('update-available',info=>{if(versions.compareVersions(info.version,app.getVersion())<=0)return;const notes=typeof info.releaseNotes==='string'?info.releaseNotes:Array.isArray(info.releaseNotes)?info.releaseNotes.map(v=>typeof v==='string'?v:v?.note||'').filter(Boolean).join('\n'):'';update={state:'available',version:info.version,notes};emit();});
   updater.on('update-not-available',()=>{update={state:'current',version:app.getVersion(),notes:''};emit();});
   updater.on('download-progress',p=>{update={...update,state:'downloading',percent:p.percent};emit();});
-  updater.on('update-downloaded',()=>{pendingFile=updater.installerPath;update={...update,state:'downloaded',percent:100};emit();});
+  updater.on('update-downloaded',event=>{pendingFile=event?.downloadedFile||null;update={...update,state:'downloaded',percent:100};emit();});
   updater.on('error',e=>{update={...update,state:'error',detail:e.message};emit();});
 }
 async function checkUpdate(force=false){
@@ -59,15 +59,17 @@ async function downloadUpdate(){
   try{if(portable){pendingFile=await downloadAsset(asset,path.join(path.dirname(file),'updates'),percent=>{update={...update,percent};emit();});update={...update,state:'downloaded',percent:100};emit();}else if(updater)await updater.downloadUpdate();else throw Error('No updater');}catch(e){update={...update,state:'error',detail:e.message};emit();throw e;}finally{downloadingUpdate=false;}
 }
 async function installUpdate(silent=false){
-  if(update.state!=='downloaded'||!pendingFile)return;
+  if(update.state!=='downloaded')return;
+  if(portable&&!pendingFile)return;
   if(!silent){const r=await dialog.showMessageBox(win,{type:'question',message:t('confirmUpdate'),buttons:[t('cancel'),t('install')],defaultId:0,cancelId:0});if(r.response!==1)return;}
   try{
     state.pendingNews={version:update.version,notes:String(update.notes||'')};await persist();
+    if(!portable&&updater){updater.quitAndInstall(false,true);return;}
     const hash=crypto.createHash('sha256');for await(const chunk of createReadStream(pendingFile))hash.update(chunk);const sha256=hash.digest('hex');
-    const options={Mode:portable?'portable':'installed',Candidate:pendingFile,Sha256:sha256,ExpectedVersion:update.version,StateFile:file};
-    if(portable){if(!process.env.PORTABLE_EXECUTABLE_FILE||!asset||sha256!==asset.sha256)throw Error('Portable launcher metadata missing');options.Original=process.env.PORTABLE_EXECUTABLE_FILE;options.Target=path.join(process.env.PORTABLE_EXECUTABLE_DIR,asset.name);options.LauncherPid=Number(process.env.PORTABLE_LAUNCHER_PID)||0;}
-    else options.InstallDir=path.dirname(app.getPath('exe'));
-    await persist();await launchHandoff(options,path.join(path.dirname(file),'updates'));app.quit();
+    const options={Mode:'portable',Candidate:pendingFile,Sha256:sha256,ExpectedVersion:update.version,StateFile:file};
+    if(!process.env.PORTABLE_EXECUTABLE_FILE||!asset||sha256!==asset.sha256)throw Error('Portable launcher metadata missing');
+    options.Original=process.env.PORTABLE_EXECUTABLE_FILE;options.Target=path.join(process.env.PORTABLE_EXECUTABLE_DIR,asset.name);options.LauncherPid=Number(process.env.PORTABLE_LAUNCHER_PID)||0;
+    await launchHandoff(options,path.join(path.dirname(file),'updates'));app.quit();
   }catch(e){update={...update,state:'error',detail:e.message};emit();throw e;}
 }
 async function runUpdateFlow(){
