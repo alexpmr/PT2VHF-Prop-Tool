@@ -1,5 +1,16 @@
 # Backlog consolidado — PT2VHF Prop Tool
 
+## Entregue na v0.2.1
+
+- Corrigido o fluxo de coleta/atualização que podia deixar a v0.2.0 sem dados visíveis no mapa e no painel lateral.
+- Nova aba **LOGs** com diagnóstico fim a fim: TX/RX, fonte, endpoint, status, duração, volume, erros, prévia limitada do payload, filtros, busca, pausa, limpeza e exportação.
+- LEDs de atividade **RX verde** e **TX vermelho**, acionados somente por tráfego real.
+- Navegação: **Mapa / LOGs / Configurações / Ajuda / Sobre**.
+- Configurações lista PSK Reporter, NOAA SWPC, Natural Earth e GitHub e seus papéis.
+- Refresh dos dados do mapa a cada **5 minutos por padrão**, configurável separadamente da verificação de versão.
+- Mapa exibe **direção/azimute e distância** da estação até o ponto sob o cursor.
+- Redirecionamentos da API PSK Reporter tratados com validação HTTPS, hosts autorizados e limite de saltos.
+
 ## Entregue na v0.2.0
 
 - Idiomas PT-BR / EN / ES / FR / DE / IT com bandeiras, Ajuda e Sobre traduzidos.
