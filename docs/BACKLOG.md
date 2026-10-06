@@ -20,6 +20,7 @@
 
 ## Navegação, Sobre e atualização
 
+- Verificar automaticamente a disponibilidade de novas versões da aplicação a cada `5 minutos` por padrão. Manter o intervalo configurável em `Configurações`, adequar a validação para aceitar 5 minutos e preservar intervalos personalizados salvos pelo usuário. Esse intervalo se refere à atualização do software; consultas às fontes de propagação continuam respeitando seus próprios limites.
 - Na barra superior, renomear o acesso de configuração atualmente chamado `Minha estação` para `Configurações` e organizá-lo como a penúltima aba. A última aba deve ser `Sobre`. Manter os seletores de contexto do mapa como controles independentes da navegação principal.
 - A aba `Sobre` deve apresentar uma breve descrição da aplicação, finalidade, recursos e limitações da versão, autoria `Alex, PT2VHF`, link do projeto e formas de contato fornecidas pelo autor. Traduzir seu conteúdo nos seis idiomas previstos.
 - Na mesma barra, exibir um botão de atualização separado do número da versão exibido após o nome da aplicação. Usar `Última versão` em verde quando uma checagem bem-sucedida confirmar que a versão atual é a mais recente, ou `Nova versão disponível` em laranja piscando quando houver uma versão mais nova. Não apresentar falha de consulta como confirmação de versão atualizada.
