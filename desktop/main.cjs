@@ -75,7 +75,7 @@ function setupUpdater(){
   const {autoUpdater}=require('electron-updater');updater=autoUpdater;updater.autoDownload=false;updater.autoInstallOnAppQuit=false;updater.allowPrerelease=false;updater.allowDowngrade=false;updater.installDirectory=path.dirname(app.getPath('exe'));
   updater.on('update-available',info=>{if(versions.compareVersions(info.version,app.getVersion())<=0)return;const notes=typeof info.releaseNotes==='string'?info.releaseNotes:Array.isArray(info.releaseNotes)?info.releaseNotes.map(v=>typeof v==='string'?v:v?.note||'').filter(Boolean).join('\n'):'';update={state:'available',version:info.version,notes};emit();});
   updater.on('update-not-available',()=>{update={state:'current',version:app.getVersion(),notes:''};emit();});
-  updater.on('download-progress',p=>{update={...update,state:'downloading',percent:p.percent};emit();});
+  updater.on('download-progress',p=>{update={...update,state:'downloading',percent:p.percent,transferred:p.transferred,total:p.total,bytesPerSecond:p.bytesPerSecond};emit();});
   updater.on('update-downloaded',event=>{pendingFile=event?.downloadedFile||null;update={...update,state:'downloaded',percent:100};emit();});
   updater.on('error',e=>{update={...update,state:'error',detail:e.message};emit();});
 }
@@ -90,15 +90,16 @@ async function checkUpdate(force=false){
   }catch(e){update={...update,state:'error',detail:e.message};}finally{checkingUpdate=false;emit();}return update;
 }
 async function downloadUpdate(){
-  if(downloadingUpdate||update.state!=='available')return;downloadingUpdate=true;update={...update,state:'downloading',percent:0};emit();
-  try{if(portable){pendingFile=await downloadAsset(asset,path.join(path.dirname(file),'updates'),percent=>{update={...update,percent};emit();});update={...update,state:'downloaded',percent:100};emit();}else if(updater)await updater.downloadUpdate();else throw Error('No updater');}catch(e){update={...update,state:'error',detail:e.message};emit();throw e;}finally{downloadingUpdate=false;}
+  if(downloadingUpdate||update.state!=='available')return;downloadingUpdate=true;update={...update,state:'downloading',percent:0,transferred:0,total:portable&&asset?asset.size:null,bytesPerSecond:null};emit();
+  try{if(portable){let lastAt=Date.now(),lastBytes=0;pendingFile=await downloadAsset(asset,path.join(path.dirname(file),'updates'),progress=>{const now=Date.now(),elapsed=Math.max(1,now-lastAt),speed=(progress.transferred-lastBytes)*1000/elapsed;lastAt=now;lastBytes=progress.transferred;update={...update,...progress,bytesPerSecond:speed};emit();});update={...update,state:'downloaded',percent:100,transferred:asset.size,total:asset.size,bytesPerSecond:0};emit();}else if(updater)await updater.downloadUpdate();else throw Error('No updater');}catch(e){update={...update,state:'error',detail:e.message};emit();throw e;}finally{downloadingUpdate=false;}
 }
-async function installUpdate(silent=false){
+async function installUpdate(){
   if(update.state!=='downloaded')return;
   if(portable&&!pendingFile)return;
-  if(!silent){const r=await dialog.showMessageBox(win,{type:'question',message:t('confirmUpdate'),buttons:[t('cancel'),t('install')],defaultId:0,cancelId:0});if(r.response!==1)return;}
   try{
+    update={...update,state:'installing',percent:100};emit();
     state.pendingNews={version:update.version,notes:String(update.notes||'')};await persist();
+    await new Promise(resolve=>setTimeout(resolve,180));
     if(!portable&&updater){updater.quitAndInstall(true,true);return;}
     const hash=crypto.createHash('sha256');for await(const chunk of createReadStream(pendingFile))hash.update(chunk);const sha256=hash.digest('hex');
     const options={Mode:'portable',Candidate:pendingFile,Sha256:sha256,ExpectedVersion:update.version,StateFile:file};
@@ -111,7 +112,7 @@ async function runUpdateFlow(){
   const checked=await checkUpdate(true);
   if(checked.state!=='available')return checked;
   await downloadUpdate();
-  if(update.state==='downloaded')await installUpdate(true);
+  if(update.state==='downloaded')await installUpdate();
   return update;
 }
 async function rendererReady(){return win.webContents.executeJavaScript(`new Promise((resolve,reject)=>{const deadline=Date.now()+15000;const poll=setInterval(()=>{if(document.documentElement.dataset.ready==='true'){clearInterval(poll);const bands=document.querySelectorAll('.bandRow').length,land=document.querySelectorAll('#land path').length;if(bands===${state.settings.visible.length}&&document.querySelector('#band').options.length===${domain.BANDS.length+1}&&land>100&&typeof window.propTool.snapshot==='function'&&typeof window.propTool.runUpdateFlow==='function'&&typeof window.propTool.clearLogs==='function')resolve(true);else reject(new Error('Interface, bridge or map failed'));}else if(Date.now()>deadline){clearInterval(poll);reject(new Error('Renderer timeout'));}},100);})`);}
