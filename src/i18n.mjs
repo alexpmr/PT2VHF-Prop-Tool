@@ -923,3 +923,50 @@ const UPDATE_FLOW_MESSAGES_V021={
   }
 };
 for(const [code,extra] of Object.entries(UPDATE_FLOW_MESSAGES_V021))Object.assign(MESSAGES[code],extra);
+
+
+const EXTRA_MESSAGES_V023={
+  "pt-BR":{
+    "nearby":"Minha região","heatmap":"Mapa de calor","polygons":"Polígonos","mapVisualization":"Visualização do mapa",
+    "nearbyNotice":"Propagação observada e estimada a partir da sua região.",
+    "helpMap":"O mapa opera somente a partir da sua região. Selecione a banda exclusivamente no menu superior. Mapa de calor é a visualização padrão e combina densidade/intensidade das evidências; Polígonos permanece como visualização técnica alternativa. Confirmada e Previsão podem ser ligadas ou desligadas separadamente.",
+    "helpData":"Bandas agora é apenas informativo e não altera o filtro do mapa. A seleção da banda fica no menu superior. Grande chance, Boa chance, Possível e Chance baixa são sínteses operacionais; não garantem QSO.",
+    "news023":"• Mapa de calor passa a ser a visualização padrão, com Polígonos como alternativa.\n• O mapa fica exclusivamente em Minha região; a opção Minha estação foi removida.\n• Bandas agora deixa de ser clicável e passa a ser somente informativo.\n• A banda exibida é escolhida apenas no seletor do menu superior.\n• Popup de novidades passa a limpar HTML/Markdown e não exibe mais tags ou atributos brutos do GitHub."
+  },
+  "en":{
+    "nearby":"My region","heatmap":"Heatmap","polygons":"Polygons","mapVisualization":"Map visualization",
+    "nearbyNotice":"Observed and estimated propagation from your region.",
+    "helpMap":"The map operates only from your region. Select the band exclusively from the top menu. Heatmap is the default visualization and combines evidence density/intensity; Polygons remains an alternative technical view. Confirmed and Forecast can be toggled independently.",
+    "helpData":"Bands now is informational only and does not change the map filter. Band selection is done from the top menu. High chance, Good chance, Possible and Low chance are operational summaries; they do not guarantee a QSO.",
+    "news023":"• Heatmap is now the default visualization, with Polygons as an alternative.\n• The map now uses My region only; My station was removed.\n• Bands now is no longer clickable and is informational only.\n• The displayed band is selected only from the top menu.\n• The news popup now cleans HTML/Markdown and no longer exposes raw GitHub tags or attributes."
+  },
+  "es":{
+    "nearby":"Mi región","heatmap":"Mapa de calor","polygons":"Polígonos","mapVisualization":"Visualización del mapa",
+    "nearbyNotice":"Propagación observada y estimada desde su región.",
+    "helpMap":"El mapa funciona únicamente desde su región. Seleccione la banda exclusivamente en el menú superior. El mapa de calor es la vista predeterminada y combina densidad/intensidad de evidencias; Polígonos permanece como vista técnica alternativa. Confirmada y Previsión pueden activarse por separado.",
+    "helpData":"Bandas ahora es solo informativo y no cambia el filtro del mapa. La banda se selecciona desde el menú superior. Gran probabilidad, Buena probabilidad, Posible y Probabilidad baja son resúmenes operativos; no garantizan un QSO.",
+    "news023":"• El mapa de calor pasa a ser la visualización predeterminada, con Polígonos como alternativa.\n• El mapa usa solo Mi región; se eliminó Mi estación.\n• Bandas ahora deja de ser clicable y queda solo informativo.\n• La banda mostrada se selecciona únicamente en el menú superior.\n• El popup de novedades limpia HTML/Markdown y ya no muestra etiquetas o atributos brutos de GitHub."
+  },
+  "fr":{
+    "nearby":"Ma région","heatmap":"Carte de chaleur","polygons":"Polygones","mapVisualization":"Visualisation de la carte",
+    "nearbyNotice":"Propagation observée et estimée depuis votre région.",
+    "helpMap":"La carte fonctionne uniquement depuis votre région. Sélectionnez la bande exclusivement dans le menu supérieur. La carte de chaleur est la vue par défaut et combine densité/intensité des observations ; Polygones reste une vue technique alternative. Confirmée et Prévision peuvent être activées séparément.",
+    "helpData":"Bandes maintenant est uniquement informatif et ne modifie pas le filtre de la carte. La bande se choisit dans le menu supérieur. Grande chance, Bonne chance, Possible et Faible chance sont des synthèses opérationnelles ; elles ne garantissent pas un QSO.",
+    "news023":"• La carte de chaleur devient la vue par défaut, avec Polygones comme alternative.\n• La carte utilise uniquement Ma région ; Ma station a été supprimée.\n• Bandes maintenant n'est plus cliquable et devient uniquement informatif.\n• La bande affichée se choisit seulement dans le menu supérieur.\n• Le popup de nouveautés nettoie le HTML/Markdown et n'affiche plus les balises ou attributs GitHub bruts."
+  },
+  "de":{
+    "nearby":"Meine Region","heatmap":"Heatmap","polygons":"Polygone","mapVisualization":"Kartendarstellung",
+    "nearbyNotice":"Beobachtete und geschätzte Ausbreitung aus Ihrer Region.",
+    "helpMap":"Die Karte arbeitet ausschließlich aus Ihrer Region. Das Band wird nur im oberen Menü gewählt. Heatmap ist die Standarddarstellung und kombiniert Dichte/Intensität der Evidenz; Polygone bleibt als technische Alternative erhalten. Bestätigt und Prognose lassen sich getrennt ein- und ausschalten.",
+    "helpData":"Bänder jetzt ist nur informativ und ändert den Kartenfilter nicht. Die Bandauswahl erfolgt im oberen Menü. Hohe Chance, Gute Chance, Möglich und Geringe Chance sind operative Zusammenfassungen und garantieren kein QSO.",
+    "news023":"• Heatmap ist jetzt die Standarddarstellung; Polygone bleibt als Alternative.\n• Die Karte verwendet nur Meine Region; Meine Station wurde entfernt.\n• Bänder jetzt ist nicht mehr anklickbar und nur noch informativ.\n• Das angezeigte Band wird ausschließlich im oberen Menü gewählt.\n• Das Neuigkeiten-Popup bereinigt HTML/Markdown und zeigt keine rohen GitHub-Tags oder Attribute mehr."
+  },
+  "it":{
+    "nearby":"La mia regione","heatmap":"Mappa di calore","polygons":"Poligoni","mapVisualization":"Visualizzazione mappa",
+    "nearbyNotice":"Propagazione osservata e stimata dalla propria regione.",
+    "helpMap":"La mappa opera esclusivamente dalla propria regione. Selezionare la banda solo dal menu superiore. La mappa di calore è la vista predefinita e combina densità/intensità delle evidenze; Poligoni resta una vista tecnica alternativa. Confermata e Previsione possono essere attivate separatamente.",
+    "helpData":"Bande ora è solo informativo e non modifica il filtro della mappa. La banda viene scelta dal menu superiore. Alta probabilità, Buona probabilità, Possibile e Bassa probabilità sono sintesi operative e non garantiscono un QSO.",
+    "news023":"• La mappa di calore diventa la visualizzazione predefinita, con Poligoni come alternativa.\n• La mappa usa soltanto La mia regione; La mia stazione è stata rimossa.\n• Bande ora non è più cliccabile ed è solo informativo.\n• La banda mostrata viene scelta esclusivamente dal menu superiore.\n• Il popup novità pulisce HTML/Markdown e non mostra più tag o attributi GitHub grezzi."
+  }
+};
+for(const [code,extra] of Object.entries(EXTRA_MESSAGES_V023))Object.assign(MESSAGES[code],extra);
