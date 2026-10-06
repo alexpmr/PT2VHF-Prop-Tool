@@ -16,7 +16,7 @@ VIAddVersionKey /LANG=1046 "LegalCopyright" "Alex Rodrigues, PT2VHF"
   Section
     InitPluginsDir
     SetOutPath "$PLUGINSDIR\app"
-    File /r "${APP_DIR}/*"
+    File /r "${APP_FILES}"
     System::Call 'kernel32::SetEnvironmentVariable(t "PORTABLE_EXECUTABLE_DIR", t "$EXEDIR") i.r0'
     ExecWait '"$PLUGINSDIR\app\PT2VHF Prop Tool.exe"'
     SetOutPath "$TEMP"
@@ -38,7 +38,7 @@ VIAddVersionKey /LANG=1046 "LegalCopyright" "Alex Rodrigues, PT2VHF"
   Section "Aplicativo"
     SetShellVarContext current
     SetOutPath "$INSTDIR"
-    File /r "${APP_DIR}/*"
+    File /r "${APP_FILES}"
     WriteUninstaller "$INSTDIR\Uninstall.exe"
     WriteRegStr HKCU "Software\PT2VHF\PropTool" "InstallDir" "$INSTDIR"
     CreateDirectory "$SMPROGRAMS\PT2VHF Prop Tool"

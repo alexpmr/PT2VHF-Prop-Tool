@@ -22,7 +22,7 @@ const prefix=process.platform==='win32'?'/':'-';
 const artifacts=[];
 for(const target of ['setup','portable']){
   const output=resolve(`dist/PT2VHF-Prop-Tool-${version}-x64-${target}.exe`);
-  const args=[prefix+'V2',prefix+'DVERSION='+version,prefix+'DOUTPUT='+output,prefix+'DAPP_DIR='+appDir,prefix+'DUNINSTALL_INCLUDE='+uninstall];
+  const args=[prefix+'V2',prefix+'DVERSION='+version,prefix+'DOUTPUT='+output,prefix+'DAPP_FILES='+join(appDir,'*'),prefix+'DUNINSTALL_INCLUDE='+uninstall];
   if(target==='portable')args.push(prefix+'DPORTABLE');args.push(script);
   console.log(`Building Windows ${target} with native NSIS compiler…`);
   execFileSync(compiler,args,{stdio:'inherit',env:{...process.env,NSISDIR:nsis}});
