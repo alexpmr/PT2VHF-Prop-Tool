@@ -141,8 +141,8 @@ export function parseWSPR(payload){
     if(!band||band==='11 m'||!Number.isFinite(when)||!tx||!rx)continue;
     const txGrid=String(row.tx_loc||''),rxGrid=String(row.rx_loc||'');
     const txLat=Number(row.tx_lat),txLon=Number(row.tx_lon),rxLat=Number(row.rx_lat),rxLon=Number(row.rx_lon);
-    const txPosition=Number.isFinite(txLat)&&Number.isFinite(txLon)&&Math.abs(txLat)<=90&&Math.abs(txLon)<=180?{lat:txLat,lon:txLon}:fromGrid(txGrid);
-    const rxPosition=Number.isFinite(rxLat)&&Number.isFinite(rxLon)&&Math.abs(rxLat)<=90&&Math.abs(rxLon)<=180?{lat:rxLat,lon:rxLon}:fromGrid(rxGrid);
+    const txPosition=fromGrid(txGrid)||(txGrid&&Number.isFinite(txLat)&&Number.isFinite(txLon)&&Math.abs(txLat)<=90&&Math.abs(txLon)<=180?{lat:txLat,lon:txLon}:null);
+    const rxPosition=fromGrid(rxGrid)||(rxGrid&&Number.isFinite(rxLat)&&Number.isFinite(rxLon)&&Math.abs(rxLat)<=90&&Math.abs(rxLon)<=180?{lat:rxLat,lon:rxLon}:null);
     const snr=Number(row.snr),code=Number(row.code);
     out.push({source:'WSPR.live',evidence:'observed',timestamp:when,frequency,band,tx,rx,txGrid,rxGrid,txPosition,rxPosition,
       mode:Number.isFinite(code)&&code!==1?`WSPR/FST4W (${code})`:'WSPR',snr:Number.isFinite(snr)?snr:null,
