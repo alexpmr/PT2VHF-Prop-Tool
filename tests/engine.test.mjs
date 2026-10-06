@@ -63,6 +63,11 @@ test('Regional observations dominate chance and produce confirmed/forecast polyg
   const b=evaluateBand(data,'20 m',now,{kp:{value:2},f107:{value:150},bz:{value:1},wind:{value:400},xray:{class:'C1.0'}});
   assert.ok(b.chance>=50);assert.equal(b.confirmedZones.length,1);assert.ok(b.predictedZones.length>=1);assert.equal(b.confirmedZones[0].type,'confirmed');assert.equal(b.predictedZones[0].type,'predicted');
 });
+test('Independent observation sources are identified without multiplying the same link pair',()=>{
+  const a=spot('fusion-a',{source:'PSK Reporter'}),b=spot('fusion-b',{source:'WSPR.live',tx:a.tx,rx:a.rx,txPosition:a.txPosition,rxPosition:a.rxPosition,timestamp:a.timestamp});
+  const data=relevantSpots([a,b],settings,'nearby',now),result=evaluateBand(data,'20 m',now,{kp:{value:2},f107:{value:150},bz:{value:1},wind:{value:400},xray:{class:'C1.0'}});
+  assert.equal(result.sourceCount,2);assert.equal(result.pairs,1);assert.equal(result.reports,2);assert.equal(result.basis,'fused');
+});
 test('Opening alerts use confirmed regional propagation rather than requiring own-station TX',()=>{
   const cfg={...settings,alertBands:['20 m'],alertMinScore:60,alertMinDistance:500};
   const high={band:'20 m',chance:85,score:80,confirmedZones:[{pairs:4,maxDistance:9000,lastEvidence:now}]},low={band:'20 m',chance:30,score:25,confirmedZones:[]};
@@ -122,7 +127,7 @@ test('Assistant routes different questions to different answers and respects sel
   ];
   const bands=BANDS.map(b=>evaluateBand(spots,b.name,now,{kp:{value:2},f107:{value:155},bz:{value:1},wind:{value:400},xray:{class:'C1.0'}}));
   const snapshot={settings:{...settings,windowMinutes:30,visible:BANDS.map(b=>b.name)},spots,bands,sourceStatus:{psk:{state:'online'},rbn:{state:'online'},wspr:{state:'online'},noaa:{state:'online'}}};
-  assert.equal(assistantReply('qual a melhor banda agora?',snapshot,'').key,'assistantBest');
+  const best=assistantReply('qual a melhor banda agora?',snapshot,'40 m');assert.equal(best.key,'assistantBest');assert.equal(best.vars.band,'20 m');
   assert.equal(assistantReply('como estão os 20 metros?',snapshot,'').key,'assistantBand');
   assert.equal(assistantReply('qual direção para 20m?',snapshot,'').key,'assistantDirection');
   assert.equal(assistantReply('como estão as fontes?',snapshot,'').key,'assistantSources');
