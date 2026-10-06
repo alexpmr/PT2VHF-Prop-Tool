@@ -27,6 +27,11 @@ jobs:
           npm ci --no-audit --no-fund
       - name: Ensure Electron runtime is downloaded
         run: node node_modules/electron/install.js
+      - name: Capture current UI for manual
+        shell: pwsh
+        run: |
+          $process = Start-Process -FilePath '.\node_modules\electron\dist\electron.exe' -ArgumentList '. --capture-docs' -PassThru -Wait -NoNewWindow
+          if ($process.ExitCode -ne 0) { throw "Documentation screenshot capture failed: $($process.ExitCode)" }
       - name: Generate current illustrated PDF manual
         run: |
           python -m pip install --disable-pip-version-check pillow reportlab pypdf
