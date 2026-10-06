@@ -8,7 +8,7 @@ export const DEFAULT_SETTINGS = {
   callsign:'',lat:null,lon:null,power:100,antennas:Object.fromEntries(BANDS.map(b=>[b.name,{type:'Vertical'}])),
   visible:BANDS.map(b=>b.name),alertBands:[],alertMinScore:65,
   alertMinDistance:800,alertCooldown:30,windowMinutes:30,
-  updateMinutes:5,dataRefreshMinutes:5,nearbyRadius:300,language:'pt-BR',theme:'dark'
+  updateMinutes:30,dataRefreshMinutes:5,nearbyRadius:300,language:'pt-BR',theme:'dark'
 };
 export function coordinates(lat,lon) {
   return typeof lat==='number' && typeof lon==='number' && Number.isFinite(lat) && Number.isFinite(lon) && lat>=-90 && lat<=90 && lon>=-180 && lon<=180;
@@ -62,6 +62,7 @@ export function validateSettings(input) {
 export function migrateSettings(input,schemaVersion=1) {
   const s={...input,antennas:{...input.antennas}};
   if(schemaVersion<2&&input.visible?.length===13&&BANDS.filter(b=>b.name!=='11 m').every(b=>input.visible.includes(b.name)))s.visible=[...input.visible,'11 m'];
+  if(schemaVersion<4&&s.updateMinutes===5)s.updateMinutes=30;
   return validateSettings(s);
 }
 function unescapeXML(v) {
