@@ -31,7 +31,7 @@ test('Release notes sanitize HTML, Markdown and plain text without exposing raw 
  const clean=normalizeReleaseNotes(html);assert.match(clean,/What's Changed/);assert.match(clean,/• Fix by @alexpmr/);assert.match(clean,/https:\/\/github\.com\/alexpmr/);assert.doesNotMatch(clean,/<h2>|data-hovercard|script|alert\(1\)/);
  const markdown=normalizeReleaseNotes('## Novidades\n- **Heatmap** ativo\n[Release](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases)');
  assert.match(markdown,/Novidades/);assert.match(markdown,/• Heatmap ativo/);assert.match(markdown,/Release \(https:\/\/github\.com/);
- assert.equal(normalizeReleaseNotes('Texto simples'),'Texto simples');
+ assert.equal(normalizeReleaseNotes('Texto simples'),'Texto simples');assert.doesNotMatch(normalizeReleaseNotes('&lt;h2&gt;Título&lt;/h2&gt;&lt;li&gt;Item&lt;/li&gt;'),/[<>]/);
 });
 
 const release={tag_name:'v0.3.0',draft:false,prerelease:false,assets:[{name:'PT2VHF-Prop-Tool-0.3.0-x64-portable.exe',state:'uploaded',size:60000000,digest:'sha256:'+'a'.repeat(64),browser_download_url:'https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.3.0/PT2VHF-Prop-Tool-0.3.0-x64-portable.exe'}]};
