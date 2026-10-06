@@ -64,7 +64,7 @@ async function installUpdate(silent=false){
   if(!silent){const r=await dialog.showMessageBox(win,{type:'question',message:t('confirmUpdate'),buttons:[t('cancel'),t('install')],defaultId:0,cancelId:0});if(r.response!==1)return;}
   try{
     state.pendingNews={version:update.version,notes:String(update.notes||'')};await persist();
-    if(!portable&&updater){updater.quitAndInstall(false,true);return;}
+    if(!portable&&updater){updater.quitAndInstall(true,true);return;}
     const hash=crypto.createHash('sha256');for await(const chunk of createReadStream(pendingFile))hash.update(chunk);const sha256=hash.digest('hex');
     const options={Mode:'portable',Candidate:pendingFile,Sha256:sha256,ExpectedVersion:update.version,StateFile:file};
     if(!process.env.PORTABLE_EXECUTABLE_FILE||!asset||sha256!==asset.sha256)throw Error('Portable launcher metadata missing');
