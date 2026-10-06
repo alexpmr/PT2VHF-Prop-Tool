@@ -169,12 +169,19 @@ function render(snap){
   if(snap.startupNews&&newsShownFor!==snap.startupNews.version){newsShownFor=snap.startupNews.version;$('newsVersion').textContent='v'+snap.startupNews.version;const notes=normalizeReleaseNotes(snap.startupNews.notes);$('newsNotes').textContent=notes||t('news023');if(!$('newsDialog').open)$('newsDialog').showModal();}
   if(snap.alert){alertBand=snap.alert.band;$('alertText').textContent=t('alertText',{band:alertBand,n:snap.alert.score});if(!$('alertDialog').open)$('alertDialog').showModal();}
 }
+function formatBytes(value){const n=Number(value);if(!Number.isFinite(n)||n<0)return '';if(n<1024)return n+' B';if(n<1048576)return (n/1024).toFixed(1)+' KB';return (n/1048576).toFixed(n>=104857600?0:1)+' MB';}
 function renderUpdate(u){
-  const key={current:'currentVersion',available:'newVersion',checking:'checking',downloading:'downloading',downloaded:'downloaded',error:'updateError',development:'development'}[u.state]||'checkUpdate';
-  $('version').textContent=t(key,{n:Math.round(u.percent||0)});$('version').classList.toggle('available',u.state==='available');$('version').classList.toggle('current',u.state==='current');$('version').disabled=['checking','downloading'].includes(u.state);
-  $('updateMessage').textContent=t(u.state==='available'?'updateAvailable':key,{version:u.version,n:Math.round(u.percent||0)});
-  $('releaseNotes').textContent=t('noNotes'); // Published release notes are opened in their original language.
-  $('downloadUpdate').classList.toggle('hidden',u.state!=='available');$('installUpdate').classList.toggle('hidden',u.state!=='downloaded');$('updateProgress').classList.toggle('hidden',u.state!=='downloading');$('updateProgress').value=u.percent||0;
+  const key={current:'currentVersion',available:'newVersion',checking:'checking',downloading:'downloading',downloaded:'downloaded',installing:'installingUpdate',error:'updateError',development:'development'}[u.state]||'checkUpdate';
+  const percent=Math.max(0,Math.min(100,Number(u.percent)||0)),busy=updateFlowActive&&['checking','downloading','downloaded','installing'].includes(u.state);
+  $('version').textContent=t(key,{n:Math.round(percent)});$('version').classList.toggle('available',u.state==='available');$('version').classList.toggle('current',u.state==='current');$('version').disabled=['checking','downloading','installing'].includes(u.state);
+  $('updateMessage').textContent=t(u.state==='available'?'updateAvailable':key,{version:u.version,n:Math.round(percent)});
+  $('releaseNotes').textContent=normalizeReleaseNotes(u.notes)||t('noNotes');
+  $('downloadUpdate').classList.add('hidden');$('installUpdate').classList.add('hidden');
+  const progressVisible=updateFlowActive&&['downloading','downloaded','installing'].includes(u.state);$('updateProgress').classList.toggle('hidden',!progressVisible);$('updateProgress').value=u.state==='installing'?100:percent;
+  const parts=[];if(Number.isFinite(u.transferred)&&u.transferred>=0)parts.push(formatBytes(u.transferred)+(Number.isFinite(u.total)&&u.total>0?' / '+formatBytes(u.total):''));if(Number.isFinite(u.bytesPerSecond)&&u.bytesPerSecond>0)parts.push(formatBytes(u.bytesPerSecond)+'/s');
+  $('updateStats').textContent=parts.join(' · ');$('updateStats').classList.toggle('hidden',!progressVisible||!parts.length);
+  $('updateDialog').dataset.busy=String(busy);
+  if(updateFlowActive&&!$('updateDialog').open)$('updateDialog').showModal();
 }
 function toast(key,vars={}){toastKey={key,vars};clearTimeout(toastTimer);$('toast').textContent=t(key,vars);$('toast').style.display='block';toastTimer=setTimeout(()=>{$('toast').style.display='none';toastKey=null;},6000);}
 const antennaTypes=[['Não informada','unspecified'],['Dipolo','dipole'],['Vertical','vertical'],['Yagi',null],['Log-periódica','logPeriodic'],['Loop','loop'],['End Fed',null],['Hexbeam',null],['Cobweb',null],['Discone',null],['Colinear','collinear'],['Outra','other']];
@@ -195,12 +202,21 @@ for(const id of ['showConfirmed','showPredicted'])$(id).onchange=()=>render(curr
 $('band').onchange=()=>render(current);$('mapVisualization').onchange=()=>changePreference('mapView',$('mapVisualization').value);$('period').onchange=async()=>{try{render(await api.configure({...current.settings,windowMinutes:Number($('period').value)}));}catch{toast('appError');}};
 async function refresh(){$('refresh').disabled=true;try{render(await api.refresh());}catch{toast('appError');}finally{$('refresh').disabled=false;}}
 $('refresh').onclick=()=>refresh();
-$('version').onclick=async()=>{try{const u=await api.runUpdateFlow();if(u){current.update=u;renderUpdate(u);}if(u?.state==='current')toast('currentVersion');else if(u?.state==='development')toast('development');else if(u?.state==='error')toast('updateError');}catch{toast('updateError');}};
-$('closeUpdate').onclick=()=>$('updateDialog').close();$('openReleases').onclick=()=>api.openLink('releases');$('downloadUpdate').onclick=()=>api.downloadUpdate().catch(()=>toast('updateError'));$('installUpdate').onclick=()=>api.installUpdate().catch(()=>toast('updateError'));
+$('version').onclick=async()=>{
+  if(updateFlowActive)return;updateFlowActive=true;
+  const checking={...(current.update||{}),state:'checking',percent:0,transferred:0,total:0};renderUpdate(checking);
+  try{
+    const u=await api.runUpdateFlow();if(u){current.update=u;renderUpdate(u);}
+    if(u?.state==='current'){updateFlowActive=false;if($('updateDialog').open)$('updateDialog').close();toast('currentVersion');}
+    else if(u?.state==='development'){updateFlowActive=false;if($('updateDialog').open)$('updateDialog').close();toast('development');}
+    else if(u?.state==='error'){updateFlowActive=false;renderUpdate(u);toast('updateError');}
+  }catch{updateFlowActive=false;renderUpdate({...current.update,state:'error'});toast('updateError');}
+};
+$('closeUpdate').onclick=()=>{if(!updateFlowActive)$('updateDialog').close();};$('openReleases').onclick=()=>api.openLink('releases');$('downloadUpdate').onclick=()=>{};$('installUpdate').onclick=()=>{};
 for(const [id,target] of [['openProject','project'],['openIssues','issues'],['openProfile','profile'],['openManual','manual']])$(id).onclick=()=>api.openLink(target).catch(()=>toast('appError'));
 $('closeNews').onclick=async()=>{try{await api.acknowledgeNews();}finally{$('newsDialog').close();}};
 $('dismissAlert').onclick=()=>$('alertDialog').close();$('viewAlert').onclick=()=>{$('band').value=alertBand;$('alertDialog').close();setPage('map');render(current);};
-$('zoomIn').onclick=()=>zoom(1.4);$('zoomOut').onclick=()=>zoom(1/1.4);$('resetMap').onclick=()=>{scale=1;tx=ty=0;mapTransform();};$('map').addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY<0?1.12:1/1.12);},{passive:false});
+$('zoomIn').onclick=()=>zoom(1.4);$('zoomOut').onclick=()=>zoom(1/1.4);$('resetMap').onclick=()=>{scale=1;tx=ty=0;mapTransform();};window.addEventListener('resize',scheduleMapOverlays);$('map').addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY<0?1.12:1/1.12);},{passive:false});
 function updateCursorReadout(e){
   const info=$('cursorInfo');if(!current||!coordinates(current.settings.lat,current.settings.lon)){info.classList.add('hidden');return;}
   const matrix=$('world').getScreenCTM();if(!matrix){info.classList.add('hidden');return;}const point=$('map').createSVGPoint();point.x=e.clientX;point.y=e.clientY;const p=point.matrixTransform(matrix.inverse());
