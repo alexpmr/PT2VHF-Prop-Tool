@@ -13,7 +13,7 @@ async function downloadAsset(asset,folder,onProgress,fetchImpl=fetch){
     }
     if(!response?.ok||!response.body)throw Error('Update download failed');
     const hash=crypto.createHash('sha256');file=await fs.open(partial,'w',0o600);const reader=response.body.getReader();let received=0,header=Buffer.alloc(0);
-    try{while(true){const {done,value}=await reader.read();if(done)break;received+=value.length;if(received>asset.size||received>700e6)throw Error('Update size exceeded');if(header.length<2)header=Buffer.concat([header,Buffer.from(value)]).subarray(0,2);hash.update(value);await file.write(value);onProgress?.(received/asset.size*100);}}finally{await reader.cancel();}
+    try{while(true){const {done,value}=await reader.read();if(done)break;received+=value.length;if(received>asset.size||received>700e6)throw Error('Update size exceeded');if(header.length<2)header=Buffer.concat([header,Buffer.from(value)]).subarray(0,2);hash.update(value);await file.write(value);onProgress?.({percent:received/asset.size*100,transferred:received,total:asset.size});}}finally{await reader.cancel();}
     await file.close();file=null;
     if(received!==asset.size||header[0]!==0x4d||header[1]!==0x5a||hash.digest('hex')!==asset.sha256)throw Error('Update integrity failed');
     await fs.rename(partial,candidate);return candidate;
