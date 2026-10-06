@@ -11,6 +11,13 @@
 - Assinatura Authenticode e ícone próprio.
 - Escolher licença de distribuição.
 
+## Página do projeto e downloads
+
+- Manter o `README.md` exibido na página inicial do repositório GitHub atualizado com a finalidade do software, recursos disponíveis, fontes de dados, requisitos, instruções de instalação/uso e limitações da versão publicada.
+- Exibir em destaque a versão mais recente e links diretos para baixar o instalador e o portátil do Windows, além do link para a página da release e suas notas.
+- Atualizar a versão e os links a cada publicação, preservando o nome versionado dos executáveis e conferindo que os downloads apontam para os arquivos da release mais recente.
+- Separar os recursos já implementados dos itens planejados; não apresentar funcionalidades do backlog como disponíveis.
+
 ## Motor e novas fontes
 
 - Adapters WSPR, RBN, DX Cluster/HamQTH, GIRO/KC2G e NOAA completo.
