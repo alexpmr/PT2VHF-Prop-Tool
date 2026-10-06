@@ -51,10 +51,13 @@ foreach ($scenario in @('success','rollback')) {
   $manifest = Join-Path $updates 'apply-update.json'
   $expected = if ($scenario -eq 'success') { $version } else { '999.0.0' }
   @{Mode='portable';Candidate=$candidate;Sha256=(Get-FileHash $candidate -Algorithm SHA256).Hash.ToLower();ExpectedVersion=$expected;AppPid=0;LauncherPid=0;Original=$original;Target=$target;StateFile=$stateFile;ReadyFile=(Join-Path $updates 'update-ready.json');Smoke=$true} | ConvertTo-Json | Set-Content -LiteralPath $manifest -Encoding UTF8
+  $env:PROP_SMOKE_LOG = Join-Path $dir 'electron-smoke.log'
   $worker = Run-CheckedProcess "powershell.exe" "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$script`" -Manifest `"$manifest`"" "portable-$scenario" 150
+  Get-Content "$dir/portable-launch.log",$env:PROP_SMOKE_LOG,(Join-Path $updates 'update-result.json') -ErrorAction SilentlyContinue | Write-Host
+  Remove-Item Env:PROP_SMOKE_LOG
   $result = Get-Content (Join-Path $updates 'update-result.json') -Raw | ConvertFrom-Json
   if ($scenario -eq 'success') {
-    if ($worker.ExitCode -ne 0 -or $result.status -ne 'ok' -or -not (Test-Path $target) -or -not (Test-Path "$original.previous")) { throw 'Portable update handoff failed' }
+    if ($worker.ExitCode -ne 0 -or $result.status -ne 'ok' -or -not (Test-Path $target) -or -not (Test-Path "$original.previous")) { throw "Portable update handoff failed: exit=$($worker.ExitCode), result=$($result | ConvertTo-Json -Compress)" }
     $saved = Get-Content $stateFile -Raw | ConvertFrom-Json
     if ($saved.settings.power -ne 50 -or $saved.settings.antennas.'20 m'.type -ne 'Yagi') { throw 'Portable update lost settings' }
     # The native smoke child must complete before the next test uses the single-instance lock.
