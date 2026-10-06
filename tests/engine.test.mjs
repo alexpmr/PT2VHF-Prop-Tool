@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {DEFAULT_SETTINGS,BANDS,toGrid,fromGrid,distance,bearing,validateSettings,parsePSK,relevantSpots,evaluateBand,spaceWeatherScore,mergeSpots,AlertMachine} from '../src/domain.mjs';
-import {parseKp,parseF107,parseSolarWindMag,parseSolarWindSpeed,parseXray,pskURL,boundedFetch} from '../src/sources.mjs';
+import {parseKp,parseF107,parseSolarWindMag,parseSolarWindSpeed,parseXray,parseRBN,pskURL,boundedFetch} from '../src/sources.mjs';
 const now=1800000000000;
 const settings={...DEFAULT_SETTINGS,callsign:'PT2VHF',lat:-15.8,lon:-47.9,nearbyRadius:300};
 function spot(id,overrides={}){
@@ -66,6 +66,11 @@ test('Opening alerts use confirmed regional propagation rather than requiring ow
   const high={band:'20 m',chance:85,score:80,confirmedZones:[{pairs:4,maxDistance:9000,lastEvidence:now}]},low={band:'20 m',chance:30,score:25,confirmedZones:[]};
   const m=new AlertMachine();assert.equal(m.update([high],cfg,now).length,1);assert.equal(m.update([high],cfg,now+60000).length,0);
   m.update([low],cfg,now+31*60000);assert.equal(m.update([{...high,confirmedZones:[{pairs:4,maxDistance:9000,lastEvidence:now+32*60000}]}],cfg,now+32*60000).length,1);
+});
+test('RBN parser maps skimmer spots into the same propagation model',()=>{
+  const rows=parseRBN({spots:[{id:42,timestamp:'2026-10-06T18:30:00Z',spotter:'DL1SKM',spotter_grid:'JO31',callsign:'PY1AAA',grid:'GH64',frequency:14025.3,mode:'CW',snr:18}]});
+  assert.equal(rows.length,1);assert.equal(rows[0].source,'Reverse Beacon Network');assert.equal(rows[0].band,'20 m');assert.equal(rows[0].tx,'PY1AAA');assert.equal(rows[0].rx,'DL1SKM');assert.ok(rows[0].txPosition);assert.ok(rows[0].rxPosition);
+  assert.equal(relevantSpots(rows,settings,'nearby',Date.parse('2026-10-06T18:31:00Z'))[0].origin,'regional-out');
 });
 test('NOAA parsers preserve source timestamps and validated values',()=>{
   const kp=parseKp([['time_tag','Kp'],['2026-10-06 12:00:00.000','3.33']]);assert.equal(kp.value,3.33);
