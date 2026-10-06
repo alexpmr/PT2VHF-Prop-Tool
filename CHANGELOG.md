@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.2.4 — 2026-10-06
+
+- Heatmap refeito como **mapa de densidade multicolor**: azul/ciano/verde representam menor a média concentração e amarelo/laranja/vermelho representam hotspots mais intensos.
+- Removida a composição por círculos SVG borrados; o heatmap agora é desenhado em **camada de tela própria**, recalculada para o viewport atual.
+- O raio/kernel diminui conforme o zoom aumenta, permitindo revelar detalhes locais em vez de ampliar as manchas.
+- A intensidade é normalizada por viewport para reduzir saturação e evitar grandes áreas brancas.
+- Marcador e rótulo da estação foram movidos para overlay em coordenadas de tela, mantendo tamanho visual constante durante zoom e pan.
+- Linhas vetoriais preservam espessura visual com `vector-effect` no modo Polígonos.
+- Atualizador passa a exibir **barra de progresso real**, percentual, bytes baixados/total e velocidade quando disponível.
+- Após download e validação, a aplicação entra em estado de instalação, fecha automaticamente, instala/substitui a nova versão **sem perguntas** e reabre ao final.
+- O fluxo silencioso vale para edição instalada e Portable; falhas preservam a versão atual e mantêm os mecanismos de recuperação existentes.
+- Testes ampliados para gradiente multicolor, kernel dependente do zoom, agregação de densidade, progresso do Portable e tamanho constante do marcador.
+
 ## v0.2.3 — 2026-10-06
 
 - **Mapa de calor** passa a ser a visualização padrão, com intensidade acumulada das evidências e cores preservadas por banda.
