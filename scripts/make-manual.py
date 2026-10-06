@@ -1,5 +1,5 @@
 """Generate the Portuguese illustrated manual from real renderer captures."""
-import json,hashlib
+import json,hashlib,os
 from pathlib import Path
 from io import BytesIO
 from PIL import Image as PILImage
@@ -13,8 +13,13 @@ from reportlab.pdfbase.ttfonts import TTFont
 root=Path(__file__).resolve().parents[1]
 version=json.loads((root/'package.json').read_text())['version']
 out=root/f'docs/PT2VHF-Prop-Tool-{version}-Manual.pdf'
-font='/usr/share/fonts/truetype/dejavu/'
-pdfmetrics.registerFont(TTFont('DV',font+'DejaVuSans.ttf'));pdfmetrics.registerFont(TTFont('DV-Bold',font+'DejaVuSans-Bold.ttf'))
+font_pairs=[
+ (Path('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'),Path('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf')),
+ (Path(os.environ.get('WINDIR','C:/Windows'))/'Fonts'/'arial.ttf',Path(os.environ.get('WINDIR','C:/Windows'))/'Fonts'/'arialbd.ttf')
+]
+regular,bold=next(((r,b) for r,b in font_pairs if r.exists() and b.exists()),(None,None))
+if not regular: raise RuntimeError('Fonte TrueType compatível não encontrada')
+pdfmetrics.registerFont(TTFont('DV',str(regular)));pdfmetrics.registerFont(TTFont('DV-Bold',str(bold)))
 pdfmetrics.registerFontFamily('DV',normal='DV',bold='DV-Bold',italic='DV',boldItalic='DV-Bold')
 styles=getSampleStyleSheet()
 styles.add(ParagraphStyle(name='BodyManual',fontName='DV',fontSize=10,leading=15,textColor=colors.HexColor('#24394b'),spaceAfter=7))
@@ -55,8 +60,9 @@ bullet('Executáveis ainda sem assinatura digital. Confirme a origem pelo reposi
 new('2. Barra superior, idiomas e temas')
 picture('03-mapa-claro.png',maxw=264,maxh=29,crop=(0,0,1440,134))
 bullet('O número da versão aparece logo após PT2VHF Prop Tool e corresponde à versão executada.')
-bullet('Mapa mostra as evidências; Ajuda traz as instruções; Configurações é a penúltima aba; Sobre é a última.')
+bullet('A navegação principal é Mapa, LOGs, Configurações, Ajuda e Sobre. LOGs fica próximo ao mapa para diagnóstico rápido do tráfego.')
 bullet('Escolha Português (Brasil), English, Español, Français, Deutsch ou Italiano. As bandeiras são imagens SVG, compatíveis com o Windows.')
+bullet('Na barra superior, RX verde pulsa quando chegam dados e TX vermelho pulsa quando uma consulta é enviada. Apagados significam ausência de tráfego naquele instante.')
 bullet('O idioma traduz abas, controles, Ajuda, Sobre, validações, estados, alertas e respostas do assistente local. Dados de terceiros, nomes de estações e os textos externos das releases mantêm sua forma original.')
 bullet('O botão de tema alterna claro e escuro. Idioma e tema são salvos automaticamente. Ajustes da estação são salvos pelo botão Salvar configuração.')
 picture('05-idiomas.png',maxw=95,maxh=75,crop=(1030,0,1430,345))
@@ -66,6 +72,9 @@ bullet('Indicativo: informe a estação cujas transmissões e recepções deseja
 bullet('Grid: ao informar GH64, por exemplo, as coordenadas recebem o centro dessa célula. Neste exemplo o centro é aproximado; confira a posição da sua antena.')
 bullet('Preencher automaticamente depende da permissão e disponibilidade da localização do Windows. Caso falhe ou fique impreciso, digite coordenadas ou Grid.')
 bullet('Potência máxima: começa em 100 W e pode ser alterada. Antena e potência são registradas; ainda não alimentam um modelo físico de propagação.')
+p('Fontes de consulta','SubManual')
+bullet('Configurações identifica PSK Reporter para recepções, NOAA SWPC para Kp, Natural Earth para o mapa offline e GitHub para versões/atualizações.')
+bullet('O refresh dos dados do mapa é de 5 minutos por padrão e pode ser alterado. Ele é independente do intervalo de verificação de novas versões.')
 p('Clique em Salvar configuração. O mapa fica livre do convite Configurar estação quando indicativo e posição estão válidos. Um aviso discreto pode continuar mostrando ausência de recepções.','SubManual')
 new('4. Bandas, antenas e critérios')
 picture('02b-bandas.png',maxw=180,maxh=90)
@@ -80,6 +89,7 @@ picture('03-mapa-claro.png',maxw=264,maxh=105,crop=(0,130,1440,762))
 p('Minha estação mostra TX recebido por terceiros e RX pela sua estação. Estações próximas reúne transmissores a até 300 km; isso é evidência regional e não comprova o alcance da sua própria estação.')
 bullet('Escolha banda e período de 15 minutos, 30 minutos ou 1 hora. Clique no painel de bandas para filtrar. Atualizar dados respeita os limites das fontes.')
 bullet('Use a roda ou +/− para zoom, arraste o mapa e use ◎ para retornar à visão mundial. Passe o mouse sobre pontos e zonas para consultar horário, modo, indicativos, distância e azimute.')
+bullet('Ao mover o cursor sobre o mapa, a legenda mostra em tempo real direção cardinal, azimute em graus e distância desde a estação principal configurada até aquele ponto.')
 new('6. Interpretar os dados sem tirar conclusões falsas')
 table([['Indicação','Interpretação correta'],['Sem evidências','Faltam relatórios recentes com localização para a estação, período ou bandas escolhidos. Não equivale a banda fechada.'],['Índice 0–100','Força experimental das evidências disponíveis. Não é probabilidade de contato e ainda não considera antena e potência.'],['Ponto de recepção','Um relatório observado. Não comprova QSO concluído nem contato bidirecional. FT8 não garante SSB ou CW.'],['Zona irregular','Grupo conservador de células observadas de 2°, com ao menos três enlaces e duas células adjacentes. Não confirma propagação em toda a área entre pontos.'],['Kp NOAA','Medição global de atividade geomagnética, com horário próprio. Não confirma abertura local de uma banda.'],['Medido / Previsto','A legenda distingue conceitos. Kp é medido; as camadas preditivas e modelos físicos ainda estão em desenvolvimento.']],[43,221])
 p('O PSK Reporter depende de participantes e modos informados. Relatórios sem localização não entram no mapa. A consulta é limitada a até 3.000 registros e respeita pelo menos cinco minutos, inclusive após reiniciar. Não representa uma amostra completa de toda a atividade mundial.')
@@ -102,7 +112,12 @@ p('Ajuda contém instruções traduzidas nos seis idiomas e um link para este ma
 p('Os botões da aba Sobre abrem o repositório, a área de problemas/sugestões e o perfil do autor. Nenhum contato privado foi presumido ou incluído.')
 p(link('Projeto e downloads',repo)+' • '+link('Relatar problema ou sugerir melhoria',repo+'/issues')+' • '+link('Perfil de Alex Rodrigues', 'https://github.com/alexpmr'))
 p('Ao relatar uma falha, informe versão, edição instalada/portátil, idioma, banda, período, estado da fonte e os passos para reproduzir. Inclua uma captura da tela e o erro, evitando dados privados.')
-new('10. Diagnóstico e preservação de dados')
+new('10. LOGs e diagnóstico')
+p('A aba LOGs registra o tráfego de rede da sessão. TX representa consultas enviadas; RX representa respostas recebidas; INFO registra etapas como redirecionamento validado e parsing. Cada evento pode mostrar fonte, endpoint, status, duração, bytes, erro e uma prévia limitada do payload.')
+bullet('Use filtros de direção e fonte, busca textual, Pausar/Retomar, Limpar e Exportar. A exportação usa JSON Lines para facilitar análise técnica.')
+bullet('Se o mapa não mudar, confirme primeiro se houve TX; depois verifique RX/status e, por fim, eventos de parsing. Isso separa falha de consulta, resposta inválida e ausência real de evidências.')
+p('Os LEDs RX/TX da barra superior usam os mesmos eventos de tráfego registrados no LOG, portanto não são animações decorativas.')
+new('11. Preservação de dados e solução de problemas')
 table([['Problema','O que verificar'],['Estação configurada, sem pontos','Indicativo, posição, período, bandas, participação nos modos digitais e disponibilidade PSK. Aguarde a próxima consulta permitida. O aviso não significa configuração perdida.'],['Localização incorreta','Confira a posição da antena. GPS/Windows podem ser aproximados; Grid usa centro da célula. Prefira coordenadas confiáveis.'],['11 m sem recepções','A banda está disponível no filtro, mas depende de relatórios reais oferecidos pela fonte. A aplicação não cria atividade artificial.'],['Tema/idioma/potência não persistem','Use uma pasta portátil gravável e mantenha data junto do lançador. Salve os campos da estação. Verifique se executou uma cópia em outra pasta.'],['Atualização portátil falhou','Consulte data/updates/update-result.json para o diagnóstico técnico. A recuperação preserva a versão anterior; não apague data. Confira espaço, permissões e arquivos em uso.'],['Dados antigos incompatíveis','O arquivo original é preservado com sufixo .invalid e data/hora. Relate a falha e faça uma cópia de segurança antes de editar o estado.']],[70,194])
 p('Antes de mover uma instalação, editar arquivos ou fazer testes, mantenha uma cópia de state.json e da pasta data do portátil. O histórico local é limitado a 24 horas e 20.000 registros; não substitui um log de contatos.')
 p('Modelos físicos, VOACAP, fontes adicionais, MapLibre, IA generativa e integrações futuras continuam no roteiro de desenvolvimento. Este manual descreve apenas os recursos implementados na v'+version+'.')
