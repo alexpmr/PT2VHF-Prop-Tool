@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {DEFAULT_SETTINGS,BANDS,toGrid,fromGrid,distance,bearing,validateSettings,parsePSK,relevantSpots,evaluateBand,spaceWeatherScore,mergeSpots,AlertMachine} from '../src/domain.mjs';
-import {parseKp,parseF107,parseSolarWindMag,parseSolarWindSpeed,parseXray,parseRBN,pskURL,pskQueryPlan,boundedFetch} from '../src/sources.mjs';
+import {parseKp,parseF107,parseSolarWindMag,parseSolarWindSpeed,parseXray,parseRBN,parseWSPR,wsprURL,pskURL,pskQueryPlan,boundedFetch} from '../src/sources.mjs';
+import {assistantReply} from '../src/assistant.mjs';
 const now=1800000000000;
 const settings={...DEFAULT_SETTINGS,callsign:'PT2VHF',lat:-15.8,lon:-47.9,nearbyRadius:300};
 function spot(id,overrides={}){
@@ -18,8 +19,8 @@ test('Maidenhead round-trip includes Brasília and coordinate extremes',()=>{
 test('Great-circle distance and bearing cross the date line correctly',()=>{
   assert.ok(distance({lat:0,lon:179},{lat:0,lon:-179})<225);assert.ok(Math.abs(bearing({lat:0,lon:0},{lat:1,lon:0}))<.01);
 });
-test('All supported bands shown by default and regional radius remains configurable',()=>{
-  assert.equal(DEFAULT_SETTINGS.visible.length,BANDS.length);assert.equal(DEFAULT_SETTINGS.nearbyRadius,300);assert.equal(DEFAULT_SETTINGS.alertBands.length,0);
+test('All supported bands shown by default, update check defaults to 15 minutes and regional radius remains configurable',()=>{
+  assert.equal(DEFAULT_SETTINGS.visible.length,BANDS.length);assert.equal(DEFAULT_SETTINGS.nearbyRadius,300);assert.equal(DEFAULT_SETTINGS.alertBands.length,0);assert.equal(DEFAULT_SETTINGS.updateMinutes,15);
   assert.throws(()=>validateSettings({...settings,lat:NaN}));assert.throws(()=>validateSettings({...settings,alertBands:['23 cm']}));assert.throws(()=>validateSettings({...settings,windowMinutes:'30'}));
 });
 test('PSK parsing preserves both endpoint positions and mode',()=>{
@@ -48,7 +49,8 @@ test('Space weather contributes conservatively when regional observations are ab
   const quiet={kp:{value:1},f107:{value:180},bz:{value:2},wind:{value:380},xray:{class:'C1.2'}};
   const disturbed={kp:{value:7},f107:{value:180},bz:{value:-12},wind:{value:750},xray:{class:'X2.0'}};
   assert.ok(spaceWeatherScore('10 m',quiet)>spaceWeatherScore('10 m',disturbed));
-  const band=evaluateBand([],'10 m',now,quiet);assert.ok(band.chance>0);assert.equal(band.confirmedZones.length,0);assert.equal(band.predictedZones.length,0);
+  const band=evaluateBand([],'10 m',now,quiet);assert.ok(band.chance>0);assert.equal(band.basis,'estimated');assert.equal(band.confirmedZones.length,0);assert.equal(band.predictedZones.length,0);
+  const eleven=evaluateBand([],'11 m',now,quiet);assert.ok(eleven.chance>0);assert.equal(eleven.basis,'estimated');assert.equal(eleven.reports,0);assert.equal(eleven.confirmedZones.length,0);
 });
 test('Regional observations dominate chance and produce confirmed/forecast polygons',()=>{
   const reports=[
@@ -70,6 +72,13 @@ test('Opening alerts use confirmed regional propagation rather than requiring ow
 test('RBN parser maps skimmer spots into the same propagation model',()=>{
   const rows=parseRBN({spots:[{id:42,timestamp:'2026-10-06T18:30:00Z',spotter:'DL1SKM',spotter_grid:'JO31',callsign:'PY1AAA',grid:'GH64',frequency:14025.3,mode:'CW',snr:18}]});
   assert.equal(rows.length,1);assert.equal(rows[0].source,'Reverse Beacon Network');assert.equal(rows[0].band,'20 m');assert.equal(rows[0].tx,'PY1AAA');assert.equal(rows[0].rx,'DL1SKM');assert.ok(rows[0].txPosition);assert.ok(rows[0].rxPosition);
+  assert.equal(relevantSpots(rows,settings,'nearby',Date.parse('2026-10-06T18:31:00Z'))[0].origin,'regional-out');
+});
+test('WSPR.live URL is bounded by window, grid and supported bands, and parser feeds the regional model',()=>{
+  const url=new URL(wsprURL({...settings,grid:'GH64AA',visible:['20 m','10 m','11 m']},900));const query=decodeURIComponent(url.searchParams.get('query'));
+  assert.equal(url.hostname,'db1.wspr.live');assert.match(query,/INTERVAL 900 SECOND/);assert.match(query,/startsWith\(tx_loc,'GH64'\)/);assert.match(query,/band IN \(14,28\)/);assert.doesNotMatch(query,/27/);
+  const payload={data:[{id:7,time:'2026-10-06 18:30:00',frequency:14095600,tx_sign:'PY1AAA',tx_lat:-15.8,tx_lon:-47.9,tx_loc:'GH64',rx_sign:'DL1ABC',rx_lat:51,rx_lon:7,rx_loc:'JO31',snr:-20,code:1}]};
+  const rows=parseWSPR(payload);assert.equal(rows.length,1);assert.equal(rows[0].source,'WSPR.live');assert.equal(rows[0].band,'20 m');assert.equal(rows[0].mode,'WSPR');
   assert.equal(relevantSpots(rows,settings,'nearby',Date.parse('2026-10-06T18:31:00Z'))[0].origin,'regional-out');
 });
 test('NOAA parsers preserve source timestamps and validated values',()=>{
@@ -104,4 +113,20 @@ test('Fetching follows only authorized redirects and reports TX/RX activity',asy
   const mock=async url=>url.endsWith('/query')?new Response(null,{status:302,headers:{location:'/query/latest'}}):new Response(xml,{status:200,headers:{'content-type':'application/xml'}});
   assert.equal(await boundedFetch('https://retrieve.pskreporter.info/query','text',mock,e=>events.push(e)),xml);assert.deepEqual(events.map(e=>e.direction),['TX','INFO','RX']);
   await assert.rejects(boundedFetch('https://retrieve.pskreporter.info/query','text',async()=>new Response(null,{status:302,headers:{location:'https://evil.example/query'}})));
+});
+
+test('Assistant routes different questions to different answers and respects selected/specific bands',()=>{
+  const spots=[
+    {...spot('1'),bearing:45,distance:1500,origin:'regional-out',endpoint:{lat:1,lon:1}},
+    {...spot('2'),bearing:50,distance:1700,origin:'regional-in',endpoint:{lat:2,lon:2}}
+  ];
+  const bands=BANDS.map(b=>evaluateBand(spots,b.name,now,{kp:{value:2},f107:{value:155},bz:{value:1},wind:{value:400},xray:{class:'C1.0'}}));
+  const snapshot={settings:{...settings,windowMinutes:30,visible:BANDS.map(b=>b.name)},spots,bands,sourceStatus:{psk:{state:'online'},rbn:{state:'online'},wspr:{state:'online'},noaa:{state:'online'}}};
+  assert.equal(assistantReply('qual a melhor banda agora?',snapshot,'').key,'assistantBest');
+  assert.equal(assistantReply('como estão os 20 metros?',snapshot,'').key,'assistantBand');
+  assert.equal(assistantReply('qual direção para 20m?',snapshot,'').key,'assistantDirection');
+  assert.equal(assistantReply('como estão as fontes?',snapshot,'').key,'assistantSources');
+  assert.equal(assistantReply('qual a janela de observação?',snapshot,'').key,'assistantWindow');
+  assert.equal(assistantReply('o que é esse heatmap?',snapshot,'').key,'assistantHeatmap');
+  assert.equal(assistantReply('banana com rádio?',snapshot,'').key,'assistantUnknown');
 });
