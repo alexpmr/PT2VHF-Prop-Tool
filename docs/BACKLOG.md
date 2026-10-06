@@ -1,5 +1,14 @@
 # Backlog consolidado — PT2VHF Prop Tool
 
+## Entregue na v0.2.5
+
+- O seletor de período do mapa passa a ser identificado explicitamente como **Janela de observação**.
+- A primeira consulta do PSK Reporter usa a Janela de observação selecionada como carga retroativa inicial, evitando esperar o Heatmap se formar apenas com dados futuros.
+- Quando a Janela de observação aumenta e o histórico local não cobre o novo período, a aplicação dispara carga retroativa imediata; consultas seguintes usam sobreposição incremental para evitar downloads repetidos.
+- O LOG/status do PSK informa se a consulta foi carga retroativa ou incremental, o período solicitado e quando o limite de reports foi atingido.
+- A banda corrente é exibida em letras grandes laranja logo abaixo do indicativo no mapa; sem filtro, mostra **Todas as bandas** no idioma ativo.
+- Ajuda, manual, traduções e testes atualizados para a nova nomenclatura e comportamento.
+
 ## Entregue na v0.2.4
 
 - Heatmap multicolor por densidade/intensidade, com escala perceptual frio → quente e normalização para evitar saturação em branco.
@@ -102,9 +111,6 @@ As descrições abaixo preservam os critérios acordados. Esses itens recentes e
 
 ## Mapa e operação
 
-- **Mapa — banda corrente em destaque:** exibir, logo abaixo do indicativo da estação no cabeçalho interno do mapa, a **banda atualmente selecionada** em letras grandes e **cor laranja**. Exemplo: `PU2AMR` e, imediatamente abaixo, `20 m`. O texto deve atualizar instantaneamente ao trocar a banda pelo seletor superior. Quando estiver selecionado `Todas as bandas`, exibir `Todas as bandas` (traduzido conforme o idioma) ou uma indicação equivalente, mantendo hierarquia visual clara: indicativo como identificação principal e banda corrente como contexto operacional destacado.
-- **Janela de observação — carga retroativa inicial:** na primeira execução com posição válida, ou quando o histórico local ainda não cobrir a janela selecionada, a consulta inicial às fontes observacionais deve tentar buscar dados retroativos correspondentes à **Janela de observação** configurada, em vez de usar uma janela fixa de 1 hora. Exemplo: 15 min busca aproximadamente 15 min; 30 min busca 30 min; 60 min busca 60 min; se forem adicionadas opções futuras de 2 h, 3 h ou 6 h, tentar buscar o mesmo período quando a fonte suportar. **Objetivo operacional:** evitar que uma estação recém-instalada precise aguardar 15–30 minutos para começar a formar o Heatmap; o aplicativo deve iniciar já com dados recentes anteriores à abertura. Assim, se no futuro a Janela de observação estiver em 3 horas, a primeira carga deve tentar recuperar as 3 horas anteriores, quando a fonte permitir, em vez de permanecer limitada à janela fixa atual de 1 hora. Respeitar limites, paginação, quotas e janelas máximas de cada fonte; quando uma fonte não permitir cobrir todo o período solicitado, usar o máximo disponível e indicar no diagnóstico/LOG a cobertura efetivamente obtida. Evitar repetir download de períodos já presentes no histórico local e deduplicar os reports antes de alimentar o Heatmap e o motor de chance.
-- **Mapa — “Janela de observação”:** identificar explicitamente o seletor de período do mapa como **Janela de observação**. Esse controle define por quanto tempo as evidências recentes entram na análise/Heatmap exibido (atualmente 15, 30 ou 60 minutos). Usar a mesma nomenclatura em Ajuda, manual, tooltips e demais textos da interface para evitar confusão com intervalo de atualização/coleta.
 - Potência padrão de `100 W` na configuração inicial da estação. Manter o valor editável e preservar a potência escolhida pelo usuário entre sessões e atualizações. Esse valor inicial já existe na v0.1.0 e deve ser mantido como requisito.
 - Na configuração inicial, habilitar todas as bandas para monitoramento e exibição, incluindo 11 metros quando adicionada, com antena `Vertical` atribuída a cada banda. Permitir alterar posteriormente o tipo de antena por banda e habilitar/desabilitar bandas. Aplicar esses valores somente na inicialização ou a novos campos sem preferência salva, preservando as escolhas existentes do usuário após reiniciar ou atualizar.
 - Corrigir o estado vazio do mapa relatado na v0.1.0: o bloco `Sem evidências para este filtro` mantém o botão `Configurar estação` após salvar a configuração. Exibir esse convite somente quando a configuração da estação estiver incompleta. Com a estação configurada e sem recepções, substituir o bloco central por uma indicação discreta que não cubra o mapa.
