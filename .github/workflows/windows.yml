@@ -22,6 +22,8 @@ jobs:
         run: |
           git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
           npm ci --no-audit --no-fund
+      - name: Ensure Electron runtime is downloaded
+        run: node node_modules/electron/install.js
       - name: Validate sources and engine
         run: |
           npm run check
