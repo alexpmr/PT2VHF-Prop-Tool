@@ -99,6 +99,7 @@ As descrições abaixo preservam os critérios acordados. Esses itens recentes e
 
 ## Motor e novas fontes
 
+- **11 m — investigar ausência de evidências:** usuário relata que a banda de **11 metros** permanece sem dados no mapa/Heatmap enquanto **10 m e 12 m** apresentam atividade. Verificar fim a fim se isso representa ausência real de reports nas fontes ou falha do aplicativo. Validar faixa de frequência configurada para 11 m, classificação por `bandFor()`, parsing dos reports, consulta regional do PSK Reporter, filtros por banda, retenção/deduplicação, geração do Heatmap e contagem em “Bandas agora”. Confirmar também quais fontes efetivamente oferecem dados de 11 m — especialmente PSK Reporter e RBN — e não apresentar RBN como cobertura válida de 11 m se a fonte não fornecer essa faixa. Quando não houver suporte ou atividade suficiente na fonte, mostrar diagnóstico explícito como **“Sem dados da fonte para 11 m”** em vez de deixar a banda aparentemente inativa sem explicação. Adicionar teste com reports sintéticos/reais em frequência de 11 m para garantir que sejam classificados e exibidos corretamente quando disponíveis.
 - Adapters WSPR independente, DX Cluster/HamQTH, GIRO/KC2G e complementos NOAA (D-RAP, GloTEC/TEC, aurora e demais produtos espaciais).
 - Confirmar acesso, condições de uso, quotas e disponibilidade antes de ativar cada fonte. Não redistribuir mapas DXMaps sem autorização.
 - MUF/foF2, prótons, D-RAP, GloTEC/TEC, aurora e demais camadas espaciais. F10.7, vento solar/Bz e raios X já entram no motor desde a v0.2.2.
