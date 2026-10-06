@@ -112,8 +112,43 @@ jobs:
             echo "A newer main commit exists; preserve artifacts and let its validated build publish."
             exit 0
           fi
-          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            echo "Release $RELEASE_TAG already exists; build artifacts remain available in Actions."
-            exit 0
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            created=false
+            for attempt in 1 2 3 4 5; do
+              echo "Creating release $RELEASE_TAG (attempt $attempt/5)"
+              if gh release create "$RELEASE_TAG" --target "$RELEASE_COMMIT" --title "PT2VHF Prop Tool $RELEASE_TAG" --generate-notes; then
+                created=true
+                break
+              fi
+              sleep $((attempt * 10))
+            done
+            if [ "$created" != "true" ]; then
+              echo "Could not create release after retries."
+              exit 1
+            fi
           fi
-          gh release create "$RELEASE_TAG" ./*.exe ./*.pdf latest.yml SHA256SUMS.txt --target "$RELEASE_COMMIT" --title "PT2VHF Prop Tool $RELEASE_TAG" --generate-notes
+          for asset in ./*.exe ./*.pdf latest.yml SHA256SUMS.txt; do
+            name=$(basename "$asset")
+            if gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name' | grep -Fxq "$name"; then
+              echo "$name already uploaded."
+              continue
+            fi
+            uploaded=false
+            for attempt in 1 2 3 4 5; do
+              echo "Uploading $name (attempt $attempt/5)"
+              if gh release upload "$RELEASE_TAG" "$asset" --clobber; then
+                uploaded=true
+                break
+              fi
+              sleep $((attempt * 10))
+            done
+            if [ "$uploaded" != "true" ]; then
+              echo "Could not upload $name after retries."
+              exit 1
+            fi
+          done
+          for asset in ./*.exe ./*.pdf latest.yml SHA256SUMS.txt; do
+            name=$(basename "$asset")
+            gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name' | grep -Fxq "$name"
+          done
+          echo "Release $RELEASE_TAG published with all validated assets."
