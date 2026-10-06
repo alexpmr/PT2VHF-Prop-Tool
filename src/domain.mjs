@@ -8,7 +8,7 @@ export const DEFAULT_SETTINGS = {
   callsign:'',lat:null,lon:null,power:100,antennas:Object.fromEntries(BANDS.map(b=>[b.name,{type:'Vertical'}])),
   visible:BANDS.map(b=>b.name),alertBands:[],alertMinScore:65,
   alertMinDistance:800,alertCooldown:30,windowMinutes:30,
-  updateMinutes:30,dataRefreshMinutes:5,nearbyRadius:300,language:'pt-BR',theme:'dark'
+  updateMinutes:30,dataRefreshMinutes:5,nearbyRadius:300,mapView:'heatmap',language:'pt-BR',theme:'dark'
 };
 export function coordinates(lat,lon) {
   return typeof lat==='number' && typeof lon==='number' && Number.isFinite(lat) && Number.isFinite(lon) && lat>=-90 && lat<=90 && lon>=-180 && lon<=180;
@@ -58,6 +58,7 @@ export function validateSettings(input) {
   s.antennas=Object.fromEntries(BANDS.map(b=>[b.name,{type:'Vertical',...s.antennas[b.name]}]));
   if(!['pt-BR','en','es','fr','de','it'].includes(s.language))throw new Error('Idioma inválido');
   if(!['dark','light'].includes(s.theme))throw new Error('Tema inválido');
+  if(!['heatmap','polygons'].includes(s.mapView))throw new Error('Visualização do mapa inválida');
   return s;
 }
 export function migrateSettings(input,schemaVersion=1) {

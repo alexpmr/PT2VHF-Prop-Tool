@@ -7,11 +7,12 @@ import {createHash} from 'node:crypto';
 import {BANDS,DEFAULT_SETTINGS,validateSettings,migrateSettings,bandFor,parsePSK} from '../src/domain.mjs';
 import {LANGUAGES,MESSAGES,translate} from '../src/i18n.mjs';
 import {compareVersions,releaseAsset,trustedDownloadURL} from '../src/updates.mjs';
+import {normalizeReleaseNotes} from '../src/release-notes.mjs';
 import updater from '../desktop/portable-update.cjs';
 test('14 bands including 11 m, vertical antennas, 100 W, 5-minute data refresh and 30-minute version check',()=>{
- assert.equal(BANDS.length,14);assert.equal(bandFor(27555000),'11 m');assert.equal(bandFor(28074000),'10 m');assert.equal(DEFAULT_SETTINGS.power,100);assert.equal(DEFAULT_SETTINGS.updateMinutes,30);assert.equal(DEFAULT_SETTINGS.dataRefreshMinutes,5);
+ assert.equal(BANDS.length,14);assert.equal(bandFor(27555000),'11 m');assert.equal(bandFor(28074000),'10 m');assert.equal(DEFAULT_SETTINGS.power,100);assert.equal(DEFAULT_SETTINGS.updateMinutes,30);assert.equal(DEFAULT_SETTINGS.dataRefreshMinutes,5);assert.equal(DEFAULT_SETTINGS.mapView,'heatmap');
  for(const b of BANDS)assert.equal(DEFAULT_SETTINGS.antennas[b.name].type,'Vertical');assert.equal(validateSettings(DEFAULT_SETTINGS).language,'pt-BR');
- assert.throws(()=>validateSettings({...DEFAULT_SETTINGS,updateMinutes:4}));assert.throws(()=>validateSettings({...DEFAULT_SETTINGS,dataRefreshMinutes:4}));assert.throws(()=>validateSettings({...DEFAULT_SETTINGS,language:'xx'}));
+ assert.throws(()=>validateSettings({...DEFAULT_SETTINGS,updateMinutes:4}));assert.throws(()=>validateSettings({...DEFAULT_SETTINGS,dataRefreshMinutes:4}));assert.throws(()=>validateSettings({...DEFAULT_SETTINGS,language:'xx'}));assert.throws(()=>validateSettings({...DEFAULT_SETTINGS,mapView:'tiles'}));
  const xml='<receptionReports><receptionReport senderCallsign="TEST" receiverCallsign="RX" frequency="27555000" flowStartSeconds="1800000000"/></receptionReports>';assert.equal(parsePSK(xml)[0].band,'11 m');
 });
 test('Migration adds 11 m to old all-band profiles, retains custom antennas, power and disabled bands',()=>{
@@ -25,6 +26,14 @@ test('All six catalogs cover the same keys and interpolation parameters, includi
  for(const {code} of LANGUAGES){assert.deepEqual(Object.keys(MESSAGES[code]).sort(),base);for(const key of base){assert.ok(MESSAGES[code][key].trim());const params=v=>[...v.matchAll(/\{\w+\}/g)].map(m=>m[0]).sort();assert.deepEqual(params(MESSAGES[code][key]),params(MESSAGES['pt-BR'][key]),`${code}/${key}`);}assert.ok(translate(code,'helpUpdate').length>150);assert.ok(translate(code,'invalidSettings'));}
  assert.equal(translate('en','minutes',{n:5}),'5 minutes');assert.throws(()=>translate('en','missingKey'));
 });
+test('Release notes sanitize HTML, Markdown and plain text without exposing raw tags',()=>{
+ const html='<h2>What\'s Changed</h2><ul><li>Fix by <a class="user-mention" data-hovercard-type="user" href="https://github.com/alexpmr">@alexpmr</a></li></ul><script>alert(1)</script>';
+ const clean=normalizeReleaseNotes(html);assert.match(clean,/What's Changed/);assert.match(clean,/• Fix by @alexpmr/);assert.match(clean,/https:\/\/github\.com\/alexpmr/);assert.doesNotMatch(clean,/<h2>|data-hovercard|script|alert\(1\)/);
+ const markdown=normalizeReleaseNotes('## Novidades\n- **Heatmap** ativo\n[Release](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases)');
+ assert.match(markdown,/Novidades/);assert.match(markdown,/• Heatmap ativo/);assert.match(markdown,/Release \(https:\/\/github\.com/);
+ assert.equal(normalizeReleaseNotes('Texto simples'),'Texto simples');assert.doesNotMatch(normalizeReleaseNotes('&lt;h2&gt;Título&lt;/h2&gt;&lt;li&gt;Item&lt;/li&gt;'),/[<>]/);
+});
+
 const release={tag_name:'v0.3.0',draft:false,prerelease:false,assets:[{name:'PT2VHF-Prop-Tool-0.3.0-x64-portable.exe',state:'uploaded',size:60000000,digest:'sha256:'+'a'.repeat(64),browser_download_url:'https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.3.0/PT2VHF-Prop-Tool-0.3.0-x64-portable.exe'}]};
 test('Release checking rejects malformed versions, drafts, missing hashes and substituted asset URLs',()=>{
  assert.equal(compareVersions('0.10.0','0.9.9'),1);assert.equal(compareVersions('0.2.0','0.2.0'),0);assert.equal(compareVersions('0.1.0','0.2.0'),-1);assert.throws(()=>compareVersions('oops','0.2.0'));

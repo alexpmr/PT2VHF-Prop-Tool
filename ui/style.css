@@ -15,3 +15,12 @@
 
 .layerToggle{display:flex;align-items:center;gap:5px;cursor:pointer}.layerToggle input{width:12px;height:12px;margin:0}.zoneSample{display:inline-block;width:17px;height:9px;border:1.5px solid var(--accent);border-radius:2px;background:#69e1c24d}.zoneSample.forecast{background:#69e1c21c;border-style:dashed}.solarMetrics{display:grid!important;grid-template-columns:1fr 1fr;gap:5px 10px;margin-top:10px!important;font-size:10px;color:var(--muted)}.solarMetrics span{display:flex;justify-content:space-between;gap:7px}.solarMetrics b{color:#d6e1ef;font-weight:600}
 :root[data-theme=light] .solarMetrics b{color:#24394b}
+
+/* v0.2.3 regional-only heatmap */
+.regionMode{display:inline-flex;align-items:center;padding:8px 11px;border:1px solid var(--border);border-radius:7px;color:var(--accent);font-size:11px;font-weight:600;background:#0b1523}
+.bandRow{cursor:default;user-select:none}.bandRow:hover{background:transparent;border-color:transparent}.bandRow.selected{background:transparent!important;color:inherit!important;border-color:transparent!important}
+.heatBlob{pointer-events:none;mix-blend-mode:screen}
+#heatPredicted .heatBlob{opacity:.78}
+#heatConfirmed .heatBlob{opacity:.92}
+:root[data-theme=light] .regionMode{background:#f7fafc}
+:root[data-theme=light] .heatBlob{mix-blend-mode:multiply}
