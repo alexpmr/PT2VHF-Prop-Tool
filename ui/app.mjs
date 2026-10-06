@@ -2,10 +2,11 @@ import {BANDS,DEFAULT_SETTINGS,validateSettings,toGrid,fromGrid,coordinates,eval
 import {LANGUAGES,translate} from '../src/i18n.mjs';
 import {APP_VERSION} from '../src/version.mjs';
 import {normalizeReleaseNotes} from '../src/release-notes.mjs';
+import {aggregateHeatSamples,heatColor,kernelRadius} from '../src/heatmap.mjs';
 const $=id=>document.getElementById(id),NS='http://www.w3.org/2000/svg';
 const colors=['#bab1dc','#ad9ce5','#738fea','#76a8fa','#6bbee9','#57d3b4','#b0de74','#e4da68','#efbd7a','#ef837a','#dca0f0','#86dbf1','#ecade0','#90cda0'];
 const color=band=>colors[BANDS.findIndex(b=>b.name===band)]||'#6fe2bf';
-let current,alertBand,scale=1,tx=0,ty=0,pointer,page='map',language='pt-BR',toastTimer,toastKey,configErrorKey,logsPaused=false,newsShownFor=null;
+let current,alertBand,scale=1,tx=0,ty=0,pointer,page='map',language='pt-BR',toastTimer,toastKey,configErrorKey,logsPaused=false,newsShownFor=null,heatFrame=0,updateFlowActive=false;
 let lastActivity={rx:0,tx:0},ledTimers={rx:null,tx:null};
 const listeners=[],conversation=[{key:'welcome'}];
 const t=(key,vars)=>translate(language,key,vars);
@@ -23,25 +24,63 @@ const api=window.propTool||{
 function svgNode(name,attrs={},parent){const node=document.createElementNS(NS,name);for(const [k,v] of Object.entries(attrs))node.setAttribute(k,String(v));if(parent)parent.append(node);return node;}
 const project=([lon,lat])=>[(lon+180)*3,(90-lat)*3];
 function ringPath(ring){return ring.map((v,i)=>`${i?'L':'M'}${project(v).join(',')}`).join(' ')+' Z';}
-function heatGradient(band,kind){
-  const id=`heat-${kind}-${BANDS.findIndex(b=>b.name===band)}`;let gradient=document.getElementById(id);
-  if(gradient)return id;
-  let defs=$('heatDefs');if(!defs){defs=svgNode('defs',{id:'heatDefs'});$('map').insertBefore(defs,$('world'));}
-  gradient=svgNode('radialGradient',{id,cx:'50%',cy:'50%',r:'50%'},defs);
-  const peak=kind==='confirmed'?.58:.34,mid=kind==='confirmed'?.25:.15;
-  svgNode('stop',{offset:'0%','stop-color':color(band),'stop-opacity':peak},gradient);
-  svgNode('stop',{offset:'48%','stop-color':color(band),'stop-opacity':mid},gradient);
-  svgNode('stop',{offset:'100%','stop-color':color(band),'stop-opacity':0},gradient);
-  return id;
-}
 function zoneCenters(zone){
   const centers=[];for(const ring of zone.rings||[]){if(!ring?.length)continue;let lon=0,lat=0,n=0;for(const point of ring){if(!Array.isArray(point)||point.length<2)continue;lon+=point[0];lat+=point[1];n++;}if(n)centers.push({lon:lon/n,lat:lat/n});}return centers;
 }
-function heatCircle(group,band,position,kind,intensity=1){
-  const [cx,cy]=project([position.lon,position.lat]),base=kind==='confirmed'?24:42,r=base*(.8+.4*Math.max(0,Math.min(1,intensity)));
-  svgNode('circle',{class:`heatBlob ${kind}`,cx,cy,r,fill:`url(#${heatGradient(band,kind)})`},group);
+function screenPosition(position){
+  if(!position||!$('world'))return null;
+  const [x,y]=project([position.lon,position.lat]),matrix=$('world').getScreenCTM(),rect=$('map').getBoundingClientRect();
+  if(!matrix||!rect.width||!rect.height)return null;
+  const p=$('map').createSVGPoint();p.x=x;p.y=y;const screen=p.matrixTransform(matrix);
+  return {x:screen.x-rect.left,y:screen.y-rect.top,width:rect.width,height:rect.height};
 }
-function mapTransform(){$('world').setAttribute('transform',`translate(${tx} ${ty}) scale(${scale})`);}
+function renderDensityHeatmap(){
+  const canvas=$('heatmapCanvas');if(!canvas||!current)return;
+  const rect=$('map').getBoundingClientRect(),width=Math.max(1,Math.round(rect.width)),height=Math.max(1,Math.round(rect.height));
+  if(canvas.width!==width)canvas.width=width;if(canvas.height!==height)canvas.height=height;
+  const ctx=canvas.getContext('2d');ctx.clearRect(0,0,width,height);
+  if((current.settings.mapView||'heatmap')!=='heatmap')return;
+  const selected=$('band').value,shownBands=new Set(current.bands.filter(b=>current.settings.visible.includes(b.band)&&(!selected||b.band===selected)).map(b=>b.band));
+  const showConfirmed=$('showConfirmed')?.checked!==false,showPredicted=$('showPredicted')?.checked!==false,samples=[];
+  if(showConfirmed)for(const s of current.spots){
+    if(!shownBands.has(s.band)||!s.endpoint)continue;const p=screenPosition(s.endpoint);if(!p)continue;
+    const snr=Number.isFinite(s.snr)?Math.max(-30,Math.min(20,s.snr)): -10;
+    samples.push({x:p.x,y:p.y,weight:.8+(snr+30)/100});
+  }
+  if(showPredicted)for(const b of current.bands){
+    if(!shownBands.has(b.band))continue;const weight=.22+.38*Math.max(0,Math.min(1,(b.chance??0)/100));
+    for(const zone of b.predictedZones||[])for(const center of zoneCenters(zone)){const p=screenPosition(center);if(p)samples.push({x:p.x,y:p.y,weight});}
+  }
+  const radius=kernelRadius(scale),bins=aggregateHeatSamples(samples,Math.max(4,radius*.28));
+  if(!bins.length)return;
+  const density=document.createElement('canvas');density.width=width;density.height=height;
+  const dctx=density.getContext('2d',{willReadFrequently:true});dctx.globalCompositeOperation='lighter';
+  for(const bin of bins){
+    if(bin.x<-radius||bin.y<-radius||bin.x>width+radius||bin.y>height+radius)continue;
+    const strength=Math.min(.92,.08+.12*Math.log2(1+bin.weight));
+    const grad=dctx.createRadialGradient(bin.x,bin.y,0,bin.x,bin.y,radius);
+    grad.addColorStop(0,`rgba(0,0,0,${strength})`);grad.addColorStop(.45,`rgba(0,0,0,${strength*.58})`);grad.addColorStop(1,'rgba(0,0,0,0)');
+    dctx.fillStyle=grad;dctx.fillRect(bin.x-radius,bin.y-radius,radius*2,radius*2);
+  }
+  const src=dctx.getImageData(0,0,width,height),hist=new Uint32Array(256);let active=0;
+  for(let i=3;i<src.data.length;i+=4){const a=src.data[i];if(a){hist[a]++;active++;}}
+  if(!active)return;
+  let cumulative=0,threshold=255,target=active*.985;for(let i=1;i<256;i++){cumulative+=hist[i];if(cumulative>=target){threshold=Math.max(18,i);break;}}
+  const out=ctx.createImageData(width,height);
+  for(let i=0;i<src.data.length;i+=4){
+    const a=src.data[i+3];if(!a)continue;let intensity=Math.min(1,a/threshold);if(intensity<.035)continue;intensity=Math.pow(intensity,.72);
+    const [r,g,b]=heatColor(intensity);out.data[i]=r;out.data[i+1]=g;out.data[i+2]=b;out.data[i+3]=Math.round(35+205*Math.pow(intensity,.78));
+  }
+  ctx.putImageData(out,0,0);
+}
+function updateHomeOverlay(){
+  const home=$('homeOverlay');if(!home||!current||!coordinates(current.settings.lat,current.settings.lon)){if(home)home.style.display='none';return;}
+  const p=screenPosition({lat:current.settings.lat,lon:current.settings.lon});if(!p||p.x<-30||p.y<-30||p.x>p.width+30||p.y>p.height+30){home.style.display='none';return;}
+  home.style.display='flex';home.style.left=p.x+'px';home.style.top=p.y+'px';home.querySelector('span').textContent=current.settings.callsign||'';
+}
+function renderMapOverlays(){renderDensityHeatmap();updateHomeOverlay();}
+function scheduleMapOverlays(){cancelAnimationFrame(heatFrame);heatFrame=requestAnimationFrame(renderMapOverlays);}
+function mapTransform(){$('world').setAttribute('transform',`translate(${tx} ${ty}) scale(${scale})`);scheduleMapOverlays();}
 function zoom(f){const next=Math.max(1,Math.min(6,scale*f));tx=540-(540-tx)*next/scale;ty=270-(270-ty)*next/scale;scale=next;mapTransform();}
 for(let lon=-180;lon<=180;lon+=30)svgNode('path',{d:`M${(lon+180)*3},0 V540`},$('graticule'));
 for(let lat=-60;lat<=60;lat+=30)svgNode('path',{d:`M0,${(90-lat)*3} H1080`},$('graticule'));
