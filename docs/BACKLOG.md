@@ -7,7 +7,7 @@
 - Confirmar consultas reais do indicativo PT2VHF e de seu Grid; verificar ausência de registros, limite de consulta e recuperação após erro/429.
 - Validar localização automática, precisão e recusa da permissão.
 - Testar alertas com transmissões realmente recebidas, diferentes receptores e múltiplos ciclos de atualização.
-- Validar atualização instalada v0.1 → próxima versão, notas, checksum, cancelamento e reinício. Portátil: substituição manual segura; OTA próprio fica pendente.
+- Validar atualização instalada e portátil v0.1 → próxima versão, notas, checksum, cancelamento, preservação de dados e reinício. Implementar o fluxo automático do portátil descrito em Navegação, Sobre e atualização; na v0.1.0 o download ainda é manual.
 - Assinatura Authenticode e ícone próprio.
 - Escolher licença de distribuição.
 
@@ -17,6 +17,14 @@
 - Exibir em destaque a versão mais recente e links diretos para baixar o instalador e o portátil do Windows, além do link para a página da release e suas notas.
 - Atualizar a versão e os links a cada publicação, preservando o nome versionado dos executáveis e conferindo que os downloads apontam para os arquivos da release mais recente.
 - Separar os recursos já implementados dos itens planejados; não apresentar funcionalidades do backlog como disponíveis.
+
+## Navegação, Sobre e atualização
+
+- Na barra superior, renomear o acesso de configuração atualmente chamado `Minha estação` para `Configurações` e organizá-lo como a penúltima aba. A última aba deve ser `Sobre`. Manter os seletores de contexto do mapa como controles independentes da navegação principal.
+- A aba `Sobre` deve apresentar uma breve descrição da aplicação, finalidade, recursos e limitações da versão, autoria `Alex, PT2VHF`, link do projeto e formas de contato fornecidas pelo autor. Traduzir seu conteúdo nos seis idiomas previstos.
+- Na mesma barra, exibir um botão de atualização separado do número da versão exibido após o nome da aplicação. Usar `Última versão` em verde quando uma checagem bem-sucedida confirmar que a versão atual é a mais recente, ou `Nova versão disponível` em laranja piscando quando houver uma versão mais nova. Não apresentar falha de consulta como confirmação de versão atualizada.
+- Ao clicar em `Nova versão disponível`, iniciar o download e a atualização pelo aplicativo, reproduzindo o fluxo solicitado do PT2VHF APRS Client: informar a versão de destino e as novidades, mostrar andamento, validar integridade, atualizar e reiniciar preservando configurações e dados. Impedir downloads concorrentes e informar erros com possibilidade de nova tentativa. O botão verde pode verificar novamente a disponibilidade.
+- Prever esse fluxo para Windows instalado e portátil. Para o portátil, implementar substituição segura do executável após encerrar o processo, preservando a pasta de dados e permitindo recuperar a versão anterior em caso de falha. O mecanismo atual de download manual do portátil deverá ser substituído quando esse recurso for implementado e validado.
 
 ## Motor e novas fontes
 
@@ -32,6 +40,7 @@
 
 ## Mapa e operação
 
+- Na configuração inicial, habilitar todas as bandas para monitoramento e exibição, incluindo 11 metros quando adicionada, com antena `Vertical` atribuída a cada banda. Permitir alterar posteriormente o tipo de antena por banda e habilitar/desabilitar bandas. Aplicar esses valores somente na inicialização ou a novos campos sem preferência salva, preservando as escolhas existentes do usuário após reiniciar ou atualizar.
 - Corrigir o estado vazio do mapa relatado na v0.1.0: o bloco `Sem evidências para este filtro` mantém o botão `Configurar estação` após salvar a configuração. Exibir esse convite somente quando a configuração da estação estiver incompleta. Com a estação configurada e sem recepções, substituir o bloco central por uma indicação discreta que não cubra o mapa.
 - Diferenciar visualmente configuração pendente, consulta em andamento, fonte indisponível e ausência de evidências para o período/bandas selecionados. Configuração salva não garante spots disponíveis; continuar indicando que ausência de dados não significa banda fechada.
 - Exibir a versão atual imediatamente após o nome da aplicação na barra superior, por exemplo: `PT2VHF Prop Tool v0.1.0`. Obter o número dos metadados da versão em execução para mantê-lo correto após cada atualização.
