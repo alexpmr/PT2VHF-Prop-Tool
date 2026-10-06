@@ -28,7 +28,7 @@ Aplicativo experimental para Windows 10/11 x64 que reúne evidências de propaga
 - Após configurar a estação, um aviso discreto de ausência de evidências substitui o bloco central; o botão de configuração não continua cobrindo o mapa.
 - Nova aba **LOGs** para diagnóstico do tráfego real: TX das consultas, RX das respostas, fonte, endpoint, status, latência, volume, erros e prévia limitada do payload; inclui filtros, busca, pausa, limpeza e exportação JSONL.
 - **Configurações → Fontes de consulta** identifica PSK Reporter, NOAA SWPC, Natural Earth e GitHub e separa o intervalo de atualização dos dados do mapa do intervalo de verificação de versões.
-- Verificação de novas versões a cada **cinco minutos** por padrão, configurável. Botão **Última versão** verde após confirmação; **Nova versão disponível** laranja piscando. Download com integridade verificada e atualização/reinício pela aplicação.
+- Verificação de novas versões a cada **30 minutos** por padrão, configurável. Ao clicar no botão de versão, a checagem é imediata: sem versão nova, a aplicação continua normalmente; com nova versão, o download e a instalação são iniciados automaticamente. Na primeira abertura após atualizar, um popup mostra as novidades uma única vez.
 - Atualização instalada com electron-updater e instalador NSIS. A partir da v0.2.0, o portátil usa substituição do lançador em sua pasta, preserva `data` e mantém o executável anterior como `.previous`, com recuperação automática se a nova versão não confirmar inicialização.
 
 ## Instalar e começar
