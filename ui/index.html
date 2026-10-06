@@ -7,7 +7,7 @@
 </head>
 <body>
   <header>
-    <div class="topLine"><div class="brand"><span class="logo">◉</span><div><strong>PT2VHF <span>PROP TOOL</span> <span id="appVersion">v0.2.4</span></strong><small data-i18n="subtitle"></small></div></div>
+    <div class="topLine"><div class="brand"><span class="logo">◉</span><div><strong>PT2VHF <span>PROP TOOL</span> <span id="appVersion">v0.2.5</span></strong><small data-i18n="subtitle"></small></div></div>
       <div class="headerActions"><div class="trafficLights" data-i18n-title="trafficActivity"><span><i id="rxLed" class="trafficLed rx"></i>RX</span><span><i id="txLed" class="trafficLed tx"></i>TX</span></div><span id="status" class="pill"></span><details id="languageMenu"><summary><img id="languageFlag" src="flags/br.svg" alt=""><span id="currentLanguage">Português (Brasil)</span></summary><div id="languages"></div></details><button id="themeButton"></button></div>
     </div>
     <div class="navLine"><nav data-i18n-aria="navigation"><button id="mapTab" data-page="map" data-i18n="map" class="selected"></button><button id="settingsButton" data-page="settings" data-i18n="settings"></button><button id="logsTab" data-page="logs" data-i18n="logs"></button><button id="helpTab" data-page="help" data-i18n="help"></button><button id="aboutTab" data-page="about" data-i18n="about"></button></nav><button id="version" class="updateButton" data-i18n="checkUpdate"></button></div>
@@ -16,11 +16,11 @@
     <section class="mapPanel">
       <nav class="mapTools"><span id="regionMode" class="regionMode" data-i18n="nearby"></span>
         <select id="band" data-i18n-aria="allBands"><option value="" data-i18n="allBands"></option></select>
-        <select id="period" data-i18n-aria="minutes"><option value="15"></option><option value="30" selected></option><option value="60" data-i18n="hour"></option></select>
+        <label class="mapToolField"><span id="observationWindowLabel" data-i18n="observationWindow"></span><select id="period" data-i18n-aria="observationWindow"><option value="15"></option><option value="30" selected></option><option value="60" data-i18n="hour"></option></select></label>
         <select id="mapVisualization" data-i18n-aria="mapVisualization"><option value="heatmap" data-i18n="heatmap"></option><option value="polygons" data-i18n="polygons"></option></select>
         <button id="refresh" data-i18n="refresh"></button><button id="resetMap" data-i18n-title="world">◎</button></nav>
       <div id="mapWrap"><svg id="map" viewBox="0 0 1080 540" data-i18n-aria="mapCaption" role="img"><rect id="ocean" width="1080" height="540"/><g id="world"><g id="graticule"></g><g id="land"></g><g id="zones"></g><g id="points"></g></g></svg><canvas id="heatmapCanvas" aria-hidden="true"></canvas><div id="homeOverlay" aria-hidden="true"><i></i><span></span></div>
-        <div class="mapTitle"><span data-i18n="mapCaption"></span><strong id="stationLabel"></strong><small id="viewNotice"></small></div>
+        <div class="mapTitle"><span data-i18n="mapCaption"></span><strong id="stationLabel"></strong><strong id="currentBand" class="currentBand"></strong><small id="viewNotice"></small></div>
         <div id="empty"><span>⌁</span><strong id="emptyTitle"></strong><p data-i18n="setupBody"></p><button id="emptyConfigure" data-i18n="configure"></button></div>
         <div id="mapNotice" class="hidden" role="status"></div>
         <div class="legend"><label class="layerToggle"><input id="showConfirmed" type="checkbox" checked><span class="zoneSample confirmed"></span><span data-i18n="observed"></span></label><label class="layerToggle"><input id="showPredicted" type="checkbox" checked><span class="zoneSample forecast"></span><span data-i18n="predicted"></span></label><span id="cursorInfo" class="cursorInfo hidden"></span></div>

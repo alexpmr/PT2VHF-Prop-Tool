@@ -24,6 +24,8 @@ Aplicativo experimental para Windows 10/11 x64 que estima **onde há possibilida
 - **Reverse Beacon Network (RBN)** como segunda fonte observacional, consultada por meio da API pública Vail ReRBN. Spots com Grid conhecido são normalizados no mesmo modelo geográfico do PSK Reporter.
 - **NOAA SWPC ampliado:** Kp, F10.7/SFI, Bz/Bt, velocidade do vento solar e classe de raios X GOES entram no contexto da estimativa.
 - **Bandas agora** mostra somente a leitura operacional: **Grande chance**, **Boa chance**, **Possível** ou **Chance baixa**. O bloco é apenas informativo e não altera filtros; a banda exibida é escolhida exclusivamente no seletor superior.
+- **Janela de observação** identifica explicitamente o período de evidências usado no mapa/análise: 15, 30 ou 60 minutos. Na primeira carga, ou quando a janela aumenta além do histórico local disponível, o PSK Reporter tenta recuperar retroativamente o mesmo período; depois disso as consultas usam sobreposição incremental para evitar downloads repetidos.
+- A **banda corrente** é mostrada em letras grandes laranja logo abaixo do indicativo no mapa. Sem filtro de banda, o mapa mostra **Todas as bandas** no mesmo local.
 - O motor mantém separados o índice de evidência observada e a **chance estimada**. O clima espacial ajusta a chance de forma conservadora; não transforma automaticamente uma medição global em confirmação local.
 - **Mapa de calor** é a visualização padrão e usa um **gradiente multicolor de densidade**: tons frios indicam menor concentração e tons quentes maior concentração. A camada é recalculada conforme zoom e deslocamento, em vez de simplesmente ampliar uma mancha já composta. **Polígonos** permanece disponível como visualização técnica alternativa e a preferência é persistida.
 - **Confirmada** e **Previsão** continuam como camadas independentes. O heatmap agrega pontos por viewport/zoom e normaliza a intensidade para evitar saturação em branco; ao aproximar, o kernel diminui e revela hotspots mais locais. No modo Polígonos, mantêm contornos sólido e tracejado.
@@ -54,7 +56,7 @@ Abra **Configurações**, informe indicativo e posição da antena, ajuste banda
 
 ## Limites e roteiro
 
-A v0.2.4 ainda não possui modelo físico completo que use potência, ganho, altura, polarização e azimute da antena. **MUF/foF2, VOACAP, D-RAP, GloTEC/TEC, aurora espacial, WSPR independente, DX Cluster e outras fontes** continuam no [roteiro](docs/BACKLOG.md).
+A v0.2.5 ainda não possui modelo físico completo que use potência, ganho, altura, polarização e azimute da antena. **MUF/foF2, VOACAP, D-RAP, GloTEC/TEC, aurora espacial, WSPR independente, DX Cluster e outras fontes** continuam no [roteiro](docs/BACKLOG.md).
 
 Os dados RBN chegam por uma API pública de agregação e podem ter Grid ausente, especialmente para alguns indicativos internacionais. O PSK Reporter também depende de participantes, modos e localização fornecida. O aplicativo rejeita dados sem posição quando ela é necessária para inferência geográfica.
 

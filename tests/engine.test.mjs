@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {DEFAULT_SETTINGS,BANDS,toGrid,fromGrid,distance,bearing,validateSettings,parsePSK,relevantSpots,evaluateBand,spaceWeatherScore,mergeSpots,AlertMachine} from '../src/domain.mjs';
-import {parseKp,parseF107,parseSolarWindMag,parseSolarWindSpeed,parseXray,parseRBN,pskURL,boundedFetch} from '../src/sources.mjs';
+import {parseKp,parseF107,parseSolarWindMag,parseSolarWindSpeed,parseXray,parseRBN,pskURL,pskQueryPlan,boundedFetch} from '../src/sources.mjs';
 const now=1800000000000;
 const settings={...DEFAULT_SETTINGS,callsign:'PT2VHF',lat:-15.8,lon:-47.9,nearbyRadius:300};
 function spot(id,overrides={}){
@@ -80,9 +80,20 @@ test('NOAA parsers preserve source timestamps and validated values',()=>{
   const x=parseXray([{current_class:'C1.4',time_tag:'2026-10-06T18:39:00Z'}]);assert.equal(x.class,'C1.4');
   assert.throws(()=>parseKp([{time_tag:'bad',kp_index:99}]));assert.throws(()=>parseF107([{flux:999,time_tag:'2026-10-06T20:00:00Z'}]));
 });
-test('PSK query defaults to the station region grid while station diagnostics remain available',()=>{
-  const regional=new URL(pskURL({...settings,grid:'GH64AA'},'nearby'));assert.equal(regional.searchParams.get('modify'),'grid');assert.equal(regional.searchParams.get('callsign'),'GH64');
+test('PSK query follows the observation window and regional grid',()=>{
+  const regional=new URL(pskURL({...settings,grid:'GH64AA'},'nearby'));assert.equal(regional.searchParams.get('modify'),'grid');assert.equal(regional.searchParams.get('callsign'),'GH64');assert.equal(regional.searchParams.get('flowStartSeconds'),'-1800');
+  const short=new URL(pskURL({...settings,grid:'GH64AA',windowMinutes:15},'nearby'));assert.equal(short.searchParams.get('flowStartSeconds'),'-900');
   const direct=new URL(pskURL(settings,'station'));assert.equal(direct.searchParams.get('callsign'),'PT2VHF');assert.equal(direct.searchParams.get('modify'),null);
+});
+test('PSK query plan backfills missing observation history and then uses incremental overlap',()=>{
+  const cfg={...settings,windowMinutes:30},grid='GH64';
+  const first=pskQueryPlan(cfg,null,now,300000,grid);assert.equal(first.mode,'backfill');assert.equal(first.seconds,1800);assert.equal(first.from,now-1800000);
+  const coverage={grid,windowMinutes:30,from:now-1800000,to:now-300000,complete:true};
+  const incremental=pskQueryPlan(cfg,coverage,now,300000,grid);assert.equal(incremental.mode,'incremental');assert.equal(incremental.seconds,420);
+  const enlarged=pskQueryPlan({...cfg,windowMinutes:60},coverage,now,300000,grid);assert.equal(enlarged.mode,'backfill');assert.equal(enlarged.seconds,3600);
+  const widerCoverage={...coverage,windowMinutes:60,from:now-3600000};const reduced=pskQueryPlan({...cfg,windowMinutes:15},widerCoverage,now,300000,grid);assert.equal(reduced.mode,'incremental');
+  const stale=pskQueryPlan(cfg,{...coverage,to:now-3600000},now,300000,grid);assert.equal(stale.mode,'backfill');
+  const changedGrid=pskQueryPlan(cfg,{...coverage,grid:'GG00'},now,300000,grid);assert.equal(changedGrid.mode,'backfill');
 });
 test('Fetching rejects arbitrary hosts and oversized streamed responses',async()=>{
   await assert.rejects(boundedFetch('https://example.com/private'));
