@@ -10,7 +10,9 @@
 - Configurações agora identifica as fontes efetivamente utilizadas: PSK Reporter, NOAA SWPC, Natural Earth e GitHub.
 - Atualização automática dos dados do mapa a cada **5 minutos por padrão**, configurável separadamente da verificação de novas versões.
 - Legenda do mapa mostra dinamicamente **direção cardinal, azimute e distância** entre a estação configurada e o ponto sob o cursor.
-- Estado interno atualizado para schema 3, preservando configurações anteriores por migração.
+- Botão de versão passa a fazer checagem imediata em um único fluxo: sem nova versão, retorna à aplicação; com nova versão, baixa e instala automaticamente. Na primeira abertura da nova versão, exibe as novidades uma única vez.
+- Verificação automática de versão alterada para **30 minutos por padrão**, configurável; o refresh dos dados do mapa permanece em 5 minutos.
+- Estado interno atualizado para schema 4, migrando o antigo padrão de 5 minutos para 30 e preservando intervalos personalizados.
 
 ## v0.2.0 — 2026-10-06
 
