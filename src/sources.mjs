@@ -10,16 +10,35 @@ export function pskURL(settings,scope) {
   } else {if(!settings.callsign)throw new Error('Informe seu indicativo');q.set('callsign',settings.callsign);}
   return 'https://retrieve.pskreporter.info/query?'+q.toString();
 }
-export async function boundedFetch(url,format='text',fetchImpl=fetch) {
-  const host=new URL(url).hostname;
-  if(!['retrieve.pskreporter.info','services.swpc.noaa.gov','api.github.com'].includes(host))throw new Error('Fonte não autorizada');
-  const response=await fetchImpl(url,{signal:AbortSignal.timeout(15000),redirect:'error',headers:{'User-Agent':'PT2VHF-Prop-Tool/'+APP_VERSION,'Accept':format==='json'?'application/json':'application/xml'}});
-  if(!response.ok)throw new Error(`HTTP ${response.status}`);
-  if(Number(response.headers.get('content-length')||0)>6e6)throw new Error('Resposta excede o limite');
-  const reader=response.body.getReader();let size=0;const chunks=[];
-  try{while(true){const {done,value}=await reader.read();if(done)break;size+=value.length;if(size>6e6)throw new Error('Resposta excede o limite');chunks.push(value);}}finally{await reader.cancel();}
-  const bytes=new Uint8Array(size);let offset=0;for(const c of chunks){bytes.set(c,offset);offset+=c.length;}
-  const text=new TextDecoder().decode(bytes);return format==='json'?JSON.parse(text):text;
+const AUTHORIZED_HOSTS=new Set(['retrieve.pskreporter.info','services.swpc.noaa.gov','api.github.com']);
+const MAX_RESPONSE_BYTES=6e6,MAX_REDIRECTS=3,LOG_PREVIEW_BYTES=8192;
+function sourceName(host){return host==='retrieve.pskreporter.info'?'PSK Reporter':host==='services.swpc.noaa.gov'?'NOAA SWPC':host==='api.github.com'?'GitHub':'HTTP';}
+function validateEndpoint(value){const u=value instanceof URL?value:new URL(value);if(u.protocol!=='https:'||u.username||u.password||!AUTHORIZED_HOSTS.has(u.hostname))throw new Error('Fonte não autorizada');return u;}
+export async function boundedFetch(url,format='text',fetchImpl=fetch,activity=()=>{}) {
+  let current=validateEndpoint(url),response,redirects=0;const started=Date.now(),method='GET';
+  activity({timestamp:started,direction:'TX',source:sourceName(current.hostname),method,url:current.toString()});
+  try{
+    while(true){
+      response=await fetchImpl(current.toString(),{signal:AbortSignal.timeout(15000),redirect:'manual',headers:{'User-Agent':'PT2VHF-Prop-Tool/'+APP_VERSION,'Accept':format==='json'?'application/json':'application/xml, text/xml;q=0.9, */*;q=0.1'}});
+      if(response.status<300||response.status>=400)break;
+      const location=response.headers.get('location');if(!location||redirects++>=MAX_REDIRECTS)throw new Error('Redirecionamento inválido');
+      const next=validateEndpoint(new URL(location,current));activity({timestamp:Date.now(),direction:'INFO',source:sourceName(current.hostname),status:response.status,url:current.toString(),detail:'redirect -> '+next.toString()});current=next;
+    }
+    if(!response.ok)throw new Error(`HTTP ${response.status}`);
+    if(Number(response.headers.get('content-length')||0)>MAX_RESPONSE_BYTES)throw new Error('Resposta excede o limite');
+    let bytes;
+    if(response.body?.getReader){
+      const reader=response.body.getReader();let size=0;const chunks=[];
+      try{while(true){const {done,value}=await reader.read();if(done)break;size+=value.length;if(size>MAX_RESPONSE_BYTES)throw new Error('Resposta excede o limite');chunks.push(value);}}finally{await reader.cancel().catch(()=>{});}
+      bytes=new Uint8Array(size);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}
+    }else{bytes=new Uint8Array(await response.arrayBuffer());if(bytes.length>MAX_RESPONSE_BYTES)throw new Error('Resposta excede o limite');}
+    const text=new TextDecoder().decode(bytes);
+    activity({timestamp:Date.now(),direction:'RX',source:sourceName(current.hostname),method,status:response.status,url:current.toString(),bytes:bytes.length,durationMs:Date.now()-started,payload:text.slice(0,LOG_PREVIEW_BYTES),truncated:text.length>LOG_PREVIEW_BYTES});
+    return format==='json'?JSON.parse(text):text;
+  }catch(error){
+    activity({timestamp:Date.now(),direction:'RX',source:sourceName(current.hostname),method,status:'ERROR',url:current.toString(),durationMs:Date.now()-started,error:error.message});
+    throw error;
+  }
 }
 export function parseKp(rows) {
   if(!Array.isArray(rows)||!rows.length)throw new Error('Kp indisponível');
@@ -37,5 +56,5 @@ export function parseKp(rows) {
   }).sort((a,b)=>a.timestamp-b.timestamp);
   if(!valid.length)throw new Error('Kp inválido');return valid.at(-1);
 }
-export async function loadPSK(settings,scope,fetchImpl) {return parsePSK(await boundedFetch(pskURL(settings,scope),'text',fetchImpl));}
-export async function loadKp(fetchImpl) {return parseKp(await boundedFetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json','json',fetchImpl));}
+export async function loadPSK(settings,scope,fetchImpl,activity) {return parsePSK(await boundedFetch(pskURL(settings,scope),'text',fetchImpl,activity));}
+export async function loadKp(fetchImpl,activity) {return parseKp(await boundedFetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json','json',fetchImpl,activity));}
