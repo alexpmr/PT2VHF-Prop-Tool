@@ -60,7 +60,7 @@ bullet('Executáveis ainda sem assinatura digital. Confirme a origem pelo reposi
 new('2. Barra superior, idiomas e temas')
 picture('03-mapa-claro.png',maxw=264,maxh=29,crop=(0,0,1440,134))
 bullet('O número da versão aparece logo após PT2VHF Prop Tool e corresponde à versão executada.')
-bullet('A navegação principal é Mapa, LOGs, Configurações, Ajuda e Sobre. LOGs fica próximo ao mapa para diagnóstico rápido do tráfego.')
+bullet('A navegação principal é Mapa, Configurações, LOGs, Ajuda e Sobre. LOGs fica próximo ao mapa para diagnóstico rápido do tráfego.')
 bullet('Escolha Português (Brasil), English, Español, Français, Deutsch ou Italiano. As bandeiras são imagens SVG, compatíveis com o Windows.')
 bullet('Na barra superior, RX verde pulsa quando chegam dados e TX vermelho pulsa quando uma consulta é enviada. Apagados significam ausência de tráfego naquele instante.')
 bullet('O idioma traduz abas, controles, Ajuda, Sobre, validações, estados, alertas e respostas do assistente local. Dados de terceiros, nomes de estações e os textos externos das releases mantêm sua forma original.')
