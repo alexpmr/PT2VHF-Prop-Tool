@@ -7,6 +7,7 @@ const $=id=>document.getElementById(id),NS='http://www.w3.org/2000/svg';
 const colors=['#bab1dc','#ad9ce5','#738fea','#76a8fa','#6bbee9','#57d3b4','#b0de74','#e4da68','#efbd7a','#ef837a','#dca0f0','#86dbf1','#ecade0','#90cda0'];
 const color=band=>colors[BANDS.findIndex(b=>b.name===band)]||'#6fe2bf';
 let current,alertBand,scale=1,tx=0,ty=0,pointer,page='map',language='pt-BR',toastTimer,toastKey,configErrorKey,logsPaused=false,newsShownFor=null,heatFrame=0,updateFlowActive=false;
+const heatScratch=document.createElement('canvas');
 let lastActivity={rx:0,tx:0},ledTimers={rx:null,tx:null};
 const listeners=[],conversation=[{key:'welcome'}];
 const t=(key,vars)=>translate(language,key,vars);
@@ -27,13 +28,11 @@ function ringPath(ring){return ring.map((v,i)=>`${i?'L':'M'}${project(v).join(',
 function zoneCenters(zone){
   const centers=[];for(const ring of zone.rings||[]){if(!ring?.length)continue;let lon=0,lat=0,n=0;for(const point of ring){if(!Array.isArray(point)||point.length<2)continue;lon+=point[0];lat+=point[1];n++;}if(n)centers.push({lon:lon/n,lat:lat/n});}return centers;
 }
-function screenPosition(position){
-  if(!position||!$('world'))return null;
-  const [x,y]=project([position.lon,position.lat]),matrix=$('world').getScreenCTM(),rect=$('map').getBoundingClientRect();
-  if(!matrix||!rect.width||!rect.height)return null;
-  const p=$('map').createSVGPoint();p.x=x;p.y=y;const screen=p.matrixTransform(matrix);
-  return {x:screen.x-rect.left,y:screen.y-rect.top,width:rect.width,height:rect.height};
+function mapProjector(){
+  const matrix=$('world')?.getScreenCTM(),rect=$('map').getBoundingClientRect();if(!matrix||!rect.width||!rect.height)return null;
+  return position=>{if(!position)return null;const [x,y]=project([position.lon,position.lat]);return {x:matrix.a*x+matrix.c*y+matrix.e-rect.left,y:matrix.b*x+matrix.d*y+matrix.f-rect.top,width:rect.width,height:rect.height};};
 }
+function screenPosition(position){const projectScreen=mapProjector();return projectScreen?projectScreen(position):null;}
 function renderDensityHeatmap(){
   const canvas=$('heatmapCanvas');if(!canvas||!current)return;
   const rect=$('map').getBoundingClientRect(),width=Math.max(1,Math.round(rect.width)),height=Math.max(1,Math.round(rect.height));
@@ -41,20 +40,20 @@ function renderDensityHeatmap(){
   const ctx=canvas.getContext('2d');ctx.clearRect(0,0,width,height);
   if((current.settings.mapView||'heatmap')!=='heatmap')return;
   const selected=$('band').value,shownBands=new Set(current.bands.filter(b=>current.settings.visible.includes(b.band)&&(!selected||b.band===selected)).map(b=>b.band));
-  const showConfirmed=$('showConfirmed')?.checked!==false,showPredicted=$('showPredicted')?.checked!==false,samples=[];
+  const showConfirmed=$('showConfirmed')?.checked!==false,showPredicted=$('showPredicted')?.checked!==false,samples=[],projectScreen=mapProjector();if(!projectScreen)return;
   if(showConfirmed)for(const s of current.spots){
-    if(!shownBands.has(s.band)||!s.endpoint)continue;const p=screenPosition(s.endpoint);if(!p)continue;
+    if(!shownBands.has(s.band)||!s.endpoint)continue;const p=projectScreen(s.endpoint);if(!p)continue;
     const snr=Number.isFinite(s.snr)?Math.max(-30,Math.min(20,s.snr)): -10;
     samples.push({x:p.x,y:p.y,weight:.8+(snr+30)/100});
   }
   if(showPredicted)for(const b of current.bands){
     if(!shownBands.has(b.band))continue;const weight=.22+.38*Math.max(0,Math.min(1,(b.chance??0)/100));
-    for(const zone of b.predictedZones||[])for(const center of zoneCenters(zone)){const p=screenPosition(center);if(p)samples.push({x:p.x,y:p.y,weight});}
+    for(const zone of b.predictedZones||[])for(const center of zoneCenters(zone)){const p=projectScreen(center);if(p)samples.push({x:p.x,y:p.y,weight});}
   }
   const radius=kernelRadius(scale),bins=aggregateHeatSamples(samples,Math.max(4,radius*.28));
   if(!bins.length)return;
-  const density=document.createElement('canvas');density.width=width;density.height=height;
-  const dctx=density.getContext('2d',{willReadFrequently:true});dctx.globalCompositeOperation='lighter';
+  const density=heatScratch;if(density.width!==width)density.width=width;if(density.height!==height)density.height=height;
+  const dctx=density.getContext('2d',{willReadFrequently:true});dctx.clearRect(0,0,width,height);dctx.globalCompositeOperation='lighter';
   for(const bin of bins){
     if(bin.x<-radius||bin.y<-radius||bin.x>width+radius||bin.y>height+radius)continue;
     const strength=Math.min(.92,.08+.12*Math.log2(1+bin.weight));
@@ -207,8 +206,8 @@ $('version').onclick=async()=>{
   const checking={...(current.update||{}),state:'checking',percent:0,transferred:0,total:0};renderUpdate(checking);
   try{
     const u=await api.runUpdateFlow();if(u){current.update=u;renderUpdate(u);}
-    if(u?.state==='current'){updateFlowActive=false;if($('updateDialog').open)$('updateDialog').close();toast('currentVersion');}
-    else if(u?.state==='development'){updateFlowActive=false;if($('updateDialog').open)$('updateDialog').close();toast('development');}
+    if(u?.state==='current'){updateFlowActive=false;renderUpdate(u);if($('updateDialog').open)$('updateDialog').close();toast('currentVersion');}
+    else if(u?.state==='development'){updateFlowActive=false;renderUpdate(u);if($('updateDialog').open)$('updateDialog').close();toast('development');}
     else if(u?.state==='error'){updateFlowActive=false;renderUpdate(u);toast('updateError');}
   }catch{updateFlowActive=false;renderUpdate({...current.update,state:'error'});toast('updateError');}
 };
