@@ -18,7 +18,7 @@ Aplicativo experimental para Windows 10/11 x64 que reúne evidências de propaga
 - Indicativo, coordenadas, Grid Maidenhead e localização automática quando disponível/autorizada no Windows.
 - {{BANDS}} bandas, de 160 m a 70 cm, incluindo **11 metros**, habilitadas inicialmente com antena **vertical**. Potência inicial **100 W**. Configurações anteriores e valores personalizados são preservados.
 - Português, inglês, espanhol, francês, alemão e italiano, com bandeiras SVG, textos da interface, mensagens, assistente e **Ajuda traduzidos**. Idioma e tema claro/escuro ficam salvos.
-- Barra superior com versão após o nome, navegação **Mapa / LOGs / Configurações / Ajuda / Sobre**, LEDs de atividade **RX verde / TX vermelho**, apresentação do software e contato pelo GitHub.
+- Barra superior com versão após o nome, navegação **Mapa / Configurações / LOGs / Ajuda / Sobre**, LEDs de atividade **RX verde / TX vermelho**, apresentação do software e contato pelo GitHub.
 - Consulta PSK Reporter por indicativo ou Grid; intervalo mínimo de cinco minutos, inclusive após reiniciar. Redirecionamentos da API são aceitos somente entre destinos HTTPS autorizados. Ausência de dados, especialmente em 11 m, não é interpretada como banda fechada.
 - Separação entre TX recebido por terceiros, RX pela estação e observações de transmissores próximos, sem confundir evidência regional com alcance confirmado da própria estação.
 - Mapa offline com pontos, zoom, movimentação e zonas irregulares conservadoras. Ao mover o cursor, a legenda mostra **azimute/direção e distância** desde a estação configurada. Zonas exigem pelo menos três enlaces e duas células adjacentes; pontos esparsos não são unidos artificialmente.
