@@ -8,7 +8,7 @@ export const DEFAULT_SETTINGS = {
   callsign:'',lat:null,lon:null,power:100,antennas:Object.fromEntries(BANDS.map(b=>[b.name,{type:'Vertical'}])),
   visible:BANDS.map(b=>b.name),alertBands:[],alertMinScore:65,
   alertMinDistance:800,alertCooldown:30,windowMinutes:30,
-  updateMinutes:5,nearbyRadius:300,language:'pt-BR',theme:'dark'
+  updateMinutes:30,dataRefreshMinutes:5,nearbyRadius:300,language:'pt-BR',theme:'dark'
 };
 export function coordinates(lat,lon) {
   return typeof lat==='number' && typeof lon==='number' && Number.isFinite(lat) && Number.isFinite(lon) && lat>=-90 && lat<=90 && lon>=-180 && lon<=180;
@@ -46,7 +46,7 @@ export function validateSettings(input) {
   s.callsign=String(s.callsign||'').trim().toUpperCase();
   if(s.callsign && !/^[A-Z0-9/]{3,20}$/.test(s.callsign)) throw new Error('Indicativo inválido');
   if((s.lat!==null || s.lon!==null) && !coordinates(s.lat,s.lon)) throw new Error('Informe latitude e longitude válidas');
-  for(const [name,min,max] of [['power',0,10000],['alertMinScore',0,100],['alertMinDistance',0,20040],['alertCooldown',1,1440],['windowMinutes',5,60],['updateMinutes',5,1440],['nearbyRadius',1,500]]) {
+  for(const [name,min,max] of [['power',0,10000],['alertMinScore',0,100],['alertMinDistance',0,20040],['alertCooldown',1,1440],['windowMinutes',5,60],['updateMinutes',5,1440],['dataRefreshMinutes',5,1440],['nearbyRadius',1,500]]) {
     if(typeof s[name]!=='number' || !Number.isFinite(s[name]) || s[name]<min || s[name]>max) throw new Error(`Valor inválido: ${name}`);
   }
   for(const field of ['visible','alertBands']) {
@@ -62,6 +62,7 @@ export function validateSettings(input) {
 export function migrateSettings(input,schemaVersion=1) {
   const s={...input,antennas:{...input.antennas}};
   if(schemaVersion<2&&input.visible?.length===13&&BANDS.filter(b=>b.name!=='11 m').every(b=>input.visible.includes(b.name)))s.visible=[...input.visible,'11 m'];
+  if(schemaVersion<4&&s.updateMinutes===5)s.updateMinutes=30;
   return validateSettings(s);
 }
 function unescapeXML(v) {

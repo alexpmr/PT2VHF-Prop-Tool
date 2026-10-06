@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.2.1 — 2026-10-06
+
+- Corrigido o fluxo de coleta da v0.2.0 para tornar falhas de consulta visíveis e permitir atualização efetiva do mapa e do painel lateral.
+- PSK Reporter passa a aceitar redirecionamentos HTTPS somente entre destinos autorizados, com limite de redirecionamentos e validação de tamanho/resposta.
+- Nova aba **LOGs** com tráfego TX/RX, fonte, endpoint, status, duração, volume, erros, prévia limitada do payload, filtros, busca, pausa, limpeza e exportação JSONL.
+- LEDs na barra superior: **RX verde** e **TX vermelho**, pulsando somente quando há tráfego real.
+- Navegação reorganizada para **Mapa / Configurações / LOGs / Ajuda / Sobre**.
+- Configurações agora identifica as fontes efetivamente utilizadas: PSK Reporter, NOAA SWPC, Natural Earth e GitHub.
+- Atualização automática dos dados do mapa a cada **5 minutos por padrão**, configurável separadamente da verificação de novas versões.
+- Legenda do mapa mostra dinamicamente **direção cardinal, azimute e distância** entre a estação configurada e o ponto sob o cursor.
+- Botão de versão passa a fazer checagem imediata em um único fluxo: sem nova versão, retorna à aplicação; com nova versão, baixa e instala automaticamente. Na primeira abertura da nova versão, exibe as novidades uma única vez.
+- Verificação automática de versão alterada para **30 minutos por padrão**, configurável; o refresh dos dados do mapa permanece em 5 minutos.
+- Estado interno atualizado para schema 4, migrando o antigo padrão de 5 minutos para 30 e preservando intervalos personalizados.
+
 ## v0.2.0 — 2026-10-06
 
 - Seis idiomas com bandeiras SVG e tradução da interface, Ajuda, Sobre, mensagens, alertas e assistente local.
