@@ -32,6 +32,7 @@
 
 ## Mapa e operação
 
+- Adicionar a banda de 11 metros à tabela de bandas, aos seletores e filtros, às configurações por banda e às análises do mapa e alertas. Verificar a cobertura das fontes; quando não houver evidências disponíveis, indicar ausência de dados, sem gerar atividade ou conclusões artificiais.
 - Seletor de idioma na barra superior: Português (Brasil), inglês, espanhol, francês, alemão e italiano.
 - Cada idioma deve ter bandeira própria (Brasil, Reino Unido, Espanha, França, Alemanha e Itália), usando imagens/SVG para funcionar também no Windows, sem depender de emojis de bandeiras.
 - Tradução integral de toda a aplicação: abas, menus, botões, configurações, tooltips, validações, mensagens de estado/erro, alertas, notas exibidas pela interface e aba Ajuda. Evitar textos fixos que permaneçam em português ao mudar o idioma.
