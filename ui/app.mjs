@@ -2,7 +2,7 @@ import {BANDS,DEFAULT_SETTINGS,validateSettings,toGrid,fromGrid,coordinates,eval
 import {LANGUAGES,translate} from '../src/i18n.mjs';
 import {APP_VERSION} from '../src/version.mjs';
 import {normalizeReleaseNotes} from '../src/release-notes.mjs';
-import {aggregateHeatSamples,heatColor,kernelRadius} from '../src/heatmap.mjs';
+import {aggregateHeatSamples,heatColor,kernelRadius,propagationQuality,heatLegendStops} from '../src/heatmap.mjs';
 import {assistantReply} from '../src/assistant.mjs';
 import {rankCountries} from '../src/geography.mjs';
 const $=id=>document.getElementById(id),NS='http://www.w3.org/2000/svg';
@@ -97,7 +97,23 @@ function renderBandControls(){
   if($('band').value&&!current.settings.visible.includes($('band').value))$('band').value='';
   const selected=$('band').value,host=$('bandButtons');host.replaceChildren();
   const choices=[['',t('allBands')],...current.settings.visible.map(name=>[name,compactBandLabel(name)])];
-  for(const [value,label] of choices){const b=document.createElement('button');b.type='button';b.dataset.band=value;b.textContent=label;b.classList.toggle('active',selected===value);b.setAttribute('role','radio');b.setAttribute('aria-checked',String(selected===value));b.onclick=()=>{$('band').value=value;render(current);};host.append(b);}
+  for(const [value,label] of choices){
+    const b=document.createElement('button');b.type='button';b.dataset.band=value;b.classList.toggle('active',selected===value);b.setAttribute('role','radio');b.setAttribute('aria-checked',String(selected===value));
+    if(value){
+      const band=current.bands.find(x=>x.band===value),q=propagationQuality(band?.chance);
+      const graph=document.createElement('span');graph.className='bandQuality';graph.setAttribute('aria-hidden','true');
+      const bar=document.createElement('i');bar.style.height=q.height+'px';bar.style.background='rgb('+q.color.join(',')+')';graph.append(bar);
+      const text=document.createElement('span');text.className='bandLabel';text.textContent=label;b.append(graph,text);
+      const quality=t('quality_'+q.level),score=q.value===null?'—':q.value;
+      b.title=t('bandQualityTooltip',{band:value,score,quality});b.setAttribute('aria-label',t('bandQualityTooltip',{band:value,score,quality}));
+    }else{const text=document.createElement('span');text.className='bandLabel';text.textContent=label;b.append(text);}
+    b.onclick=()=>{$('band').value=value;render(current);};host.append(b);
+  }
+}
+function renderHeatLegend(){
+  const bar=$('heatLegendBar');if(!bar)return;
+  const stops=heatLegendStops();bar.style.background='linear-gradient(90deg,'+stops.map(s=>'rgb('+s.color.join(',')+') '+Math.round(s.position*100)+'%').join(',')+')';
+  $('heatLegendLow').textContent=t('heatLow');$('heatLegendModerate').textContent=t('heatModerate');$('heatLegendHigh').textContent=t('heatHigh');$('heatLegendVeryHigh').textContent=t('heatVeryHigh');$('heatLegendNote').textContent=t('heatLegendNote');
 }
 function renderSourceControls(){
   const host=$('sourceButtons');if(!host||!current)return;host.replaceChildren();
@@ -155,7 +171,7 @@ function render(snap){
   current=snap;language=snap.settings.language;paintTranslations();pulseActivity(snap.activity||{});$('appVersion').textContent=$('aboutVersion').textContent=`v${snap.version}`;
   const status=snap.sourceStatus.psk,rbnStatus=snap.sourceStatus.rbn||{state:'idle'},wsprStatus=snap.sourceStatus.wspr||{state:'idle'},voacapStatus=snap.sourceStatus.voacap||{state:'idle'};const obsOnline=status.state==='online'||rbnStatus.state==='online'||wsprStatus.state==='online';$('status').textContent=obsOnline?'PSK/RBN/WSPR'+(voacapStatus.state==='online'?' + VOACAP':'')+' OK':sourceLabel(status);$('stationLabel').textContent=snap.settings.callsign||t('configure');
   $('period').value=String(snap.settings.windowMinutes);
-  renderBandControls();renderPeriodControls();renderSourceControls();$('mapBase').value=snap.settings.mapBase||'default';
+  renderBandControls();renderPeriodControls();renderSourceControls();renderHeatLegend();$('mapBase').value=snap.settings.mapBase||'default';
   $('bands').replaceChildren();$('bandCount').textContent=t('bandCount',{n:snap.settings.visible.length});
   for(const b of snap.bands.filter(b=>snap.settings.visible.includes(b.band))){
     const row=document.createElement('div');row.className='bandRow';
