@@ -1,6 +1,6 @@
 {
   "name": "pt2vhf-prop-tool",
-  "version": "0.2.9",
+  "version": "0.2.10",
   "private": true,
   "description": "Análise de evidências de propagação personalizada à estação",
   "author": "Alex Rodrigues, PT2VHF",
