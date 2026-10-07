@@ -1,10 +1,10 @@
-# PT2VHF Prop Tool — Downloads v0.2.12
+# PT2VHF Prop Tool — Downloads v0.2.13
 
 ## ⬇️ Baixe agora
 
-**[Instalador Windows x64](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.12/PT2VHF-Prop-Tool-0.2.12-x64-setup.exe)** · **[Portable Windows x64](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.12/PT2VHF-Prop-Tool-0.2.12-x64-portable.exe)** · **[Manual PDF](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.12/PT2VHF-Prop-Tool-0.2.12-Manual.pdf)**
+**[Instalador Windows x64](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.13/PT2VHF-Prop-Tool-0.2.13-x64-setup.exe)** · **[Portable Windows x64](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.13/PT2VHF-Prop-Tool-0.2.13-x64-portable.exe)** · **[Manual PDF](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.13/PT2VHF-Prop-Tool-0.2.13-Manual.pdf)**
 
-[SHA-256](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.12/SHA256SUMS.txt) · [Release v0.2.12](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/tag/v0.2.12) · [Última release](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/latest)
+[SHA-256](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.13/SHA256SUMS.txt) · [Release v0.2.13](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/tag/v0.2.13) · [Última release](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/latest)
 
 ## Sobre o PT2VHF Prop Tool
 
@@ -29,6 +29,8 @@ Aplicativo experimental para Windows 10/11 x64 que estima **onde há possibilida
 - O motor mantém separados **observado**, **medido** e **estimado**. PSK Reporter, RBN e WSPR.live contribuem como observações; NOAA SWPC contribui como condição física. A **confiança** é calculada separadamente da chance e considera diversidade de fontes, precisão geográfica, idade das evidências e convergência independente.
 - **11 m / PX:** quando não há fonte observacional compatível, a banda continua recebendo uma estimativa solar/ionosférica conservadora a partir dos dados NOAA, claramente marcada como estimativa e sem inventar regiões no Heatmap.
 - O mapa opera **exclusivamente em Heatmap**, com gradiente multicolor de densidade: tons frios indicam menor concentração e tons quentes maior concentração. A camada é recalculada conforme zoom e deslocamento; não existe mais alternância para Polígonos.
+- O mapa inclui **legenda visual do Heatmap** com a mesma escala de cores do renderer: Baixa, Moderada, Alta e Muito alta. A intensidade é relativa à evidência combinada no recorte visível e não representa probabilidade absoluta de QSO.
+- Os botões de banda exibem **bar-graphs verticais de qualidade**: baixo/vermelho em condições ruins e progressivamente mais alto até verde em condições ótimas, permitindo identificar rapidamente a melhor banda.
 - Evidências observadas e previstas continuam diferenciadas internamente e são compostas automaticamente no Heatmap; os antigos controles manuais Confirmada/Previsão foram removidos.
 - O painel **Destinos observados** usa fronteiras offline Natural Earth para identificar os principais países presentes nas evidências geolocalizadas do filtro atual.
 - As áreas previstas permanecem geograficamente conservadoras: dependem de geometria observacional disponível e não inventam continentes/regiões apenas a partir de índices globais. O cursor mostra direção/azimute e distância desde a estação configurada.
@@ -68,7 +70,7 @@ A fonte **KC2G/GIRO** fornece MUF(3000)F2 e foF2 medidos por ionossondas. O pain
 
 ## Limites e roteiro
 
-A v0.2.12 inclui VOACAP local (potência e circuito HF) e dados **foF2 / MUF(3000)F2** de ionossondas via KC2G/GIRO. A MUF(3000) é uma referência para aproximadamente 3.000 km, não o limite exato de qualquer percurso. Para a próxima fase ficam os modelos de antena (altura/ganho/polarização/azimute), MUF por circuito, interpolação ionosférica, GloTEC/TEC, aurora, DX Cluster e outras fontes. Detalhes no [backlog](docs/BACKLOG.md).
+A v0.2.13 inclui VOACAP local (potência e circuito HF) e dados **foF2 / MUF(3000)F2** de ionossondas via KC2G/GIRO. A MUF(3000) é uma referência para aproximadamente 3.000 km, não o limite exato de qualquer percurso. Para a próxima fase ficam os modelos de antena (altura/ganho/polarização/azimute), MUF por circuito, interpolação ionosférica, GloTEC/TEC, aurora, DX Cluster e outras fontes. Detalhes no [backlog](docs/BACKLOG.md).
 
 Os dados RBN chegam por uma API pública de agregação e podem ter Grid ausente, especialmente para alguns indicativos internacionais. PSK Reporter e WSPR.live também dependem de participantes e localização reportada. O aplicativo rejeita evidências sem posição quando ela é necessária para inferência geográfica e mantém a origem de cada fonte para evitar dupla interpretação.
 
