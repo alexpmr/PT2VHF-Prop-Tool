@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.2.13 — 2026-10-07
+
+- Novo **bar-graph vertical sobre cada banda** para leitura instantânea da qualidade atual.
+- Altura cresce com o score; cor evolui de vermelho para laranja/amarelo e verde.
+- Bandas sem evidência recebem indicador neutro, sem sugerir propagação inexistente.
+- Tooltip e `aria-label` mostram banda, score e classificação.
+- Novo **Heatmap legend** diretamente no mapa com Baixa / Moderada / Alta / Muito alta.
+- A legenda usa exatamente os mesmos `HEAT_STOPS` do renderer, evitando divergência entre escala exibida e cores reais.
+- Texto explicativo deixa claro que a intensidade é relativa à densidade/evidência no viewport atual e não uma probabilidade absoluta de QSO.
+- Layout responsivo, temas claro/escuro e mapas base preservados.
+- Testes unitários e smoke test ampliados.
+
 ## v0.2.12 — 2026-10-07
 
 - **RBN deixa de usar prefixo de indicativo como definição de região.**
