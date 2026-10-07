@@ -143,6 +143,8 @@
 
 ## Mapa e análise operacional
 
+- Corrigir a comparação de fontes: ao desativar **PSK Reporter**, o mapa e o painel **Bandas agora** não podem ficar vazios se ainda houver dados válidos de **WSPR.live, RBN, NOAA, VOACAP ou KC2G/GIRO**. Revisar a filtragem do snapshot e a lógica de elegibilidade por banda para garantir que cada fonte ativa contribua de forma independente. Em especial, WSPR/RBN devem continuar alimentando observações e Heatmap; NOAA/VOACAP/MUF devem continuar sustentando estimativas/previsões onde aplicável. Adicionar testes de regressão cobrindo PSK desligado com as demais fontes ligadas e combinações parciais de fontes.
+
 - Evoluir o seletor de mapa base já entregue com provedores **online opcionais** (ex.: satélite/topográfico de terceiros) somente após validar licença, termos de uso, atribuição e estratégia de fallback/cache; manter sempre as quatro bases offline atuais disponíveis.
 
 - Criar visão global separada da análise regional padrão, sem reintroduzir o antigo modo Minha estação.
