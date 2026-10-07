@@ -1341,3 +1341,44 @@ const EXTRA_MESSAGES_V027={
 };
 for(const [code,extra] of Object.entries(EXTRA_MESSAGES_V027))Object.assign(MESSAGES[code],extra);
 for(const code of Object.keys(MESSAGES)){delete MESSAGES[code].polygons;delete MESSAGES[code].mapVisualization;delete MESSAGES[code].zoneTip;}
+
+
+const EXTRA_MESSAGES_V028={
+  "pt-BR":{
+    "voacapSource":"Previsão HF calculada localmente pelo motor VOACAP/VOACAPW para destinos realmente observados. Não consulta o site voacap.com.",
+    "basisVoacap":"previsão VOACAP",
+    "news028":"• VOACAP local integrado como camada de previsão HF.\n• O aplicativo calcula circuitos para destinos realmente observados por PSK Reporter, WSPR.live ou RBN e funde a confiabilidade VOACAP ao score da banda.\n• As previsões aparecem na camada Previsão do Heatmap e nos LOGs.\n• O motor oficial/local é detectado em C:\\\\itshfbc\\\\bin_win\\\\voacapw.exe ou por PT2VHF_VOACAP_ROOT/PT2VHF_VOACAP_BIN.\n• Nenhuma automação é feita contra o site voacap.com.",
+    "helpData":"PSK Reporter, WSPR.live e RBN fornecem evidências observacionais; NOAA SWPC fornece contexto físico; VOACAP local fornece previsão de circuito HF para destinos observados. A confiança continua separada da chance. Em 11 m/PX, a estimativa solar/ionosférica e a previsão VOACAP não equivalem a confirmação por spot."
+  },
+  "en":{
+    "voacapSource":"HF forecast calculated locally by VOACAP/VOACAPW for destinations that were actually observed. The app does not automate voacap.com.",
+    "basisVoacap":"VOACAP forecast",
+    "news028":"• Local VOACAP added as an HF forecast layer.\n• The app computes circuits for destinations actually observed by PSK Reporter, WSPR.live or RBN and fuses VOACAP reliability into the band score.\n• Forecasts appear in the Heatmap Forecast layer and LOGs.\n• The local engine is detected at C:\\\\itshfbc\\\\bin_win\\\\voacapw.exe or via PT2VHF_VOACAP_ROOT/PT2VHF_VOACAP_BIN.\n• voacap.com is never automated.",
+    "helpData":"PSK Reporter, WSPR.live and RBN provide observational evidence; NOAA SWPC provides physical context; local VOACAP provides HF circuit forecasts for observed destinations. Confidence remains separate from chance. On 11 m/CB, solar/ionospheric estimates and VOACAP forecasts are not spot confirmation."
+  },
+  "es":{
+    "voacapSource":"Predicción HF calculada localmente por VOACAP/VOACAPW para destinos realmente observados. La aplicación no automatiza voacap.com.",
+    "basisVoacap":"predicción VOACAP",
+    "news028":"• VOACAP local integrado como capa de predicción HF.\n• Se calculan circuitos para destinos observados por PSK Reporter, WSPR.live o RBN y la fiabilidad VOACAP se fusiona con la puntuación de banda.\n• Las predicciones aparecen en Heatmap y LOGs.\n• Motor local detectado en C:\\\\itshfbc\\\\bin_win\\\\voacapw.exe o mediante variables PT2VHF_VOACAP_ROOT/PT2VHF_VOACAP_BIN.",
+    "helpData":"PSK Reporter, WSPR.live y RBN aportan evidencia observacional; NOAA SWPC aporta contexto físico; VOACAP local aporta predicciones de circuitos HF para destinos observados."
+  },
+  "fr":{
+    "voacapSource":"Prévision HF calculée localement par VOACAP/VOACAPW pour des destinations réellement observées. Aucun accès automatisé à voacap.com.",
+    "basisVoacap":"prévision VOACAP",
+    "news028":"• VOACAP local ajouté comme couche de prévision HF.\n• Les circuits sont calculés pour les destinations observées par PSK Reporter, WSPR.live ou RBN.\n• Les prévisions apparaissent dans la Heatmap et les LOGs.",
+    "helpData":"PSK Reporter, WSPR.live et RBN fournissent les observations; NOAA SWPC le contexte physique; VOACAP local les prévisions HF vers les destinations observées."
+  },
+  "de":{
+    "voacapSource":"HF-Prognose lokal mit VOACAP/VOACAPW für tatsächlich beobachtete Ziele. voacap.com wird nicht automatisiert abgefragt.",
+    "basisVoacap":"VOACAP-Prognose",
+    "news028":"• Lokales VOACAP als HF-Prognoseebene integriert.\n• Berechnung für durch PSK Reporter, WSPR.live oder RBN beobachtete Ziele.\n• Prognosen erscheinen in Heatmap und LOGs.",
+    "helpData":"PSK Reporter, WSPR.live und RBN liefern Beobachtungen; NOAA SWPC den physikalischen Kontext; lokales VOACAP HF-Prognosen für beobachtete Ziele."
+  },
+  "it":{
+    "voacapSource":"Previsione HF calcolata localmente da VOACAP/VOACAPW per destinazioni realmente osservate. Nessuna automazione di voacap.com.",
+    "basisVoacap":"previsione VOACAP",
+    "news028":"• VOACAP locale integrato come livello di previsione HF.\n• I circuiti vengono calcolati per destinazioni osservate da PSK Reporter, WSPR.live o RBN.\n• Le previsioni compaiono nella Heatmap e nei LOG.",
+    "helpData":"PSK Reporter, WSPR.live e RBN forniscono osservazioni; NOAA SWPC il contesto fisico; VOACAP locale le previsioni HF per destinazioni osservate."
+  }
+};
+for(const [code,extra] of Object.entries(EXTRA_MESSAGES_V028))Object.assign(MESSAGES[code],extra);
