@@ -33,3 +33,22 @@ export function aggregateHeatSamples(samples,cellSize=8){
   }
   return [...bins.values()];
 }
+
+export function propagationQuality(value){
+  if(!Number.isFinite(value))return {level:'none',height:2,color:[112,124,139],value:null};
+  const score=Math.max(0,Math.min(100,Number(value)));
+  let color;
+  if(score<25){
+    const u=score/25;color=[210+Math.round(25*u),55+Math.round(45*u),48];
+  }else if(score<50){
+    const u=(score-25)/25;color=[235+Math.round(10*u),100+Math.round(80*u),48];
+  }else if(score<75){
+    const u=(score-50)/25;color=[245-Math.round(95*u),180+Math.round(35*u),48+Math.round(25*u)];
+  }else{
+    const u=(score-75)/25;color=[150-Math.round(90*u),215+Math.round(10*u),73+Math.round(40*u)];
+  }
+  return {level:score<25?'low':score<50?'moderate':score<75?'good':'excellent',height:Math.round(4+score*.20),color,value:Math.round(score)};
+}
+export function heatLegendStops(){
+  return HEAT_STOPS.map(([position,color])=>({position,color:[...color]}));
+}
