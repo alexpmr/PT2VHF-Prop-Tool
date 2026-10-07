@@ -62,7 +62,7 @@ Abra **Configurações**, informe indicativo e posição da antena, ajuste banda
 
 ## Limites e roteiro
 
-A v0.2.7 ainda não possui modelo físico completo que use potência, ganho, altura, polarização e azimute da antena. **MUF/foF2, VOACAP, D-RAP, GloTEC/TEC, aurora espacial, DX Cluster e outras fontes** continuam no [roteiro](docs/BACKLOG.md). O WSPR independente já é consultado por meio do WSPR.live.
+A linha v0.2.8 inicia a integração **VOACAP local**: potência configurada, posição da estação, destino observado, hora/mês e SSN estimado a partir de F10.7 entram em circuitos ponto a ponto. Ainda faltam modelos completos de antena (ganho, altura, polarização e azimute), SSN observado direto, long path/VOAAREA e calibração por modo. **MUF/foF2, D-RAP, GloTEC/TEC, aurora espacial, DX Cluster e outras fontes** continuam no [roteiro](docs/BACKLOG.md).
 
 Os dados RBN chegam por uma API pública de agregação e podem ter Grid ausente, especialmente para alguns indicativos internacionais. PSK Reporter e WSPR.live também dependem de participantes e localização reportada. O aplicativo rejeita evidências sem posição quando ela é necessária para inferência geográfica e mantém a origem de cada fonte para evitar dupla interpretação.
 
@@ -87,6 +87,7 @@ npm run dist:win
 
 - [PSK Reporter — API](https://www.pskreporter.info/pskdev.html)
 - [NOAA Space Weather Prediction Center](https://services.swpc.noaa.gov/)
+- [NTIA/ITS — VOACAP Propagation Model](https://its.ntia.gov/software/high-frequency/voacap-propagation-model/)
 - [WSPR.live — banco público WSPR](https://wspr.live/)
 - [Reverse Beacon Network](https://www.reversebeacon.net/)
 - [Vail ReRBN — API pública de spots RBN](https://vailrerbn.com/docs)
