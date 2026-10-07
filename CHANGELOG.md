@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.2.12 — 2026-10-07
+
+- **RBN deixa de usar prefixo de indicativo como definição de região.**
+- A região passa a ser definida pela posição configurada da estação e pelo **raio regional em km**.
+- O raio é configurável em Configurações, com padrão de 300 km e faixa de 1 a 2.000 km.
+- Vail ReRBN passa a ser consultado por banda habilitada e Janela de observação, sem filtros `call`/`spotter` usados como localização.
+- Grids TX e RX/skimmer são convertidos em coordenadas e o aplicativo mantém apenas enlaces em que exatamente um extremo esteja dentro do raio e o outro fora.
+- Enlaces com os dois extremos dentro do raio são tratados como locais e não alimentam o Heatmap DX; enlaces com ambos fora são descartados.
+- Spots sem localização suficiente dos dois extremos não são usados como evidência geográfica.
+- Paginação adicional é usada quando uma consulta por banda ultrapassa 1.000 spots.
+- Testes cobrem estação de prefixo local operando longe, estação de outro prefixo dentro do raio, ambos extremos dentro/fora do raio e URLs RBN sem filtro de indicativo.
+
 ## v0.2.11 — 2026-10-07
 
 - Corrigido o cenário em que desligar **PSK Reporter** podia deixar o mapa sem evidências úteis mesmo com outras fontes ativas.
