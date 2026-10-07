@@ -148,28 +148,19 @@ function render(snap){
     const row=document.createElement('div');row.className='bandRow';
     const label=document.createElement('strong');label.textContent=b.band;label.style.color=color(b.band);
     const state=document.createElement('span');state.className='state';state.textContent=b.chance===null?t('insufficient'):t(bandStates[b.state]||'none')+(b.trend!=='—'?' '+b.trend:'');
-    const basis=document.createElement('small');basis.className='basis';basis.textContent=t({estimated:'basisEstimated',observed:'basisObserved',fused:'basisFused',none:'basisNone'}[b.basis]||'basisNone');
+    const basis=document.createElement('small');basis.className='basis';basis.textContent=t({estimated:'basisEstimated',observed:'basisObserved',fused:'basisFused',none:'basisNone'}[b.basis]||'basisNone')+' · '+t('confidenceShort',{n:b.confidence??0});
     row.append(label,state,basis);$('bands').append(row);
   }
   $('zones').replaceChildren();$('points').replaceChildren();
   const displayed=snap.bands.filter(b=>snap.settings.visible.includes(b.band)&&(!$('band').value||b.band===$('band').value));let zoneCount=0,pointCount=0;
-  const showConfirmed=$('showConfirmed')?.checked!==false,showPredicted=$('showPredicted')?.checked!==false,mapView=snap.settings.mapView||'heatmap',shownBands=new Set(displayed.map(b=>b.band));
+  const showConfirmed=$('showConfirmed')?.checked!==false,showPredicted=$('showPredicted')?.checked!==false,shownBands=new Set(displayed.map(b=>b.band));
   const shownSpots=snap.spots.filter(p=>shownBands.has(p.band));
   pointCount=shownSpots.length;
-  if(mapView==='heatmap'){
-    if(showPredicted)zoneCount+=displayed.reduce((n,b)=>n+(b.predictedZones||[]).length,0);
-    if(showConfirmed)zoneCount+=displayed.reduce((n,b)=>n+(b.confirmedZones||b.zones||[]).length,0);
-  }else{
-    for(const b of displayed){
-      if(showPredicted)for(const zone of b.predictedZones||[]){zoneCount++;const p=svgNode('path',{class:'forecastZone',d:zone.rings.map(ringPath).join(' '),fill:color(b.band),stroke:color(b.band)},$('zones'));svgNode('title',{},p).textContent=`${b.band} · ${t('predicted')} · ${b.chance??'—'}%`;}
-      if(showConfirmed)for(const zone of b.confirmedZones||b.zones||[]){zoneCount++;const p=svgNode('path',{class:'confirmedZone',d:zone.rings.map(ringPath).join(' '),fill:color(b.band),stroke:color(b.band)},$('zones'));svgNode('title',{},p).textContent=t('zoneTip',{band:b.band,n:zone.reportCount,pairs:zone.pairs});}
-    }
-    for(const s of shownSpots){
-      const [cx,cy]=project([s.endpoint.lon,s.endpoint.lat]);const point=svgNode('circle',{cx,cy,r:1.8,fill:color(s.band)},$('points'));
-      const mode=s.mode==='Não informado'?t('unknownMode'):s.mode,direction=t({'regional-out':'rxNearby','regional-in':'rxNearby'}[s.origin]||'observed');
-      svgNode('title',{},point).textContent=`${s.tx} → ${s.rx} · ${s.band} · ${mode}\n${direction} · ${Math.round(s.distance)} km · ${Math.round(s.bearing)}°\n${date(s.timestamp)} · ${s.source}${s.snr===null?'':` · SNR ${s.snr} dB`}`;
-    }
-  }
+  if(showPredicted)zoneCount+=displayed.reduce((n,b)=>n+(b.predictedZones||[]).length,0);
+  if(showConfirmed)zoneCount+=displayed.reduce((n,b)=>n+(b.confirmedZones||b.zones||[]).length,0);
+  const ranked=rankCountries(shownSpots,countryFeatures,language,3),destHost=$('favoredDestinations');destHost.replaceChildren();
+  if(!ranked.length){const empty=document.createElement('span');empty.className='destinationEmpty';empty.textContent=t('noFavoredDestinations');destHost.append(empty);}
+  else for(const item of ranked){const row=document.createElement('div');row.className='destinationRow';const name=document.createElement('strong');name.textContent=item.name;const meta=document.createElement('span');meta.textContent=t('destinationMeta',{n:item.reports,sources:item.sources.length});row.append(name,meta);destHost.append(row);}
   const configured=Boolean(snap.settings.callsign)&&coordinates(snap.settings.lat,snap.settings.lon);
   scheduleMapOverlays();
   $('empty').classList.toggle('hidden',configured);$('emptyTitle').textContent=t('configure');$('emptyConfigure').hidden=configured;
