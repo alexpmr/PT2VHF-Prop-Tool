@@ -225,24 +225,29 @@ function spaceConfidence(space={},now=Date.now()){
   let fresh=0;for(const m of metrics){const ts=Number(m?.timestamp);fresh+=Number.isFinite(ts)?Math.exp(-Math.max(0,now-ts)/(6*3600000)):.65;}
   return Math.round(clamp(25+metrics.length*8+(fresh/metrics.length)*25));
 }
-export function evaluateBand(spots,band,now=Date.now(),spaceWeather={}) {
+export function evaluateBand(spots,band,now=Date.now(),spaceWeather={},voacapPredictions=[]) {
   const data=spots.filter(s=>s.band===band),pairs=new Set(data.map(s=>s.tx+'|'+s.rx)),metrics=evidenceMetrics(data,now);
   const latest=metrics.latest,score=metrics.score,spaceScore=spaceWeatherScore(band,spaceWeather),sourceCount=metrics.sourceCount,independentEvents=metrics.independentEvents;
+  const vp=(voacapPredictions||[]).filter(p=>p.band===band&&Number.isFinite(p.reliability)&&p.timestamp>=now-30*60000);
+  const voacapScore=vp.length?Math.round(vp.reduce((n,p)=>n+p.reliability,0)/vp.length):null;
   let chance=null;
-  if(score!==null&&spaceScore!==null)chance=Math.round(clamp(score*.74+spaceScore*.26+Math.min(5,Math.max(0,sourceCount-1)*1.5)));
+  if(score!==null&&spaceScore!==null&&voacapScore!==null)chance=Math.round(clamp(score*.58+spaceScore*.17+voacapScore*.25+Math.min(5,Math.max(0,sourceCount-1)*1.5)));
+  else if(score!==null&&voacapScore!==null)chance=Math.round(clamp(score*.72+voacapScore*.28));
+  else if(score!==null&&spaceScore!==null)chance=Math.round(clamp(score*.74+spaceScore*.26+Math.min(5,Math.max(0,sourceCount-1)*1.5)));
   else if(score!==null)chance=score;
+  else if(voacapScore!==null)chance=Math.round(clamp(voacapScore*.72));
   else if(spaceScore!==null){
     const weight=band==='11 m'?.78:['6 m'].includes(band)?.35:['2 m','70 cm'].includes(band)?.18:.55;
     chance=Math.round(clamp(spaceScore*weight));
   }
-  const basis=data.length?(spaceScore!==null?'fused':'observed'):(spaceScore!==null?'estimated':'none');
+  const basis=data.length?((spaceScore!==null||voacapScore!==null)?'fused':'observed'):(voacapScore!==null?'voacap':(spaceScore!==null?'estimated':'none'));
   const confidence=data.length?metrics.confidence:(spaceScore!==null?Math.round(spaceConfidence(spaceWeather,now)*(band==='11 m'?.8:.65)):0);
   const state=chance===null?'Sem evidências':chance>=75?'Evidência forte':chance>=50?'Evidência moderada':chance>=25?'Evidência limitada':'Sem evidências';
   const recent=data.filter(s=>s.timestamp>=now-10*60000).length;
   const previous=data.filter(s=>s.timestamp>=now-20*60000&&s.timestamp<now-10*60000).length;
   const trend=previous>=3?(recent>previous*1.25?'↑':recent<previous*.75?'↓':'→'):'—';
   const confirmedZones=zonesFor(data,band),predictedZones=forecastZonesFor(data,band,chance);
-  return {band,state,score,chance,spaceScore,basis,confidence,sourceCount,independentEvents,convergedEvents:metrics.convergedEvents??0,pairs:pairs.size,reports:data.length,latest,trend,
+  return {band,state,score,chance,spaceScore,voacapScore,voacapTargets:vp.length,basis,confidence,sourceCount,independentEvents,convergedEvents:metrics.convergedEvents??0,pairs:pairs.size,reports:data.length,latest,trend,
     txReports:data.filter(s=>s.origin==='regional-out'||s.origin==='direct-tx').length,
     rxReports:data.filter(s=>s.origin==='regional-in'||s.origin==='direct-rx').length,
     zones:confirmedZones,confirmedZones,predictedZones};
