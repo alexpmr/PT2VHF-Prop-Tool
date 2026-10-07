@@ -1,5 +1,5 @@
 import {BANDS} from './domain.mjs';
-import {rankCountries} from './geography.mjs';
+import {rankCountries,rankContinents} from './geography.mjs';
 
 const normalize=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 function bandPattern(name){return name.replace(' ','\\s*').replace('cm','\\s*cm').replace('m','\\s*m');}
@@ -49,7 +49,16 @@ export function assistantReply(question,snapshot,selectedBand='',geography={}){
   if(/(score|indice|pontuacao|chance.*calcul|como.*chance|por que.*chance|why.*score)/.test(q))
     return {key:'assistantScore',vars:{band:band?.band||'',score:band?.chance??'—',basisKey:basisKey(band),reports:band?.reports??0,confidence:band?.confidence??0,sources:band?.sourceCount??0}};
 
-  if(/(pais|país|paises|países|country|countries|regiao|região|regioes|regiões|region|regions|destino|destinos)/.test(q)){
+  if(/(regiao|região|regioes|regiões|region|regions|continente|continentes|continent|continents)/.test(q)){
+    if(!band)return {key:'assistantEmpty',vars:{n:snapshot.settings.windowMinutes}};
+    const ranked=rankContinents(spots,countries,language,3),top=sector(spots);
+    if(!ranked.length)return {key:'assistantRegionsEmpty',vars:{band:band.band,n:snapshot.settings.windowMinutes}};
+    const names=ranked.map(v=>`${v.name} (${v.reports})`).join(', ');
+    const sources=[...new Set(ranked.flatMap(v=>v.sources))].join(', ')||'—';
+    return {key:'assistantRegions',vars:{band:band.band,regions:names,sources,cardinal:top?.cardinal||'—',degrees:top?.degrees??'—',confidence:band.confidence??0}};
+  }
+
+  if(/(pais|país|paises|países|country|countries|destino|destinos)/.test(q)){
     if(!band)return {key:'assistantEmpty',vars:{n:snapshot.settings.windowMinutes}};
     const ranked=rankCountries(spots,countries,language,3),top=sector(spots);
     if(!ranked.length)return {key:'assistantCountriesEmpty',vars:{band:band.band,n:snapshot.settings.windowMinutes}};
