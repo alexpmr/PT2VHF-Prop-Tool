@@ -1,10 +1,10 @@
-# PT2VHF Prop Tool — Downloads v0.2.11
+# PT2VHF Prop Tool — Downloads v0.2.12
 
 ## ⬇️ Baixe agora
 
-**[Instalador Windows x64](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.11/PT2VHF-Prop-Tool-0.2.11-x64-setup.exe)** · **[Portable Windows x64](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.11/PT2VHF-Prop-Tool-0.2.11-x64-portable.exe)** · **[Manual PDF](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.11/PT2VHF-Prop-Tool-0.2.11-Manual.pdf)**
+**[Instalador Windows x64](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.12/PT2VHF-Prop-Tool-0.2.12-x64-setup.exe)** · **[Portable Windows x64](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.12/PT2VHF-Prop-Tool-0.2.12-x64-portable.exe)** · **[Manual PDF](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.12/PT2VHF-Prop-Tool-0.2.12-Manual.pdf)**
 
-[SHA-256](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.11/SHA256SUMS.txt) · [Release v0.2.11](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/tag/v0.2.11) · [Última release](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/latest)
+[SHA-256](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.12/SHA256SUMS.txt) · [Release v0.2.12](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/tag/v0.2.12) · [Última release](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/latest)
 
 ## Sobre o PT2VHF Prop Tool
 
@@ -20,7 +20,7 @@ Aplicativo experimental para Windows 10/11 x64 que estima **onde há possibilida
 - Barra superior com versão, menu **Mapa / Configurações / LOGs / Ajuda / Sobre** e LEDs reais de tráfego **RX verde / TX vermelho**.
 - **Minha região** é o único contexto operacional do mapa. A posição configurada é a referência; o aplicativo procura enlaces observados envolvendo estações da região, sem depender de transmissões da própria PT2VHF. Atividade diretamente ligada ao indicativo continua acessível pelos LOGs/diagnóstico, sem um modo de mapa separado.
 - **PSK Reporter regional por Grid**, incluindo os modos reportados pela rede, com classificação de enlaces de saída e entrada da região.
-- **Reverse Beacon Network (RBN)** como fonte observacional de spots automáticos, consultada por meio da API pública Vail ReRBN. Spots com Grid conhecido são normalizados no mesmo modelo geográfico.
+- **Reverse Beacon Network (RBN)** como fonte observacional de spots automáticos, consultada por banda e Janela de observação por meio da API pública Vail ReRBN. Spots com Grid conhecido são geolocalizados e entram somente quando o enlace cruza o raio regional configurado.
 - **WSPR.live** como fonte observacional independente de WSPR/WSPRnet. As consultas são limitadas por tempo, bandas habilitadas e Grid regional; os reports entram no mesmo modelo geográfico sem perder a identificação da fonte.
 - **NOAA SWPC ampliado:** Kp, F10.7/SFI, Bz/Bt, velocidade do vento solar e classe de raios X GOES entram no contexto da estimativa.
 - **Bandas agora** mostra somente a leitura operacional: **Grande chance**, **Boa chance**, **Possível** ou **Chance baixa**, indicando também se a base é observada, fundida ou apenas estimada. O bloco é informativo e não altera filtros.
@@ -34,7 +34,7 @@ Aplicativo experimental para Windows 10/11 x64 que estima **onde há possibilida
 - As áreas previstas permanecem geograficamente conservadoras: dependem de geometria observacional disponível e não inventam continentes/regiões apenas a partir de índices globais. O cursor mostra direção/azimute e distância desde a estação configurada.
 - Painel de clima espacial exibe **Kp, SFI, Bz, Vsw e X-Ray**.
 - Histórico local de até 24 h; análise nos últimos 15, 30 ou 60 minutos. Refresh automático do mapa a cada **5 minutos por padrão**, configurável.
-- **Comparação de fontes:** PSK, WSPR, RBN, NOAA, VOACAP e MUF podem ser ligados/desligados diretamente ao lado da Janela de observação. O filtro afeta somente o snapshot analítico/visual atual; a coleta e o histórico permanecem preservados. WSPR e RBN continuam operando sem PSK; o RBN usa o prefixo regional do indicativo nos filtros `call` e `spotter` para não depender apenas do feed global.
+- **Comparação de fontes:** PSK, WSPR, RBN, NOAA, VOACAP e MUF podem ser ligados/desligados diretamente ao lado da Janela de observação. O filtro afeta somente o snapshot analítico/visual atual; a coleta e o histórico permanecem preservados. WSPR e RBN continuam operando sem PSK. No RBN, a região é definida pela posição configurada e pelo raio regional em quilômetros; o prefixo do indicativo não é usado como prova de localização.
 - **Mapa base selecionável:** Padrão, Claro, Escuro e Relevo funcionam offline e preservam o Heatmap e todas as camadas analíticas. A escolha fica salva no perfil.
 - Aba **LOGs** registra TX, RX, fonte, endpoint, status, latência, bytes, erros e prévia limitada do payload, incluindo PSK Reporter, WSPR.live, RBN, NOAA e GitHub.
 - Verificação de versões a cada **15 minutos** por padrão, configurável. O botão de versão verifica imediatamente e, havendo release nova, inicia o fluxo automático de atualização.
@@ -68,7 +68,7 @@ A fonte **KC2G/GIRO** fornece MUF(3000)F2 e foF2 medidos por ionossondas. O pain
 
 ## Limites e roteiro
 
-A v0.2.11 inclui VOACAP local (potência e circuito HF) e dados **foF2 / MUF(3000)F2** de ionossondas via KC2G/GIRO. A MUF(3000) é uma referência para aproximadamente 3.000 km, não o limite exato de qualquer percurso. Para a próxima fase ficam os modelos de antena (altura/ganho/polarização/azimute), MUF por circuito, interpolação ionosférica, GloTEC/TEC, aurora, DX Cluster e outras fontes. Detalhes no [backlog](docs/BACKLOG.md).
+A v0.2.12 inclui VOACAP local (potência e circuito HF) e dados **foF2 / MUF(3000)F2** de ionossondas via KC2G/GIRO. A MUF(3000) é uma referência para aproximadamente 3.000 km, não o limite exato de qualquer percurso. Para a próxima fase ficam os modelos de antena (altura/ganho/polarização/azimute), MUF por circuito, interpolação ionosférica, GloTEC/TEC, aurora, DX Cluster e outras fontes. Detalhes no [backlog](docs/BACKLOG.md).
 
 Os dados RBN chegam por uma API pública de agregação e podem ter Grid ausente, especialmente para alguns indicativos internacionais. PSK Reporter e WSPR.live também dependem de participantes e localização reportada. O aplicativo rejeita evidências sem posição quando ela é necessária para inferência geográfica e mantém a origem de cada fonte para evitar dupla interpretação.
 
