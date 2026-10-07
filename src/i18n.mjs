@@ -1476,3 +1476,38 @@ const EXTRA_MESSAGES_V0210={
   }
 };
 for(const [code,extra] of Object.entries(EXTRA_MESSAGES_V0210))Object.assign(MESSAGES[code],extra);
+
+
+const EXTRA_MESSAGES_V0212={
+  'pt-BR':{
+    nearbyRadius:'Raio da região (km)',
+    news0212:'• A região do RBN agora é definida exclusivamente pela posição configurada + raio em km, não pelo prefixo do indicativo.\n• O raio regional está disponível em Configurações e mantém 300 km como padrão.\n• RBN é consultado por banda e Janela de observação; os grids TX/RX são convertidos em coordenadas e filtrados localmente pelo raio.\n• Spots sem localização suficiente não entram como evidência geográfica.',
+    rbnSource:'Spots automáticos do Reverse Beacon Network via Vail ReRBN. A região é definida pela posição configurada e pelo raio em km; o indicativo não define localização.'
+  },
+  en:{
+    nearbyRadius:'Region radius (km)',
+    news0212:'• RBN region is now defined only by configured position + radius in km, never by callsign prefix.\n• Region radius is configurable and defaults to 300 km.\n• RBN is queried by band and Observation window; TX/RX grids are geolocated and filtered locally.\n• Spots without enough location data are not used as geographic evidence.',
+    rbnSource:'Automatic Reverse Beacon Network spots via Vail ReRBN. Region membership is defined by configured position and radius in km; callsign prefix is not treated as location.'
+  },
+  es:{
+    nearbyRadius:'Radio de la región (km)',
+    news0212:'• La región RBN se define por posición + radio en km, no por prefijo de indicativo.\n• Radio regional configurable, 300 km por defecto.\n• RBN se consulta por banda y ventana temporal y se filtra geográficamente.',
+    rbnSource:'Spots del Reverse Beacon Network vía Vail ReRBN. La región se determina por posición y radio configurado, no por el prefijo del indicativo.'
+  },
+  fr:{
+    nearbyRadius:'Rayon de la région (km)',
+    news0212:'• La région RBN est définie par la position + rayon en km, jamais par le préfixe d’indicatif.\n• Rayon configurable, 300 km par défaut.\n• RBN est interrogé par bande et fenêtre puis filtré géographiquement.',
+    rbnSource:'Spots Reverse Beacon Network via Vail ReRBN. La région est définie par la position et le rayon configurés, pas par le préfixe d’indicatif.'
+  },
+  de:{
+    nearbyRadius:'Regionsradius (km)',
+    news0212:'• Die RBN-Region wird nur durch Position + Radius definiert, nicht durch Rufzeichenpräfix.\n• Konfigurierbarer Radius, standardmäßig 300 km.\n• RBN wird bandweise abgefragt und geografisch gefiltert.',
+    rbnSource:'Reverse-Beacon-Network-Spots über Vail ReRBN. Die Region wird durch Position und Radius bestimmt, nicht durch das Rufzeichenpräfix.'
+  },
+  it:{
+    nearbyRadius:'Raggio della regione (km)',
+    news0212:'• La regione RBN è definita solo da posizione + raggio in km, non dal prefisso del nominativo.\n• Raggio configurabile, 300 km predefiniti.\n• RBN viene interrogato per banda e filtrato geograficamente.',
+    rbnSource:'Spot Reverse Beacon Network via Vail ReRBN. La regione è definita da posizione e raggio configurati, non dal prefisso del nominativo.'
+  }
+};
+for(const [code,extra] of Object.entries(EXTRA_MESSAGES_V0212))Object.assign(MESSAGES[code],extra);
