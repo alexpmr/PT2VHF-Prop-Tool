@@ -7,6 +7,7 @@ import {assistantReply} from '../src/assistant.mjs';
 import {rankCountries} from '../src/geography.mjs';
 const $=id=>document.getElementById(id),NS='http://www.w3.org/2000/svg';
 const colors=['#bab1dc','#ad9ce5','#738fea','#76a8fa','#6bbee9','#57d3b4','#b0de74','#e4da68','#efbd7a','#ef837a','#dca0f0','#86dbf1','#ecade0','#90cda0'];
+const SOURCE_CONTROLS=[['psk','PSK'],['wspr','WSPR'],['rbn','RBN'],['noaa','NOAA'],['voacap','VOACAP'],['muf','MUF']];
 const color=band=>colors[BANDS.findIndex(b=>b.name===band)]||'#6fe2bf';
 let current,alertBand,scale=1,tx=0,ty=0,pointer,page='map',language='pt-BR',toastTimer,toastKey,configErrorKey,logsPaused=false,newsShownFor=null,heatFrame=0,updateFlowActive=false,countryFeatures=[];
 const heatScratch=document.createElement('canvas');
@@ -98,12 +99,21 @@ function renderBandControls(){
   const choices=[['',t('allBands')],...current.settings.visible.map(name=>[name,compactBandLabel(name)])];
   for(const [value,label] of choices){const b=document.createElement('button');b.type='button';b.dataset.band=value;b.textContent=label;b.classList.toggle('active',selected===value);b.setAttribute('role','radio');b.setAttribute('aria-checked',String(selected===value));b.onclick=()=>{$('band').value=value;render(current);};host.append(b);}
 }
+function renderSourceControls(){
+  const host=$('sourceButtons');if(!host||!current)return;host.replaceChildren();
+  for(const [key,label] of SOURCE_CONTROLS){
+    const b=document.createElement('button');b.type='button';b.dataset.source=key;b.textContent=label;
+    const active=current.settings.sourceEnabled?.[key]!==false;b.classList.toggle('active',active);b.classList.toggle('inactive',!active);b.setAttribute('aria-pressed',String(active));
+    b.onclick=async()=>{const next={...(current.settings.sourceEnabled||{}),[key]:!active};try{render(await api.configure({...current.settings,sourceEnabled:next}));}catch{toast('appError');}};
+    host.append(b);
+  }
+}
 function renderPeriodControls(){
   const selected=Number(current.settings.windowMinutes),host=$('periodButtons');host.replaceChildren();
   for(const n of [15,30,60]){const b=document.createElement('button');b.type='button';b.dataset.minutes=String(n);b.textContent=n===60?t('hour'):t('minutes',{n});b.classList.toggle('active',selected===n);b.setAttribute('role','radio');b.setAttribute('aria-checked',String(selected===n));b.onclick=async()=>{if(Number(current.settings.windowMinutes)===n)return;try{$('period').value=String(n);render(await api.configure({...current.settings,windowMinutes:n}));await refresh();}catch{toast('appError');}};host.append(b);}
 }
 function paintTranslations(){
-  document.documentElement.lang=language;document.documentElement.dataset.theme=current.settings.theme;
+  document.documentElement.lang=language;document.documentElement.dataset.theme=current.settings.theme;document.documentElement.dataset.mapBase=current.settings.mapBase||'default';
   for(const [attr,target] of [['data-i18n','textContent'],['data-i18n-title','title'],['data-i18n-aria','aria-label'],['data-i18n-placeholder','placeholder']])for(const node of document.querySelectorAll(`[${attr}]`)){const val=t(node.getAttribute(attr));if(target==='textContent')node.textContent=val;else node.setAttribute(target,val);}
   for(const n of [15,30])$('period').querySelector(`[value="${n}"]`).textContent=t('minutes',{n});
   $('period').querySelector('[value="60"]').textContent=t('hour');$('period').setAttribute('aria-label',t('observationWindow'));
@@ -145,7 +155,7 @@ function render(snap){
   current=snap;language=snap.settings.language;paintTranslations();pulseActivity(snap.activity||{});$('appVersion').textContent=$('aboutVersion').textContent=`v${snap.version}`;
   const status=snap.sourceStatus.psk,rbnStatus=snap.sourceStatus.rbn||{state:'idle'},wsprStatus=snap.sourceStatus.wspr||{state:'idle'},voacapStatus=snap.sourceStatus.voacap||{state:'idle'};const obsOnline=status.state==='online'||rbnStatus.state==='online'||wsprStatus.state==='online';$('status').textContent=obsOnline?'PSK/RBN/WSPR'+(voacapStatus.state==='online'?' + VOACAP':'')+' OK':sourceLabel(status);$('stationLabel').textContent=snap.settings.callsign||t('configure');
   $('period').value=String(snap.settings.windowMinutes);
-  renderBandControls();renderPeriodControls();
+  renderBandControls();renderPeriodControls();renderSourceControls();$('mapBase').value=snap.settings.mapBase||'default';
   $('bands').replaceChildren();$('bandCount').textContent=t('bandCount',{n:snap.settings.visible.length});
   for(const b of snap.bands.filter(b=>snap.settings.visible.includes(b.band))){
     const row=document.createElement('div');row.className='bandRow';
@@ -204,6 +214,7 @@ function setPage(next){if(!['map','logs','settings','help','about'].includes(nex
 for(const button of document.querySelectorAll('[data-page]'))button.onclick=()=>setPage(button.dataset.page);$('emptyConfigure').onclick=()=>setPage('settings');
 async function changePreference(key,value){try{render(await api.configure({...current.settings,[key]:value}));}catch{toast('appError');}}
 $('themeButton').onclick=()=>changePreference('theme',current.settings.theme==='dark'?'light':'dark');
+$('mapBase').onchange=()=>changePreference('mapBase',$('mapBase').value);
 for(const id of ['lat','lon'])$(id).oninput=()=>{const lat=Number($('lat').value),lon=Number($('lon').value);if($('lat').value&&$('lon').value&&coordinates(lat,lon))$('grid').value=toGrid(lat,lon);};
 $('grid').onchange=()=>{const p=fromGrid($('grid').value.trim());if(p){$('lat').value=p.lat;$('lon').value=p.lon;}else toast('invalidGrid');};
 $('locate').onclick=()=>{if(!navigator.geolocation){toast('locationError');return;}$('locate').disabled=true;navigator.geolocation.getCurrentPosition(p=>{$('lat').value=p.coords.latitude;$('lon').value=p.coords.longitude;$('grid').value=toGrid(p.coords.latitude,p.coords.longitude);$('locate').disabled=false;toast('locationFilled',{n:Math.round(p.coords.accuracy)});},()=>{$('locate').disabled=false;toast('locationError');},{timeout:15000,maximumAge:300000,enableHighAccuracy:true});};
