@@ -21,7 +21,7 @@ app.on('window-all-closed',()=>app.quit());
 function persist(){const payload=JSON.stringify(state);const job=persistQueue.catch(()=>{}).then(async()=>{await fs.mkdir(path.dirname(file),{recursive:true});await fs.writeFile(file+'.tmp',payload,'utf8');await fs.rename(file+'.tmp',file);});persistQueue=job;return job;}
 function snapshot(){
   const now=Date.now(),enabled=state.settings.sourceEnabled||{},rawSpots=domain.relevantSpots(state.spots,state.settings,scope,now);
-  const spots=rawSpots.filter(s=>s.source==='PSK Reporter'?enabled.psk!==false:s.source==='WSPR.live'?enabled.wspr!==false:s.source==='Reverse Beacon Network'?enabled.rbn!==false:true);
+  const spots=domain.filterSpotsBySources(rawSpots,enabled);
   const spaceWeather=enabled.noaa===false?{}:(state.spaceWeather||{kp:state.kp});
   const voacapPredictions=enabled.voacap===false?[]:(state.voacapPredictions||[]);
   const ionosonde=enabled.muf===false?null:(state.ionosonde&&now-state.ionosonde.timestamp<=muf.MUF_MAX_AGE?state.ionosonde:null);
@@ -101,7 +101,7 @@ async function refresh(){
     if(dueRBN){
       state.status.rbn={...state.status.rbn,state:'loading'};
       work.push((async()=>{try{
-        const spots=await sources.loadRBN(undefined,recordTraffic);state.spots=domain.mergeSpots(state.spots,spots);
+        const spots=await sources.loadRBN(state.settings,undefined,recordTraffic);state.spots=domain.mergeSpots(state.spots,spots);
         state.status.rbn={state:'online',updated:Date.now(),count:spots.length};
         recordTraffic({direction:'INFO',source:'Reverse Beacon Network',event:'parsed',detail:`${spots.length} RBN spots parsed`});
       }catch(e){state.status.rbn={...state.status.rbn,state:'error',detail:e.message};}})());
@@ -140,7 +140,7 @@ async function refresh(){
         recordTraffic({direction:'INFO',source:'KC2G / GIRO',event:'ionosonde-error',error:e.message});
       }})());
     }
-    emit();await Promise.all(work);state.spots=domain.mergeSpots(state.spots,[]);const regionalForVoacap=domain.relevantSpots(state.spots,state.settings,'nearby',Date.now());await refreshVoacap(regionalForVoacap,Date.now());await persist();
+    emit();await Promise.all(work);state.spots=domain.mergeSpots(state.spots,[]);const regionalForVoacap=domain.filterSpotsBySources(domain.relevantSpots(state.spots,state.settings,'nearby',Date.now()),state.settings.sourceEnabled||{});await refreshVoacap(regionalForVoacap,Date.now());await persist();
     const snap=snapshot(),healthy=(state.status.psk.state==='online'&&Date.now()-state.status.psk.updated<6*60000)||(state.status.rbn?.state==='online'&&Date.now()-state.status.rbn.updated<6*60000)||(state.status.wspr?.state==='online'&&Date.now()-state.status.wspr.updated<6*60000);
     for(const b of alerts.update(snap.bands,state.settings,Date.now(),healthy)){
       const metric=b.chance??b.score;if(Notification.isSupported())new Notification({title:t('opening')+' — '+b.band,body:t('alertText',{band:b.band,n:metric})}).show();
