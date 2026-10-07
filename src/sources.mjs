@@ -137,7 +137,7 @@ export async function loadRBN(settings={},fetchImpl,activity){
   if(!firstURLs.length)return [];
   const first=await Promise.all(firstURLs.map(url=>boundedFetch(url,'json',fetchImpl,activity)));
   const payloads=[...first],secondURLs=[];
-  first.forEach((payload,i)=>{if(Number(payload?.total)>1000&&Array.isArray(payload?.spots)&&payload.spots.length>=1000)secondURLs.push(rbnURLs(settings,Date.now(),1000)[i]);});
+  first.forEach((payload,i)=>{if(Number(payload?.total)>1000&&Array.isArray(payload?.spots)&&payload.spots.length>=1000)secondURLs.push(firstURLs[i].replace('offset=0','offset=1000'));});
   if(secondURLs.length)payloads.push(...await Promise.all(secondURLs.filter(Boolean).map(url=>boundedFetch(url,'json',fetchImpl,activity))));
   const merged=new Map();
   for(const payload of payloads)for(const spot of parseRBN(payload))merged.set(spot.id,spot);
