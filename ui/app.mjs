@@ -4,10 +4,11 @@ import {APP_VERSION} from '../src/version.mjs';
 import {normalizeReleaseNotes} from '../src/release-notes.mjs';
 import {aggregateHeatSamples,heatColor,kernelRadius} from '../src/heatmap.mjs';
 import {assistantReply} from '../src/assistant.mjs';
+import {rankCountries} from '../src/geography.mjs';
 const $=id=>document.getElementById(id),NS='http://www.w3.org/2000/svg';
 const colors=['#bab1dc','#ad9ce5','#738fea','#76a8fa','#6bbee9','#57d3b4','#b0de74','#e4da68','#efbd7a','#ef837a','#dca0f0','#86dbf1','#ecade0','#90cda0'];
 const color=band=>colors[BANDS.findIndex(b=>b.name===band)]||'#6fe2bf';
-let current,alertBand,scale=1,tx=0,ty=0,pointer,page='map',language='pt-BR',toastTimer,toastKey,configErrorKey,logsPaused=false,newsShownFor=null,heatFrame=0,updateFlowActive=false;
+let current,alertBand,scale=1,tx=0,ty=0,pointer,page='map',language='pt-BR',toastTimer,toastKey,configErrorKey,logsPaused=false,newsShownFor=null,heatFrame=0,updateFlowActive=false,countryFeatures=[];
 const heatScratch=document.createElement('canvas');
 let lastActivity={rx:0,tx:0},ledTimers={rx:null,tx:null};
 const listeners=[],conversation=[{key:'welcome'}];
@@ -39,7 +40,6 @@ function renderDensityHeatmap(){
   const rect=$('map').getBoundingClientRect(),width=Math.max(1,Math.round(rect.width)),height=Math.max(1,Math.round(rect.height));
   if(canvas.width!==width)canvas.width=width;if(canvas.height!==height)canvas.height=height;
   const ctx=canvas.getContext('2d');ctx.clearRect(0,0,width,height);
-  if((current.settings.mapView||'heatmap')!=='heatmap')return;
   const selected=$('band').value,shownBands=new Set(current.bands.filter(b=>current.settings.visible.includes(b.band)&&(!selected||b.band===selected)).map(b=>b.band));
   const showConfirmed=$('showConfirmed')?.checked!==false,showPredicted=$('showPredicted')?.checked!==false,samples=[],projectScreen=mapProjector();if(!projectScreen)return;
   if(showConfirmed)for(const s of current.spots){
@@ -85,6 +85,7 @@ function zoom(f){const next=Math.max(1,Math.min(6,scale*f));tx=540-(540-tx)*next
 for(let lon=-180;lon<=180;lon+=30)svgNode('path',{d:`M${(lon+180)*3},0 V540`},$('graticule'));
 for(let lat=-60;lat<=60;lat+=30)svgNode('path',{d:`M0,${(90-lat)*3} H1080`},$('graticule'));
 try{const land=await (await fetch('land.geojson')).json();for(const f of land.features){const polygons=f.geometry.type==='MultiPolygon'?f.geometry.coordinates:[f.geometry.coordinates];for(const rings of polygons)svgNode('path',{d:rings.map(ringPath).join(' '),'fill-rule':'evenodd'},$('land'));}}catch{toast('mapError');}
+try{const countries=await (await fetch('countries.geojson')).json();countryFeatures=Array.isArray(countries.features)?countries.features:[];}catch{countryFeatures=[];}
 for(const band of BANDS){const option=document.createElement('option');option.value=option.textContent=band.name;$('band').append(option);}
 for(const item of LANGUAGES){const button=document.createElement('button');button.type='button';button.dataset.language=item.code;const img=document.createElement('img');img.src=`flags/${item.flag}.svg`;img.alt='';button.append(img,document.createTextNode(item.name));button.onclick=()=>{changePreference('language',item.code);$('languageMenu').open=false;};$('languages').append(button);}
 function compactBandLabel(name){return name.replace(/\s+/g,'');}
@@ -140,35 +141,25 @@ function sourceLabel(status){return t({online:'online',loading:'loading',error:'
 function render(snap){
   current=snap;language=snap.settings.language;paintTranslations();pulseActivity(snap.activity||{});$('appVersion').textContent=$('aboutVersion').textContent=`v${snap.version}`;
   const status=snap.sourceStatus.psk,rbnStatus=snap.sourceStatus.rbn||{state:'idle'},wsprStatus=snap.sourceStatus.wspr||{state:'idle'};const obsOnline=status.state==='online'||rbnStatus.state==='online'||wsprStatus.state==='online';$('status').textContent=obsOnline?'PSK/RBN/WSPR OK':sourceLabel(status);$('stationLabel').textContent=snap.settings.callsign||t('configure');
-  $('period').value=String(snap.settings.windowMinutes);$('mapVisualization').value=snap.settings.mapView||'heatmap';
+  $('period').value=String(snap.settings.windowMinutes);
   renderBandControls();renderPeriodControls();
   $('bands').replaceChildren();$('bandCount').textContent=t('bandCount',{n:snap.settings.visible.length});
   for(const b of snap.bands.filter(b=>snap.settings.visible.includes(b.band))){
     const row=document.createElement('div');row.className='bandRow';
     const label=document.createElement('strong');label.textContent=b.band;label.style.color=color(b.band);
     const state=document.createElement('span');state.className='state';state.textContent=b.chance===null?t('insufficient'):t(bandStates[b.state]||'none')+(b.trend!=='—'?' '+b.trend:'');
-    const basis=document.createElement('small');basis.className='basis';basis.textContent=t({estimated:'basisEstimated',observed:'basisObserved',fused:'basisFused',none:'basisNone'}[b.basis]||'basisNone');
+    const basis=document.createElement('small');basis.className='basis';basis.textContent=t({estimated:'basisEstimated',observed:'basisObserved',fused:'basisFused',none:'basisNone'}[b.basis]||'basisNone')+' · '+t('confidenceShort',{n:b.confidence??0});
     row.append(label,state,basis);$('bands').append(row);
   }
-  $('zones').replaceChildren();$('points').replaceChildren();
   const displayed=snap.bands.filter(b=>snap.settings.visible.includes(b.band)&&(!$('band').value||b.band===$('band').value));let zoneCount=0,pointCount=0;
-  const showConfirmed=$('showConfirmed')?.checked!==false,showPredicted=$('showPredicted')?.checked!==false,mapView=snap.settings.mapView||'heatmap',shownBands=new Set(displayed.map(b=>b.band));
+  const showConfirmed=$('showConfirmed')?.checked!==false,showPredicted=$('showPredicted')?.checked!==false,shownBands=new Set(displayed.map(b=>b.band));
   const shownSpots=snap.spots.filter(p=>shownBands.has(p.band));
   pointCount=shownSpots.length;
-  if(mapView==='heatmap'){
-    if(showPredicted)zoneCount+=displayed.reduce((n,b)=>n+(b.predictedZones||[]).length,0);
-    if(showConfirmed)zoneCount+=displayed.reduce((n,b)=>n+(b.confirmedZones||b.zones||[]).length,0);
-  }else{
-    for(const b of displayed){
-      if(showPredicted)for(const zone of b.predictedZones||[]){zoneCount++;const p=svgNode('path',{class:'forecastZone',d:zone.rings.map(ringPath).join(' '),fill:color(b.band),stroke:color(b.band)},$('zones'));svgNode('title',{},p).textContent=`${b.band} · ${t('predicted')} · ${b.chance??'—'}%`;}
-      if(showConfirmed)for(const zone of b.confirmedZones||b.zones||[]){zoneCount++;const p=svgNode('path',{class:'confirmedZone',d:zone.rings.map(ringPath).join(' '),fill:color(b.band),stroke:color(b.band)},$('zones'));svgNode('title',{},p).textContent=t('zoneTip',{band:b.band,n:zone.reportCount,pairs:zone.pairs});}
-    }
-    for(const s of shownSpots){
-      const [cx,cy]=project([s.endpoint.lon,s.endpoint.lat]);const point=svgNode('circle',{cx,cy,r:1.8,fill:color(s.band)},$('points'));
-      const mode=s.mode==='Não informado'?t('unknownMode'):s.mode,direction=t({'regional-out':'rxNearby','regional-in':'rxNearby'}[s.origin]||'observed');
-      svgNode('title',{},point).textContent=`${s.tx} → ${s.rx} · ${s.band} · ${mode}\n${direction} · ${Math.round(s.distance)} km · ${Math.round(s.bearing)}°\n${date(s.timestamp)} · ${s.source}${s.snr===null?'':` · SNR ${s.snr} dB`}`;
-    }
-  }
+  if(showPredicted)zoneCount+=displayed.reduce((n,b)=>n+(b.predictedZones||[]).length,0);
+  if(showConfirmed)zoneCount+=displayed.reduce((n,b)=>n+(b.confirmedZones||b.zones||[]).length,0);
+  const ranked=rankCountries(shownSpots,countryFeatures,language,3),destHost=$('favoredDestinations');destHost.replaceChildren();
+  if(!ranked.length){const empty=document.createElement('span');empty.className='destinationEmpty';empty.textContent=t('noFavoredDestinations');destHost.append(empty);}
+  else for(const item of ranked){const row=document.createElement('div');row.className='destinationRow';const name=document.createElement('strong');name.textContent=item.name;const meta=document.createElement('span');meta.textContent=t('destinationMeta',{n:item.reports,sources:item.sources.length});row.append(name,meta);destHost.append(row);}
   const configured=Boolean(snap.settings.callsign)&&coordinates(snap.settings.lat,snap.settings.lon);
   scheduleMapOverlays();
   $('empty').classList.toggle('hidden',configured);$('emptyTitle').textContent=t('configure');$('emptyConfigure').hidden=configured;
@@ -178,7 +169,7 @@ function render(snap){
   const rbnQuery=rbnStatus.state==='online'?`OK (${rbnStatus.count??0})`:sourceLabel(rbnStatus),wsprQuery=wsprStatus.state==='online'?`OK (${wsprStatus.count??0})`:sourceLabel(wsprStatus);$('freshness').textContent=`PSK: ${query}${status.updated?' · '+age(status.updated):''} · WSPR: ${wsprQuery}${wsprStatus.updated?' · '+age(wsprStatus.updated):''} · RBN: ${rbnQuery}${rbnStatus.updated?' · '+age(rbnStatus.updated):''}${snap.nextPSK>0?' · '+t('nextQuery',{n:Math.ceil(snap.nextPSK/60000)}):''}`;
   const kp=snap.kp,sw=snap.spaceWeather||{};$('kp').textContent=kp?kp.value.toLocaleString(language,{minimumFractionDigits:1,maximumFractionDigits:1}):'—';$('kpState').textContent=kp?t(Date.now()-kp.timestamp>4*3600000?'oldMeasure':kp.value>=5?'elevated':'measurement'):sourceLabel(snap.sourceStatus.noaa);$('kpTime').textContent=kp?`${date(kp.timestamp)} · ${t('kpNote')}`:t('kpWaiting');$('sfi').textContent=sw.f107?.value??'—';$('bz').textContent=sw.bz?`${sw.bz.value} nT`:'—';$('wind').textContent=sw.wind?`${Math.round(sw.wind.value)} km/s`:'—';$('xray').textContent=sw.xray?.class??'—';
   renderUpdate(snap.update);renderLogs();
-  if(snap.startupNews&&newsShownFor!==snap.startupNews.version){newsShownFor=snap.startupNews.version;$('newsVersion').textContent='v'+snap.startupNews.version;const notes=normalizeReleaseNotes(snap.startupNews.notes);$('newsNotes').textContent=notes||t('news026');if(!$('newsDialog').open)$('newsDialog').showModal();}
+  if(snap.startupNews&&newsShownFor!==snap.startupNews.version){newsShownFor=snap.startupNews.version;$('newsVersion').textContent='v'+snap.startupNews.version;const notes=normalizeReleaseNotes(snap.startupNews.notes);$('newsNotes').textContent=notes||t('news027');if(!$('newsDialog').open)$('newsDialog').showModal();}
   if(snap.alert){alertBand=snap.alert.band;$('alertText').textContent=t('alertText',{band:alertBand,n:snap.alert.score});if(!$('alertDialog').open)$('alertDialog').showModal();}
 }
 function formatBytes(value){const n=Number(value);if(!Number.isFinite(n)||n<0)return '';if(n<1024)return n+' B';if(n<1048576)return (n/1024).toFixed(1)+' KB';return (n/1048576).toFixed(n>=104857600?0:1)+' MB';}
@@ -211,7 +202,7 @@ $('locate').onclick=()=>{if(!navigator.geolocation){toast('locationError');retur
 for(const input of $('configForm').querySelectorAll('input')){input.addEventListener('invalid',()=>input.setCustomValidity(t('invalidSettings')));input.addEventListener('input',()=>input.setCustomValidity(''));}
 $('configForm').onsubmit=async e=>{e.preventDefault();const s={...current.settings};try{for(const id of ['lat','lon','power','alertMinScore','alertMinDistance','alertCooldown','updateMinutes','dataRefreshMinutes'])s[id]=Number($(id).value);s.callsign=$('callsign').value;for(const kind of ['visible','alertBands'])s[kind]=[...$('bandSettings').querySelectorAll(`input[data-kind="${kind}"]:checked`)].map(n=>n.dataset.band);s.antennas={...s.antennas};for(const n of $('bandSettings').querySelectorAll('select'))s.antennas[n.dataset.antenna]={...s.antennas[n.dataset.antenna],type:n.value};render(await api.configure(s));setPage('map');toast('saved');await refresh();}catch{configErrorKey='invalidSettings';$('configError').textContent=t(configErrorKey);}};
 for(const id of ['showConfirmed','showPredicted'])$(id).onchange=()=>render(current);
-$('band').onchange=()=>render(current);$('mapVisualization').onchange=()=>changePreference('mapView',$('mapVisualization').value);$('period').onchange=async()=>{try{const next=Number($('period').value);render(await api.configure({...current.settings,windowMinutes:next}));await refresh();}catch{toast('appError');}};
+$('band').onchange=()=>render(current);$('period').onchange=async()=>{try{const next=Number($('period').value);render(await api.configure({...current.settings,windowMinutes:next}));await refresh();}catch{toast('appError');}};
 async function refresh(){$('refresh').disabled=true;try{render(await api.refresh());}catch{toast('appError');}finally{$('refresh').disabled=false;}}
 $('refresh').onclick=()=>refresh();
 $('version').onclick=async()=>{
@@ -238,7 +229,7 @@ function updateCursorReadout(e){
 }
 $('map').addEventListener('pointerdown',e=>{if(e.button!==0)return;pointer={x:e.clientX,y:e.clientY,tx,ty};$('map').setPointerCapture(e.pointerId);});$('map').addEventListener('pointermove',e=>{updateCursorReadout(e);if(!pointer)return;const rect=$('map').getBoundingClientRect(),ratio=Math.min(rect.width/1080,rect.height/540);tx=pointer.tx+(e.clientX-pointer.x)/ratio;ty=pointer.ty+(e.clientY-pointer.y)/ratio;mapTransform();});$('map').addEventListener('pointerleave',()=>$('cursorInfo').classList.add('hidden'));for(const type of ['pointerup','pointercancel'])$('map').addEventListener(type,()=>pointer=null);
 for(const id of ['logDirection','logSource'])$(id).onchange=renderLogs;$('logSearch').oninput=renderLogs;$('pauseLogs').onclick=()=>{logsPaused=!logsPaused;$('pauseLogs').textContent=t(logsPaused?'resume':'pause');if(!logsPaused)renderLogs();};$('clearLogs').onclick=async()=>{await api.clearLogs();if(current)current.logs=[];renderLogs();};$('exportLogs').onclick=()=>api.exportLogs().then(ok=>{if(ok)toast('exported');}).catch(()=>toast('appError'));
-function answer(question){return assistantReply(question,current,$('band').value);}
+function answer(question){return assistantReply(question,current,$('band').value,{countries:countryFeatures,language});}
 function renderConversation(){$('conversation').replaceChildren();for(const item of conversation){const p=document.createElement('p');p.className=item.user?'userMessage':'assistantMessage';const vars={...item.vars,age:age(item.vars?.latest),basis:item.vars?.basisKey?t(item.vars.basisKey):'',psk:item.vars?.psk?t('sourceState_'+item.vars.psk):item.vars?.psk,rbn:item.vars?.rbn?t('sourceState_'+item.vars.rbn):item.vars?.rbn,wspr:item.vars?.wspr?t('sourceState_'+item.vars.wspr):item.vars?.wspr,noaa:item.vars?.noaa?t('sourceState_'+item.vars.noaa):item.vars?.noaa};p.textContent=item.user||t(item.key,vars);$('conversation').append(p);}}
 $('chat').onsubmit=e=>{e.preventDefault();const q=$('question').value.trim();if(!q)return;conversation.push({user:q},answer(q));while(conversation.length>41)conversation.splice(1,2);renderConversation();$('conversation').scrollTop=$('conversation').scrollHeight;$('question').value='';};
 api.subscribe(render);render(await api.snapshot());document.documentElement.dataset.ready='true';

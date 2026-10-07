@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.2.7 — 2026-10-06
+
+- O mapa passa a operar **exclusivamente em Heatmap**. O seletor Heatmap/Polígonos, a preferência persistida e o renderer alternativo foram removidos; perfis antigos migram automaticamente.
+- O motor passa a expor **confiança separada da chance**, considerando diversidade de PSK Reporter/WSPR.live/RBN, qualidade geográfica, freshness, quantidade de enlaces e convergência.
+- Evidências do mesmo enlace/banda na mesma janela curta, vistas por mais de uma fonte, são tratadas como **convergência multifuente**, evitando multiplicação integral do mesmo evento.
+- Nova base geográfica offline **Natural Earth Admin 0 1:110m**, com 177 países e nomes nos seis idiomas da aplicação.
+- Novo painel **Destinos observados** mostra os países mais presentes nas evidências geolocalizadas do filtro atual.
+- O Assistente passa a responder perguntas sobre **países/regiões favorecidos** usando fronteiras reais, além de informar direção predominante, fontes e confiança.
+- O README do GitHub passa a exibir **Instalador, Portable e Manual PDF logo no topo** da área de documentação.
+- Ajuda, manual, traduções, testes e validações atualizados.
+- Backlog consolidado limpo: requisitos já entregues e contradições históricas deixam de aparecer como pendências atuais.
+
 ## v0.2.6 — 2026-10-06
 
 - **WSPR.live** integrado como nova fonte observacional independente, consultada por Grid, bandas habilitadas e Janela de observação.

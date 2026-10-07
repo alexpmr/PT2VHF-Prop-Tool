@@ -8,7 +8,7 @@ export const DEFAULT_SETTINGS = {
   callsign:'',lat:null,lon:null,power:100,antennas:Object.fromEntries(BANDS.map(b=>[b.name,{type:'Vertical'}])),
   visible:BANDS.map(b=>b.name),alertBands:[],alertMinScore:65,
   alertMinDistance:800,alertCooldown:30,windowMinutes:30,
-  updateMinutes:15,dataRefreshMinutes:5,nearbyRadius:300,mapView:'heatmap',language:'pt-BR',theme:'dark'
+  updateMinutes:15,dataRefreshMinutes:5,nearbyRadius:300,language:'pt-BR',theme:'dark'
 };
 export function coordinates(lat,lon) {
   return typeof lat==='number' && typeof lon==='number' && Number.isFinite(lat) && Number.isFinite(lon) && lat>=-90 && lat<=90 && lon>=-180 && lon<=180;
@@ -58,7 +58,7 @@ export function validateSettings(input) {
   s.antennas=Object.fromEntries(BANDS.map(b=>[b.name,{type:'Vertical',...s.antennas[b.name]}]));
   if(!['pt-BR','en','es','fr','de','it'].includes(s.language))throw new Error('Idioma inválido');
   if(!['dark','light'].includes(s.theme))throw new Error('Tema inválido');
-  if(!['heatmap','polygons'].includes(s.mapView))throw new Error('Visualização do mapa inválida');
+  delete s.mapView;
   return s;
 }
 export function migrateSettings(input,schemaVersion=1) {
@@ -66,6 +66,7 @@ export function migrateSettings(input,schemaVersion=1) {
   if(schemaVersion<2&&input.visible?.length===13&&BANDS.filter(b=>b.name!=='11 m').every(b=>input.visible.includes(b.name)))s.visible=[...input.visible,'11 m'];
   if(schemaVersion<4&&s.updateMinutes===5)s.updateMinutes=30;
   if(schemaVersion<5&&s.updateMinutes===30)s.updateMinutes=15;
+  delete s.mapView;
   return validateSettings(s);
 }
 function unescapeXML(v) {
@@ -187,32 +188,61 @@ export function spaceWeatherScore(band,space={}) {
   if(cls==='X')score-=28+Math.min(12,level*2);
   return Math.round(clamp(score));
 }
-function evidenceScore(data,now) {
-  if(!data.length)return null;
-  const pairs=new Set(data.map(s=>s.tx+'|'+s.rx)),sources=new Set(data.map(s=>s.source).filter(Boolean)),latest=Math.max(...data.map(s=>s.timestamp));
-  const independentEvents=new Set(data.map(s=>[s.tx,s.rx,s.band,Math.floor(s.timestamp/(5*60000))].join('|')));
-  const diversityBoost=Math.min(8,Math.max(0,sources.size-1)*4);
-  return Math.round(clamp((Math.log2(1+pairs.size)*18+Math.min(18,independentEvents.size/2)+diversityBoost)*Math.exp(-(now-latest)/(30*60000))));
+const SOURCE_WEIGHT={'PSK Reporter':1,'WSPR.live':.95,'Reverse Beacon Network':.9};
+function endpointGrid(spot){
+  if(spot.origin==='regional-out'||spot.origin==='direct-tx')return spot.rxGrid||'';
+  if(spot.origin==='regional-in'||spot.origin==='direct-rx')return spot.txGrid||'';
+  return '';
+}
+function geoQuality(spot){
+  const grid=String(endpointGrid(spot)||'').trim();
+  if(grid.length>=8)return 1;
+  if(grid.length>=6)return .96;
+  if(grid.length>=4)return .82;
+  return spot.endpoint?.lat!==undefined&&spot.endpoint?.lon!==undefined ? .72 : .55;
+}
+function sourceWeight(spot){return SOURCE_WEIGHT[spot.source]??.85;}
+function freshnessWeight(spot,now){return Math.exp(-Math.max(0,now-spot.timestamp)/(30*60000));}
+function evidenceMetrics(data,now){
+  if(!data.length)return {score:null,confidence:0,sourceCount:0,independentEvents:0,latest:null};
+  const pairs=new Set(data.map(s=>s.tx+'|'+s.rx)),sources=new Set(data.map(s=>s.source).filter(Boolean)),latest=Math.max(...data.map(s=>s.timestamp)),events=new Map();
+  for(const s of data){
+    const key=[s.tx,s.rx,s.band,Math.floor(s.timestamp/(5*60000))].join('|'),quality=sourceWeight(s)*geoQuality(s)*freshnessWeight(s,now);
+    if(!events.has(key))events.set(key,{quality:0,sources:new Set()});
+    const e=events.get(key);e.quality=Math.max(e.quality,quality);if(s.source)e.sources.add(s.source);
+  }
+  let weightedEvents=0,converged=0;
+  for(const e of events.values()){const bonus=Math.min(.12,Math.max(0,e.sources.size-1)*.06);weightedEvents+=Math.min(1.12,e.quality+bonus);if(e.sources.size>1)converged++;}
+  const diversityBoost=Math.min(7,Math.max(0,sources.size-1)*3.5),score=Math.round(clamp(Math.log2(1+pairs.size)*18+Math.min(20,weightedEvents*.62)+diversityBoost));
+  const avgGeo=data.reduce((n,s)=>n+geoQuality(s),0)/data.length,avgFresh=data.reduce((n,s)=>n+freshnessWeight(s,now),0)/data.length;
+  const coverage=Math.min(1,Math.log2(1+pairs.size)/5),diversity=Math.min(1,sources.size/3),convergence=Math.min(1,converged/3);
+  const confidence=Math.round(clamp(coverage*35+diversity*20+avgGeo*20+avgFresh*20+convergence*5));
+  return {score,confidence,sourceCount:sources.size,independentEvents:events.size,latest,convergedEvents:converged};
+}
+function spaceConfidence(space={},now=Date.now()){
+  const metrics=[space.kp,space.f107,space.bz,space.wind,space.xray].filter(Boolean);
+  if(!metrics.length)return 0;
+  let fresh=0;for(const m of metrics){const ts=Number(m?.timestamp);fresh+=Number.isFinite(ts)?Math.exp(-Math.max(0,now-ts)/(6*3600000)):.65;}
+  return Math.round(clamp(25+metrics.length*8+(fresh/metrics.length)*25));
 }
 export function evaluateBand(spots,band,now=Date.now(),spaceWeather={}) {
-  const data=spots.filter(s=>s.band===band),pairs=new Set(data.map(s=>s.tx+'|'+s.rx));
-  const latest=data.length?Math.max(...data.map(s=>s.timestamp)):null;
-  const score=evidenceScore(data,now),spaceScore=spaceWeatherScore(band,spaceWeather),sourceCount=new Set(data.map(s=>s.source).filter(Boolean)).size;
-  const independentEvents=new Set(data.map(s=>[s.tx,s.rx,s.band,Math.floor(s.timestamp/(5*60000))].join('|'))).size;
+  const data=spots.filter(s=>s.band===band),pairs=new Set(data.map(s=>s.tx+'|'+s.rx)),metrics=evidenceMetrics(data,now);
+  const latest=metrics.latest,score=metrics.score,spaceScore=spaceWeatherScore(band,spaceWeather),sourceCount=metrics.sourceCount,independentEvents=metrics.independentEvents;
   let chance=null;
-  if(score!==null&&spaceScore!==null)chance=Math.round(clamp(score*.72+spaceScore*.28+Math.min(8,independentEvents/4)+Math.min(4,Math.max(0,sourceCount-1)*2)));
+  if(score!==null&&spaceScore!==null)chance=Math.round(clamp(score*.74+spaceScore*.26+Math.min(5,Math.max(0,sourceCount-1)*1.5)));
   else if(score!==null)chance=score;
   else if(spaceScore!==null){
     const weight=band==='11 m'?.78:['6 m'].includes(band)?.35:['2 m','70 cm'].includes(band)?.18:.55;
     chance=Math.round(clamp(spaceScore*weight));
   }
   const basis=data.length?(spaceScore!==null?'fused':'observed'):(spaceScore!==null?'estimated':'none');
+  const confidence=data.length?metrics.confidence:(spaceScore!==null?Math.round(spaceConfidence(spaceWeather,now)*(band==='11 m'?.8:.65)):0);
   const state=chance===null?'Sem evidências':chance>=75?'Evidência forte':chance>=50?'Evidência moderada':chance>=25?'Evidência limitada':'Sem evidências';
   const recent=data.filter(s=>s.timestamp>=now-10*60000).length;
   const previous=data.filter(s=>s.timestamp>=now-20*60000&&s.timestamp<now-10*60000).length;
   const trend=previous>=3?(recent>previous*1.25?'↑':recent<previous*.75?'↓':'→'):'—';
   const confirmedZones=zonesFor(data,band),predictedZones=forecastZonesFor(data,band,chance);
-  return {band,state,score,chance,spaceScore,basis,sourceCount,pairs:pairs.size,reports:data.length,latest,trend,
+  return {band,state,score,chance,spaceScore,basis,confidence,sourceCount,independentEvents,convergedEvents:metrics.convergedEvents??0,pairs:pairs.size,reports:data.length,latest,trend,
     txReports:data.filter(s=>s.origin==='regional-out'||s.origin==='direct-tx').length,
     rxReports:data.filter(s=>s.origin==='regional-in'||s.origin==='direct-rx').length,
     zones:confirmedZones,confirmedZones,predictedZones};

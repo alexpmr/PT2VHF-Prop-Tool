@@ -1,5 +1,17 @@
 # Backlog consolidado — PT2VHF Prop Tool
 
+## Entregue na v0.2.7
+
+- **Mapa exclusivamente Heatmap:** removido o seletor Heatmap/Polígonos, a preferência persistida e o renderer de polígonos. Perfis antigos com `mapView=polygons` migram automaticamente sem intervenção.
+- **Fusão com confiança própria:** chance e confiança passam a ser métricas distintas. A confiança considera diversidade de PSK Reporter/WSPR.live/RBN, qualidade geográfica do Grid/posição, freshness, quantidade de enlaces e convergência entre fontes.
+- **Deduplicação lógica multifuente:** o mesmo enlace/banda observado na mesma janela curta por mais de uma fonte conta como convergência, sem ser multiplicado como vários eventos independentes completos.
+- **Destinos observados:** painel lateral mostra os principais países do filtro atual a partir das coordenadas reais das evidências.
+- **Geografia offline:** incorporada base Natural Earth Admin 0 1:110m com 177 países e nomes em PT-BR, EN, ES, FR, DE e IT.
+- **Assistente geográfico:** perguntas sobre países/regiões favorecidos retornam nomes geográficos reais, direção predominante, fontes e confiança; não inferem país apenas por azimute.
+- **README com downloads primeiro:** Instalador Windows, Portable e Manual PDF passam a ser o primeiro bloco útil do README na página do GitHub.
+- Ajuda, manual, traduções, testes, validação da base geográfica e documentação atualizados.
+- Backlog consolidado limpo para remover requisitos já entregues e contradições históricas.
+
 ## Entregue na v0.2.6
 
 - Seleção de bandas por botões compactos na barra superior, incluindo **Todas as bandas**; removido o pull-down de banda.
@@ -82,83 +94,47 @@
 - Atualização instalada e portátil com integridade, reinício e recuperação do portátil.
 - README com downloads diretos; manual PDF com telas.
 
-As descrições abaixo preservam os critérios acordados. Esses itens recentes estão implementados; fontes adicionais, modelos físicos, IA generativa, MapLibre, Alexa e demais evoluções continuam no roteiro.
+## Validações de campo ainda pendentes
 
-## Prioridade imediata: validar v0.1 em Windows
-
-- [x] Criar repositório `alexpmr/PT2VHF-Prop-Tool`, publicar código e executar o workflow Windows.
-- Testar instalador, desinstalação, preservação de configurações e portátil em pasta gravável/USB.
-- Confirmar consultas reais do indicativo PT2VHF e de seu Grid; verificar ausência de registros, limite de consulta e recuperação após erro/429.
+- Testar instalador, desinstalação e preservação de configurações em máquinas Windows reais.
+- Testar Portable em pasta gravável e USB, incluindo atualização e rollback.
+- Confirmar consultas reais por Grid/indicativo, cenários sem registros, limites das fontes e recuperação após erro/429.
 - Validar localização automática, precisão e recusa da permissão.
-- Testar alertas com transmissões realmente recebidas, diferentes receptores e múltiplos ciclos de atualização.
-- Validar atualização instalada e portátil v0.1 → próxima versão, notas, checksum, cancelamento, preservação de dados e reinício. O fluxo automático está implementado a partir da v0.2.0; na v0.1.0 o portátil ainda exige download manual.
+- Testar alertas com eventos reais, múltiplas fontes e vários ciclos de atualização.
+- Validar OTA instalada e Portable entre versões publicadas, preservando dados.
 - Assinatura Authenticode e ícone próprio.
-- Escolher licença de distribuição.
+- Escolher licença de distribuição do projeto.
 
-## Página do projeto e downloads
+## Motor, fontes e modelagem
 
-- Manter o `README.md` exibido na página inicial do repositório GitHub atualizado com a finalidade do software, recursos disponíveis, fontes de dados, requisitos, instruções de instalação/uso e limitações da versão publicada.
-- Exibir em destaque a versão mais recente e links diretos para baixar o instalador e o portátil do Windows, além do link para a página da release e suas notas.
-- Atualizar a versão e os links a cada publicação, preservando o nome versionado dos executáveis e conferindo que os downloads apontam para os arquivos da release mais recente.
-- Separar os recursos já implementados dos itens planejados; não apresentar funcionalidades do backlog como disponíveis.
+- Integrar novas fontes somente após validar acesso, termos de uso, quotas e estabilidade: **DX Cluster/HamQTH**, **GIRO/KC2G**, **D-RAP**, **GloTEC/TEC**, aurora, prótons e outros produtos NOAA/SWPC. Não redistribuir mapas de terceiros sem autorização.
+- Integrar **MUF/foF2** para melhorar a leitura ionosférica e a estimativa de HF/11 m.
+- Implementar **VOACAP** ou motor equivalente para circuitos HF, considerando potência, antena, altura, ganho, polarização e azimute.
+- Calibrar o Prop Score/confiança com dados históricos e validação real por banda/região; os pesos operacionais atuais ainda não são probabilidades científicas de QSO.
+- Separar recepção unilateral de QSO confirmado e evitar converter automaticamente evidência FT8/WSPR em garantia equivalente para SSB/CW.
+- Criar motor específico VHF/UHF para **Es, TEP, F2, tropo/ducting, aurora e meteor scatter**, explicitando mecanismo provável e nível de confiança.
+- Corrigir vieses de cobertura/atividade por quantidade de receptores e construir baselines por horário, banda, região, modo e observadores ativos.
+- Evoluir 11 m/PX com MUF/foF2, TEC/GloTEC e modelos F2/Es/TEP; manter estimativa solar sempre separada de confirmação geográfica.
 
-## Navegação, Sobre e atualização
+## Mapa e análise operacional
 
-- **GitHub/README — downloads no topo:** reorganizar o README para que, imediatamente ao início da área de README na página principal do repositório, apareçam primeiro os links/botões de **Download do Instalador Windows**, **Portable** e **Manual PDF** da versão estável mais recente. A lista de arquivos/pastas do GitHub é fixa e não pode ser movida abaixo do README; portanto, a solução deve priorizar os downloads como o primeiro bloco visível do README. Mover apresentação, descrição do projeto, recursos, fontes, arquitetura, instruções e demais seções para depois desse bloco. Preferir links claros e destacados para a release atual/latest, evitando que o usuário precise rolar a página para encontrar os executáveis.
-- Na barra superior, manter a ordem `Mapa`, `Configurações`, `LOGs`, `Ajuda` e `Sobre`. Manter os seletores de contexto do mapa como controles independentes da navegação principal.
-- A aba `Sobre` deve apresentar uma breve descrição da aplicação, finalidade, recursos e limitações da versão, autoria `Alex, PT2VHF`, link do projeto e formas de contato fornecidas pelo autor. Traduzir seu conteúdo nos seis idiomas previstos.
-- Na mesma barra, exibir um botão de atualização separado do número da versão exibido após o nome da aplicação. Usar `Última versão` em verde quando uma checagem bem-sucedida confirmar que a versão atual é a mais recente, ou `Nova versão disponível` em laranja piscando quando houver uma versão mais nova. Não apresentar falha de consulta como confirmação de versão atualizada.
-- Ao clicar em `Nova versão disponível`, iniciar o download e a atualização pelo aplicativo, reproduzindo o fluxo solicitado do PT2VHF APRS Client: informar a versão de destino e as novidades, mostrar andamento, validar integridade, atualizar e reiniciar preservando configurações e dados. Impedir downloads concorrentes e informar erros com possibilidade de nova tentativa. O botão verde pode verificar novamente a disponibilidade.
-- Prever esse fluxo para Windows instalado e portátil. Para o portátil, implementar substituição segura do executável após encerrar o processo, preservando a pasta de dados e permitindo recuperar a versão anterior em caso de falha. Implementado na v0.2.0; o mecanismo de download manual permanece apenas na v0.1.0.
-
-## Motor e novas fontes
-
-- Continuar ampliando a fusão além do WSPR.live já integrado: DX Cluster/HamQTH, GIRO/KC2G e complementos NOAA (D-RAP, GloTEC/TEC, aurora e demais produtos espaciais).
-- Confirmar acesso, condições de uso, quotas e disponibilidade antes de ativar cada fonte. Não redistribuir mapas DXMaps sem autorização.
-- MUF/foF2, prótons, D-RAP, GloTEC/TEC, aurora e demais camadas espaciais. F10.7, vento solar/Bz e raios X já entram no motor; a v0.2.6 usa esse contexto também na estimativa não geográfica de 11 m.
-- VOACAP para circuitos HF: considerar potência, antena, altura, ganho, polarização e azimute por banda.
-- Prop Score calibrado por banda/região; separar força de evidência, cobertura amostral, qualidade do enlace e probabilidade modelada.
-- Separar recepção unilateral de QSO confirmado. Analisar modos sem converter automaticamente FT8 em SSB/CW.
-- Motor específico VHF/UHF: Es, TEP, F2, tropo/ductos, aurora, meteor scatter e outros mecanismos, explicitando hipóteses.
-- Corrigir viés de atividade e cobertura de receptores; ausência de spots não é ausência de propagação.
-- Baselines por horário, bandas, região, modos e quantidade de observadores ativos.
-
-## Mapa e operação
-
-- **Mapa — somente Heatmap:** remover a opção/seletor de visualização **Mapa de calor / Polígonos**. O mapa deverá operar exclusivamente em **Mapa de calor**, sem permitir alternância para polígonos. Remover da interface, configurações, preferências persistidas, Ajuda, manual e traduções qualquer controle ou referência que sugira seleção entre os dois modos. Manter apenas a lógica necessária ao Heatmap e eliminar o código de renderização de polígonos quando não houver dependência técnica restante, reduzindo complexidade e risco de regressão. Perfis antigos que tenham salvo `mapView = polygons` devem migrar automaticamente para Heatmap sem intervenção do usuário.
-
-- Potência padrão de `100 W` na configuração inicial da estação. Manter o valor editável e preservar a potência escolhida pelo usuário entre sessões e atualizações. Esse valor inicial já existe na v0.1.0 e deve ser mantido como requisito.
-- Na configuração inicial, habilitar todas as bandas para monitoramento e exibição, incluindo 11 metros quando adicionada, com antena `Vertical` atribuída a cada banda. Permitir alterar posteriormente o tipo de antena por banda e habilitar/desabilitar bandas. Aplicar esses valores somente na inicialização ou a novos campos sem preferência salva, preservando as escolhas existentes do usuário após reiniciar ou atualizar.
-- Corrigir o estado vazio do mapa relatado na v0.1.0: o bloco `Sem evidências para este filtro` mantém o botão `Configurar estação` após salvar a configuração. Exibir esse convite somente quando a configuração da estação estiver incompleta. Com a estação configurada e sem recepções, substituir o bloco central por uma indicação discreta que não cubra o mapa.
-- Diferenciar visualmente configuração pendente, consulta em andamento, fonte indisponível e ausência de evidências para o período/bandas selecionados. Configuração salva não garante spots disponíveis; continuar indicando que ausência de dados não significa banda fechada.
-- Exibir a versão atual imediatamente após o nome da aplicação na barra superior, por exemplo: `PT2VHF Prop Tool v0.1.0`. Obter o número dos metadados da versão em execução para mantê-lo correto após cada atualização.
-- Adicionar seletor de tema claro/escuro e persistir a escolha do usuário entre sessões. Aplicar o tema a toda a interface, incluindo abas, painéis, configurações, Ajuda e mapa, garantindo legibilidade e preservando o significado das cores das evidências e da legenda.
-- Evoluir 11 m/PX com MUF/foF2, TEC/GloTEC e mecanismos F2/Es/TEP quando houver dados/modelos confiáveis; manter a estimativa solar atual claramente separada de confirmação geográfica.
-- Seletor de idioma na barra superior: Português (Brasil), inglês, espanhol, francês, alemão e italiano.
-- Cada idioma deve ter bandeira própria (Brasil, Reino Unido, Espanha, França, Alemanha e Itália), usando imagens/SVG para funcionar também no Windows, sem depender de emojis de bandeiras.
-- Tradução integral de toda a aplicação: abas, menus, botões, configurações, tooltips, validações, mensagens de estado/erro, alertas, notas exibidas pela interface e aba Ajuda. Evitar textos fixos que permaneçam em português ao mudar o idioma.
-- Persistir o idioma escolhido, iniciar em Português (Brasil) por padrão e atualizar a interface inteira ao trocar o idioma. Revisar as seis traduções e testar Ajuda e mensagens dinâmicas.
-
-- Visão global com fontes próprias, separada da análise regional padrão; não reintroduzir o antigo modo Minha estação no mapa.
-- MapLibre, camadas independentes e legenda Observado / Medido / Previsto.
-- Evoluir o heatmap atual com interpolação espacial/contornos mais sofisticados, indicação explícita de incerteza geográfica e suavização configurável. Manter Polígonos como modo técnico alternativo.
-- Terminação dia/noite e gray line; MUF, absorção, aurora e meteorologia.
-- Painel lateral: regiões favorecidas, azimute, intensidade, evidências, mecanismo provável, confiança qualificada, tendência e última atualização de cada fonte.
-- Histórico e reprodução de nascimento, expansão, deslocamento e desaparecimento das zonas.
-- Máquinas de estados completas para aberturas por banda/região: surgindo, aberta, forte, enfraquecendo, encerrada; estado desconhecido separado.
-- Silenciar alerta por uma hora, horários silenciosos, preferência por eventos relevantes e canais independentes.
-- Antenas por banda com altura, ganho, polarização e azimute, além do tipo já implementado.
+- Criar visão global separada da análise regional padrão, sem reintroduzir o antigo modo Minha estação.
+- Avaliar MapLibre e camadas independentes **Observado / Medido / Previsto**.
+- Evoluir o Heatmap com interpolação/contornos mais sofisticados, incerteza espacial explícita e suavização configurável.
+- Adicionar terminador dia/noite e gray line; avaliar camadas de MUF, absorção, aurora e meteorologia.
+- Ampliar o painel lateral além dos destinos/confiança já entregues: mecanismo provável, tendência, intensidade, azimute e freshness individual de cada fonte.
+- Histórico/replay do nascimento, expansão, deslocamento e desaparecimento das zonas.
+- Máquina de estados por banda/região: surgindo, aberta, forte, enfraquecendo, encerrada e desconhecida.
+- Alertas: silenciar por uma hora, horários silenciosos, eventos relevantes e canais independentes.
+- Antenas por banda com altura, ganho, polarização e azimute, além do tipo já cadastrado.
 - Importação ADIF e integração WSJT-X/JTDX.
 
-## IA e integrações futuras
+## Assistente e integrações futuras
 
-- **Assistente — regiões/países por nome:** complementar a resposta atual de direção/azimute com identificação de regiões e países favorecidos usando uma base geográfica offline apropriada. Não inferir país apenas por quadrante ou azimute; associar os endpoints observados a fronteiras reais e apresentar ranking com quantidade de evidências, banda, distância e fontes.
-- **Fusão — confiança por fonte e envelhecimento:** evoluir a fusão multifuente iniciada com PSK Reporter, WSPR.live, RBN e NOAA para pesos calibrados por fonte, qualidade de localização, idade/freshness, cobertura amostral e independência real das evidências. Evitar que fontes correlacionadas ou o mesmo enlace observado por mais de uma rede sejam interpretados como eventos totalmente independentes.
-- IA generativa abaixo do mapa, consumindo snapshots auditáveis do motor, com fontes, horários, justificativa e limites.
-- Perguntas sobre melhor banda, direção da antena, tendência, causa provável e diagnóstico da própria estação.
-- Credenciais opcionais protegidas e consentimento específico para o envio de localização/dados ao provedor escolhido.
-- Amazon Alexa somente em fase madura: consultas por voz e notificações oficiais; emissão imediata de fala depende do canal suportado. Integração consumirá eventos do motor, sem acoplamento.
-- Canais futuros como voz local, Telegram e Discord, se solicitados.
-- Stable e Beta/Nightly; atualização por canal, verificação de integridade e recuperação de falhas.
+- IA generativa opcional consumindo snapshots auditáveis do motor, com fontes, horários, justificativa e limitações.
+- Diagnóstico mais avançado: melhor banda, direção de antena, tendência, causa provável e saúde da própria estação.
+- Credenciais opcionais protegidas e consentimento explícito antes de enviar localização/dados a qualquer provedor externo.
+- Amazon Alexa apenas em fase madura; considerar também voz local, Telegram e Discord se houver demanda.
+- Canais Stable e Beta/Nightly, com atualização por canal, integridade e recuperação de falhas.
 
 por Alex, PT2VHF

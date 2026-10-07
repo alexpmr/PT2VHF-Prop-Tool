@@ -1227,3 +1227,117 @@ const EXTRA_MESSAGES_V026={
   }
 };
 for(const [code,extra] of Object.entries(EXTRA_MESSAGES_V026))Object.assign(MESSAGES[code],extra);
+
+
+const EXTRA_MESSAGES_V027={
+  "pt-BR":{
+    "confidenceShort":"Confiança {n}%",
+    "favoredDestinations":"Destinos observados",
+    "noFavoredDestinations":"Sem destinos geográficos suficientes neste filtro.",
+    "destinationMeta":"{n} evidências · {sources} fontes",
+    "assistantCountriesEmpty":"{band}: não há evidências geolocalizadas suficientes nos últimos {n} minutos para identificar países favorecidos.",
+    "assistantRegionsEmpty":"{band}: não há evidências geolocalizadas suficientes nos últimos {n} minutos para identificar regiões favorecidas.",
+    "assistantRegions":"{band}: principais regiões observadas: {regions}. Direção predominante: {cardinal} ({degrees}°). Fontes: {sources}. Confiança da banda: {confidence}%.",
+    "assistantCountries":"{band}: principais destinos observados: {countries}. Direção predominante: {cardinal} ({degrees}°). Fontes: {sources}. Confiança da banda: {confidence}%.",
+    "assistantDirection":"{band}: maior concentração observada no setor {cardinal}, aproximadamente {degrees}°, com {reports} evidências nesse setor e distância típica próxima de {distance} km. Confiança: {confidence}%.",
+    "assistantScore":"{band}: chance {score}/100. Base atual: {basis}. {reports} recepções observadas, {sources} fontes e confiança {confidence}%.",
+    "assistantTraffic":"{band}: {reports} recepções, {pairs} enlaces regionais, saída {tx} e entrada {rx}. Base: {basis}. Fontes: {sources}; confiança {confidence}%.",
+    "assistantBand":"{band}: chance {score}/100, {reports} recepções e {pairs} enlaces. Tendência: {trend}. Base: {basis}. Fontes: {sources}; confiança {confidence}%. Última evidência: {age}.",
+    "assistantBest":"Maior chance entre as bandas habilitadas: {band}, {score}/100. Base: {basis}; {reports} recepções, {pairs} enlaces, {sources} fontes e confiança {confidence}%. Última evidência: {age}.",
+    "news027":"• O mapa passa a operar exclusivamente em Heatmap; a opção Polígonos e a preferência antiga foram removidas e perfis antigos migram automaticamente.\n• O motor passa a calcular confiança separada da chance, considerando diversidade de fontes, qualidade geográfica, freshness e convergência independente.\n• O painel lateral mostra os principais países observados no filtro atual usando fronteiras Natural Earth embarcadas.\n• O Assistente responde perguntas sobre países/regiões favorecidos com nomes geográficos reais, direção, fontes e confiança.\n• O README prioriza os downloads no topo da página do projeto.\n• O backlog foi limpo para manter apenas pendências reais.",
+    "helpMap":"O mapa usa exclusivamente Heatmap. Selecione a banda pelos botões da barra superior e ajuste a Janela de observação em 15, 30 ou 60 minutos. Confirmada e Previsão continuam como camadas independentes dentro do Heatmap. O painel Destinos observados resume países encontrados nas evidências geolocalizadas do filtro atual.",
+    "helpData":"PSK Reporter, WSPR.live e RBN fornecem evidências observacionais; NOAA SWPC fornece contexto físico. A confiança é separada da chance e considera diversidade de fontes, precisão geográfica, idade das evidências e convergência. Em 11 m/PX, a estimativa solar/ionosférica continua explicitamente não confirmada geograficamente quando não houver spots."
+  },
+  "en":{
+    "confidenceShort":"Confidence {n}%",
+    "favoredDestinations":"Observed destinations",
+    "noFavoredDestinations":"Not enough geographic destinations for this filter.",
+    "destinationMeta":"{n} reports · {sources} sources",
+    "assistantCountriesEmpty":"{band}: there is not enough geolocated evidence in the last {n} minutes to identify favored countries.",
+    "assistantRegionsEmpty":"{band}: there is not enough geolocated evidence in the last {n} minutes to identify favored regions.",
+    "assistantRegions":"{band}: main observed regions: {regions}. Predominant direction: {cardinal} ({degrees}°). Sources: {sources}. Band confidence: {confidence}%.",
+    "assistantCountries":"{band}: main observed destinations: {countries}. Predominant direction: {cardinal} ({degrees}°). Sources: {sources}. Band confidence: {confidence}%.",
+    "assistantDirection":"{band}: strongest observed concentration toward {cardinal}, about {degrees}°, with {reports} reports in that sector and a typical distance near {distance} km. Confidence: {confidence}%.",
+    "assistantScore":"{band}: chance {score}/100. Current basis: {basis}. {reports} observed receptions, {sources} sources and {confidence}% confidence.",
+    "assistantTraffic":"{band}: {reports} receptions, {pairs} regional links, outbound {tx} and inbound {rx}. Basis: {basis}. Sources: {sources}; confidence {confidence}%.",
+    "assistantBand":"{band}: chance {score}/100, {reports} receptions and {pairs} links. Trend: {trend}. Basis: {basis}. Sources: {sources}; confidence {confidence}%. Latest evidence: {age}.",
+    "assistantBest":"Highest chance among enabled bands: {band}, {score}/100. Basis: {basis}; {reports} receptions, {pairs} links, {sources} sources and {confidence}% confidence. Latest evidence: {age}.",
+    "news027":"• The map now operates exclusively as a Heatmap; Polygon mode and its saved preference were removed and old profiles migrate automatically.\n• The engine now calculates confidence separately from chance using source diversity, geographic quality, freshness and independent convergence.\n• The side panel shows leading observed countries for the current filter using bundled Natural Earth boundaries.\n• The Assistant can answer favored-country/region questions with real geographic names, direction, sources and confidence.\n• The README puts downloads first.\n• The backlog was cleaned to retain only real pending work.",
+    "helpMap":"The map uses Heatmap only. Select bands with the top buttons and set the Observation window to 15, 30 or 60 minutes. Observed and Forecast remain independent layers inside the Heatmap. The Observed destinations panel summarizes countries found in geolocated evidence for the current filter.",
+    "helpData":"PSK Reporter, WSPR.live and RBN provide observational evidence; NOAA SWPC provides physical context. Confidence is separate from chance and considers source diversity, geographic precision, evidence age and convergence. On 11 m/CB, solar/ionospheric estimates remain explicitly unconfirmed geographically when no spots are available."
+  },
+  "es":{
+    "confidenceShort":"Confianza {n}%",
+    "favoredDestinations":"Destinos observados",
+    "noFavoredDestinations":"No hay suficientes destinos geográficos para este filtro.",
+    "destinationMeta":"{n} evidencias · {sources} fuentes",
+    "assistantCountriesEmpty":"{band}: no hay evidencias geolocalizadas suficientes en los últimos {n} minutos para identificar países favorecidos.",
+    "assistantRegionsEmpty":"{band}: no hay evidencias geolocalizadas suficientes en los últimos {n} minutos para identificar regiones favorecidas.",
+    "assistantRegions":"{band}: principales regiones observadas: {regions}. Dirección predominante: {cardinal} ({degrees}°). Fuentes: {sources}. Confianza de la banda: {confidence}%.",
+    "assistantCountries":"{band}: principales destinos observados: {countries}. Dirección predominante: {cardinal} ({degrees}°). Fuentes: {sources}. Confianza de la banda: {confidence}%.",
+    "assistantDirection":"{band}: mayor concentración observada hacia {cardinal}, aproximadamente {degrees}°, con {reports} evidencias y distancia típica cercana a {distance} km. Confianza: {confidence}%.",
+    "assistantScore":"{band}: probabilidad {score}/100. Base actual: {basis}. {reports} recepciones observadas, {sources} fuentes y confianza {confidence}%.",
+    "assistantTraffic":"{band}: {reports} recepciones, {pairs} enlaces regionales, salida {tx} y entrada {rx}. Base: {basis}. Fuentes: {sources}; confianza {confidence}%.",
+    "assistantBand":"{band}: probabilidad {score}/100, {reports} recepciones y {pairs} enlaces. Tendencia: {trend}. Base: {basis}. Fuentes: {sources}; confianza {confidence}%. Última evidencia: {age}.",
+    "assistantBest":"Mayor probabilidad entre las bandas habilitadas: {band}, {score}/100. Base: {basis}; {reports} recepciones, {pairs} enlaces, {sources} fuentes y confianza {confidence}%. Última evidencia: {age}.",
+    "news027":"• El mapa pasa a funcionar exclusivamente como Heatmap; se eliminan Polígonos y su preferencia guardada.\n• El motor calcula confianza separada de la probabilidad mediante diversidad de fuentes, calidad geográfica, frescura y convergencia independiente.\n• El panel lateral muestra los principales países observados con fronteras Natural Earth integradas.\n• El Asistente responde sobre países/regiones favorecidos con nombres geográficos reales, dirección, fuentes y confianza.\n• El README prioriza las descargas.\n• Se limpió el backlog.",
+    "helpMap":"El mapa usa únicamente Heatmap. Seleccione la banda con los botones superiores y la Ventana de observación de 15, 30 o 60 minutos. Observada y Previsión siguen como capas independientes dentro del Heatmap. Destinos observados resume los países encontrados en las evidencias geolocalizadas.",
+    "helpData":"PSK Reporter, WSPR.live y RBN aportan evidencia observacional; NOAA SWPC aporta contexto físico. La confianza se separa de la probabilidad y considera diversidad de fuentes, precisión geográfica, edad y convergencia. En 11 m/CB, una estimación solar/ionosférica sin spots sigue claramente no confirmada geográficamente."
+  },
+  "fr":{
+    "confidenceShort":"Confiance {n}%",
+    "favoredDestinations":"Destinations observées",
+    "noFavoredDestinations":"Pas assez de destinations géographiques pour ce filtre.",
+    "destinationMeta":"{n} preuves · {sources} sources",
+    "assistantCountriesEmpty":"{band} : pas assez de preuves géolocalisées sur les {n} dernières minutes pour identifier des pays favorisés.",
+    "assistantRegionsEmpty":"{band} : pas assez de preuves géolocalisées sur les {n} dernières minutes pour identifier des régions favorisées.",
+    "assistantRegions":"{band} : principales régions observées : {regions}. Direction dominante : {cardinal} ({degrees}°). Sources : {sources}. Confiance de la bande : {confidence}%.",
+    "assistantCountries":"{band} : principales destinations observées : {countries}. Direction dominante : {cardinal} ({degrees}°). Sources : {sources}. Confiance de la bande : {confidence}%.",
+    "assistantDirection":"{band} : concentration observée principale vers {cardinal}, environ {degrees}°, avec {reports} preuves et une distance typique proche de {distance} km. Confiance : {confidence}%.",
+    "assistantScore":"{band} : chance {score}/100. Base actuelle : {basis}. {reports} réceptions observées, {sources} sources et confiance {confidence}%.",
+    "assistantTraffic":"{band} : {reports} réceptions, {pairs} liaisons régionales, sortie {tx} et entrée {rx}. Base : {basis}. Sources : {sources} ; confiance {confidence}%.",
+    "assistantBand":"{band} : chance {score}/100, {reports} réceptions et {pairs} liaisons. Tendance : {trend}. Base : {basis}. Sources : {sources} ; confiance {confidence}%. Dernière preuve : {age}.",
+    "assistantBest":"Meilleure chance parmi les bandes actives : {band}, {score}/100. Base : {basis}; {reports} réceptions, {pairs} liaisons, {sources} sources et confiance {confidence}%. Dernière preuve : {age}.",
+    "news027":"• La carte fonctionne désormais uniquement en Heatmap ; le mode Polygones et sa préférence sauvegardée sont supprimés.\n• Le moteur calcule une confiance distincte de la chance selon la diversité des sources, la qualité géographique, la fraîcheur et la convergence indépendante.\n• Le panneau latéral affiche les principaux pays observés grâce aux frontières Natural Earth embarquées.\n• L’Assistant répond sur les pays/régions favorisés avec de vrais noms géographiques, direction, sources et confiance.\n• Le README place les téléchargements en premier.\n• Le backlog a été nettoyé.",
+    "helpMap":"La carte utilise uniquement la Heatmap. Choisissez la bande avec les boutons supérieurs et la Fenêtre d’observation de 15, 30 ou 60 minutes. Observé et Prévision restent des couches indépendantes dans la Heatmap. Destinations observées résume les pays trouvés dans les preuves géolocalisées.",
+    "helpData":"PSK Reporter, WSPR.live et RBN fournissent les preuves observationnelles ; NOAA SWPC fournit le contexte physique. La confiance est distincte de la chance et tient compte de la diversité des sources, de la précision géographique, de l’âge et de la convergence. Sur 11 m/CB, une estimation solaire/ionosphérique sans spots reste explicitement non confirmée géographiquement."
+  },
+  "de":{
+    "confidenceShort":"Vertrauen {n}%",
+    "favoredDestinations":"Beobachtete Ziele",
+    "noFavoredDestinations":"Nicht genügend geografische Ziele für diesen Filter.",
+    "destinationMeta":"{n} Evidenzen · {sources} Quellen",
+    "assistantCountriesEmpty":"{band}: In den letzten {n} Minuten gibt es nicht genügend geolokalisierte Evidenz, um bevorzugte Länder zu bestimmen.",
+    "assistantRegionsEmpty":"{band}: In den letzten {n} Minuten gibt es nicht genügend geolokalisierte Evidenz, um bevorzugte Regionen zu bestimmen.",
+    "assistantRegions":"{band}: wichtigste beobachtete Regionen: {regions}. Vorherrschende Richtung: {cardinal} ({degrees}°). Quellen: {sources}. Bandvertrauen: {confidence}%.",
+    "assistantCountries":"{band}: wichtigste beobachtete Ziele: {countries}. Vorherrschende Richtung: {cardinal} ({degrees}°). Quellen: {sources}. Bandvertrauen: {confidence}%.",
+    "assistantDirection":"{band}: stärkste beobachtete Konzentration Richtung {cardinal}, etwa {degrees}°, mit {reports} Evidenzen und typischer Entfernung um {distance} km. Vertrauen: {confidence}%.",
+    "assistantScore":"{band}: Chance {score}/100. Aktuelle Basis: {basis}. {reports} beobachtete Empfänge, {sources} Quellen und {confidence}% Vertrauen.",
+    "assistantTraffic":"{band}: {reports} Empfänge, {pairs} regionale Links, ausgehend {tx}, eingehend {rx}. Basis: {basis}. Quellen: {sources}; Vertrauen {confidence}%.",
+    "assistantBand":"{band}: Chance {score}/100, {reports} Empfänge und {pairs} Links. Trend: {trend}. Basis: {basis}. Quellen: {sources}; Vertrauen {confidence}%. Jüngste Evidenz: {age}.",
+    "assistantBest":"Höchste Chance unter aktiven Bändern: {band}, {score}/100. Basis: {basis}; {reports} Empfänge, {pairs} Links, {sources} Quellen und {confidence}% Vertrauen. Jüngste Evidenz: {age}.",
+    "news027":"• Die Karte arbeitet nur noch als Heatmap; Polygonmodus und gespeicherte Präferenz wurden entfernt.\n• Der Motor berechnet Vertrauen getrennt von der Chance anhand Quellenvielfalt, geografischer Qualität, Aktualität und unabhängiger Konvergenz.\n• Das Seitenpanel zeigt führende beobachtete Länder mit eingebetteten Natural-Earth-Grenzen.\n• Der Assistent beantwortet Fragen zu bevorzugten Ländern/Regionen mit echten geografischen Namen, Richtung, Quellen und Vertrauen.\n• Das README stellt Downloads an den Anfang.\n• Das Backlog wurde bereinigt.",
+    "helpMap":"Die Karte verwendet ausschließlich die Heatmap. Band über die oberen Schaltflächen und Beobachtungsfenster mit 15, 30 oder 60 Minuten wählen. Beobachtet und Prognose bleiben unabhängige Ebenen innerhalb der Heatmap. Beobachtete Ziele fasst Länder aus geolokalisierten Evidenzen zusammen.",
+    "helpData":"PSK Reporter, WSPR.live und RBN liefern Beobachtungsevidenz; NOAA SWPC liefert physikalischen Kontext. Vertrauen ist von der Chance getrennt und berücksichtigt Quellenvielfalt, geografische Präzision, Alter und Konvergenz. Für 11 m/CB bleiben solare/ionosphärische Schätzungen ohne Spots ausdrücklich geografisch unbestätigt."
+  },
+  "it":{
+    "confidenceShort":"Affidabilità {n}%",
+    "favoredDestinations":"Destinazioni osservate",
+    "noFavoredDestinations":"Destinazioni geografiche insufficienti per questo filtro.",
+    "destinationMeta":"{n} evidenze · {sources} fonti",
+    "assistantCountriesEmpty":"{band}: evidenze geolocalizzate insufficienti negli ultimi {n} minuti per identificare paesi favoriti.",
+    "assistantRegionsEmpty":"{band}: evidenze geolocalizzate insufficienti negli ultimi {n} minuti per identificare regioni favorite.",
+    "assistantRegions":"{band}: principali regioni osservate: {regions}. Direzione predominante: {cardinal} ({degrees}°). Fonti: {sources}. Affidabilità banda: {confidence}%.",
+    "assistantCountries":"{band}: principali destinazioni osservate: {countries}. Direzione predominante: {cardinal} ({degrees}°). Fonti: {sources}. Affidabilità banda: {confidence}%.",
+    "assistantDirection":"{band}: maggiore concentrazione osservata verso {cardinal}, circa {degrees}°, con {reports} evidenze e distanza tipica vicina a {distance} km. Affidabilità: {confidence}%.",
+    "assistantScore":"{band}: probabilità {score}/100. Base attuale: {basis}. {reports} ricezioni osservate, {sources} fonti e affidabilità {confidence}%.",
+    "assistantTraffic":"{band}: {reports} ricezioni, {pairs} collegamenti regionali, uscita {tx} e ingresso {rx}. Base: {basis}. Fonti: {sources}; affidabilità {confidence}%.",
+    "assistantBand":"{band}: probabilità {score}/100, {reports} ricezioni e {pairs} collegamenti. Tendenza: {trend}. Base: {basis}. Fonti: {sources}; affidabilità {confidence}%. Ultima evidenza: {age}.",
+    "assistantBest":"Probabilità più alta tra le bande abilitate: {band}, {score}/100. Base: {basis}; {reports} ricezioni, {pairs} collegamenti, {sources} fonti e affidabilità {confidence}%. Ultima evidenza: {age}.",
+    "news027":"• La mappa opera esclusivamente come Heatmap; modalità Poligoni e preferenza salvata vengono rimosse.\n• Il motore calcola l’affidabilità separatamente dalla probabilità considerando diversità delle fonti, qualità geografica, freschezza e convergenza indipendente.\n• Il pannello laterale mostra i principali paesi osservati usando confini Natural Earth integrati.\n• L’Assistente risponde sui paesi/regioni favoriti con nomi geografici reali, direzione, fonti e affidabilità.\n• Il README mette i download al primo posto.\n• Il backlog è stato ripulito.",
+    "helpMap":"La mappa usa esclusivamente la Heatmap. Selezionare la banda con i pulsanti superiori e la Finestra di osservazione di 15, 30 o 60 minuti. Osservata e Previsione restano livelli indipendenti nella Heatmap. Destinazioni osservate riassume i paesi trovati nelle evidenze geolocalizzate.",
+    "helpData":"PSK Reporter, WSPR.live e RBN forniscono evidenza osservativa; NOAA SWPC fornisce contesto fisico. L’affidabilità è separata dalla probabilità e considera diversità delle fonti, precisione geografica, età e convergenza. Su 11 m/CB, una stima solare/ionosferica senza spot resta esplicitamente non confermata geograficamente."
+  }
+};
+for(const [code,extra] of Object.entries(EXTRA_MESSAGES_V027))Object.assign(MESSAGES[code],extra);
+for(const code of Object.keys(MESSAGES)){delete MESSAGES[code].polygons;delete MESSAGES[code].mapVisualization;delete MESSAGES[code].zoneTip;}
