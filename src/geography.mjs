@@ -54,8 +54,19 @@ export function rankCountries(spots,features=[],language='pt-BR',limit=3){
     return {...item,sources:[...item.sources].sort(),distance:sorted.length?Math.round(sorted[Math.floor(sorted.length/2)]):null};
   }).sort((a,b)=>b.reports-a.reports||b.sources.length-a.sources.length||String(a.name).localeCompare(String(b.name))).slice(0,Math.max(1,limit));
 }
+const CONTINENT_NAMES={
+  'Africa':{'pt-BR':'África',en:'Africa',es:'África',fr:'Afrique',de:'Afrika',it:'Africa'},
+  'Asia':{'pt-BR':'Ásia',en:'Asia',es:'Asia',fr:'Asie',de:'Asien',it:'Asia'},
+  'Europe':{'pt-BR':'Europa',en:'Europe',es:'Europa',fr:'Europe',de:'Europa',it:'Europa'},
+  'North America':{'pt-BR':'América do Norte',en:'North America',es:'América del Norte',fr:'Amérique du Nord',de:'Nordamerika',it:'America del Nord'},
+  'South America':{'pt-BR':'América do Sul',en:'South America',es:'América del Sur',fr:'Amérique du Sud',de:'Südamerika',it:'America del Sud'},
+  'Oceania':{'pt-BR':'Oceania',en:'Oceania',es:'Oceanía',fr:'Océanie',de:'Ozeanien',it:'Oceania'},
+  'Antarctica':{'pt-BR':'Antártica',en:'Antarctica',es:'Antártida',fr:'Antarctique',de:'Antarktika',it:'Antartide'},
+  'Seven seas (open ocean)':{'pt-BR':'Oceano aberto',en:'Open ocean',es:'Océano abierto',fr:'Océan ouvert',de:'Offener Ozean',it:'Oceano aperto'}
+};
+function localizedContinent(name,language){return CONTINENT_NAMES[name]?.[language]||CONTINENT_NAMES[name]?.en||name||'—';}
 export function rankContinents(spots,features=[],language='pt-BR',limit=3){
   const countries=rankCountries(spots,features,language,features.length||999),map=new Map();
   for(const c of countries){const key=c.continent||c.region||'—';if(!map.has(key))map.set(key,{name:key,reports:0,sources:new Set(),countries:0});const x=map.get(key);x.reports+=c.reports;x.countries++;for(const s of c.sources)x.sources.add(s);}
-  return [...map.values()].map(x=>({...x,sources:[...x.sources].sort()})).sort((a,b)=>b.reports-a.reports).slice(0,Math.max(1,limit));
+  return [...map.values()].map(x=>({...x,name:localizedContinent(x.name,language),sources:[...x.sources].sort()})).sort((a,b)=>b.reports-a.reports).slice(0,Math.max(1,limit));
 }
