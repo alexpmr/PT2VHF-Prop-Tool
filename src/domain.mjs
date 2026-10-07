@@ -199,7 +199,7 @@ function geoQuality(spot){
   if(grid.length>=8)return 1;
   if(grid.length>=6)return .96;
   if(grid.length>=4)return .82;
-  return spot.endpoint?.lat!==undefined&&spot.endpoint?.lon!==undefined?.72:.55;
+  return spot.endpoint?.lat!==undefined&&spot.endpoint?.lon!==undefined ? .72 : .55;
 }
 function sourceWeight(spot){return SOURCE_WEIGHT[spot.source]??.85;}
 function freshnessWeight(spot,now){return Math.exp(-Math.max(0,now-spot.timestamp)/(30*60000));}
