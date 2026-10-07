@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {DEFAULT_SETTINGS,BANDS,toGrid,fromGrid,distance,bearing,validateSettings,parsePSK,relevantSpots,evaluateBand,spaceWeatherScore,mergeSpots,AlertMachine} from '../src/domain.mjs';
 import {parseKp,parseF107,parseSolarWindMag,parseSolarWindSpeed,parseXray,parseRBN,parseWSPR,wsprURL,pskURL,pskQueryPlan,boundedFetch} from '../src/sources.mjs';
 import {assistantReply} from '../src/assistant.mjs';
-import {countryForPoint,rankCountries} from '../src/geography.mjs';
+import {countryForPoint,rankCountries,rankContinents} from '../src/geography.mjs';
 const now=1800000000000;
 const settings={...DEFAULT_SETTINGS,callsign:'PT2VHF',lat:-15.8,lon:-47.9,nearbyRadius:300};
 function spot(id,overrides={}){
@@ -126,6 +126,7 @@ test('Offline geography resolves countries and ranks geolocated evidence',()=>{
   assert.equal(countryForPoint({lat:-15.8,lon:-47.9},countries).iso3,'BRA');assert.equal(countryForPoint({lat:50,lon:8},countries),null);
   const ranked=rankCountries([{endpoint:{lat:-15.8,lon:-47.9},source:'PSK Reporter',distance:900},{endpoint:{lat:-10,lon:-50},source:'WSPR.live',distance:1200}],countries,'en',3);
   assert.equal(ranked[0].name,'Brazil');assert.equal(ranked[0].reports,2);assert.equal(ranked[0].sources.length,2);
+  const regions=rankContinents([{endpoint:{lat:-15.8,lon:-47.9},source:'PSK Reporter'}],countries,'pt-BR',3);assert.equal(regions[0].name,'América do Sul');
 });
 test('Confidence falls when otherwise similar evidence gets older',()=>{
   const fresh=[spot('20',{txGrid:'GH64AA',rxGrid:'JO31AA',origin:'regional-out',endpoint:{lat:50,lon:8},distance:8000,bearing:40})];
@@ -144,8 +145,9 @@ test('Assistant routes different questions to different answers and respects sel
   const best=assistantReply('qual a melhor banda agora?',snapshot,'40 m');assert.equal(best.key,'assistantBest');assert.equal(best.vars.band,'20 m');
   assert.equal(assistantReply('como estão os 20 metros?',snapshot,'').key,'assistantBand');
   assert.equal(assistantReply('qual direção para 20m?',snapshot,'').key,'assistantDirection');
-  const countries=[{type:'Feature',properties:{name:'Teste',names:{'pt-BR':'País Teste'},iso3:'TST'},bbox:[0,0,3,3],geometry:{type:'Polygon',coordinates:[[[0,0],[3,0],[3,3],[0,3],[0,0]]]}}];
+  const countries=[{type:'Feature',properties:{name:'Teste',names:{'pt-BR':'País Teste'},iso3:'TST',continent:'South America'},bbox:[0,0,3,3],geometry:{type:'Polygon',coordinates:[[[0,0],[3,0],[3,3],[0,3],[0,0]]]}}];
   const countryAnswer=assistantReply('quais países estão favorecidos em 20m?',snapshot,'',{countries,language:'pt-BR'});assert.equal(countryAnswer.key,'assistantCountries');assert.match(countryAnswer.vars.countries,/País Teste/);
+  const regionAnswer=assistantReply('qual região está favorecida em 20m?',snapshot,'',{countries,language:'pt-BR'});assert.equal(regionAnswer.key,'assistantRegions');assert.match(regionAnswer.vars.regions,/América do Sul/);
   assert.equal(assistantReply('como estão as fontes?',snapshot,'').key,'assistantSources');
   assert.equal(assistantReply('qual a janela de observação?',snapshot,'').key,'assistantWindow');
   assert.equal(assistantReply('o que é esse heatmap?',snapshot,'').key,'assistantHeatmap');
