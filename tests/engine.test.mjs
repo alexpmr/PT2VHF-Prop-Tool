@@ -203,9 +203,9 @@ test('MUF uses a nearby valid station and never asserts precise link cutoff',()=
 
 
 test('Source comparison keeps WSPR and RBN observations when PSK is disabled',()=>{
-  const p=spot('psk',{source:'PSK Reporter'});
-  const w=spot('wspr',{source:'WSPR.live',tx:'PT2AAA',rx:'DL1AAA'});
-  const r=spot('rbn',{source:'Reverse Beacon Network',tx:'PT2BBB',rx:'K1ABC'});
+  const p=spot('90',{source:'PSK Reporter'});
+  const w=spot('91',{source:'WSPR.live',tx:'PT2AAA',rx:'DL1AAA'});
+  const r=spot('92',{source:'Reverse Beacon Network',tx:'PT2BBB',rx:'K1ABC'});
   const filtered=filterSpotsBySources([p,w,r],{psk:false,wspr:true,rbn:true});
   assert.deepEqual(filtered.map(s=>s.source),['WSPR.live','Reverse Beacon Network']);
   const regional=relevantSpots(filtered,settings,'nearby',now);
@@ -215,8 +215,8 @@ test('Source comparison keeps WSPR and RBN observations when PSK is disabled',()
 });
 
 test('Source comparison supports WSPR-only and RBN-only snapshots',()=>{
-  const w=spot('wspr-only',{source:'WSPR.live',tx:'PT2AAA',rx:'DL1AAA'});
-  const r=spot('rbn-only',{source:'Reverse Beacon Network',tx:'PT2BBB',rx:'K1ABC'});
+  const w=spot('93',{source:'WSPR.live',tx:'PT2AAA',rx:'DL1AAA'});
+  const r=spot('94',{source:'Reverse Beacon Network',tx:'PT2BBB',rx:'K1ABC'});
   const wOnly=relevantSpots(filterSpotsBySources([w,r],{psk:false,wspr:true,rbn:false}),settings,'nearby',now);
   const rOnly=relevantSpots(filterSpotsBySources([w,r],{psk:false,wspr:false,rbn:true}),settings,'nearby',now);
   assert.equal(wOnly.length,1);assert.equal(wOnly[0].source,'WSPR.live');
