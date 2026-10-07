@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {DEFAULT_SETTINGS,BANDS,toGrid,fromGrid,distance,bearing,validateSettings,parsePSK,relevantSpots,evaluateBand,spaceWeatherScore,mergeSpots,filterSpotsBySources,AlertMachine} from '../src/domain.mjs';
-import {parseKp,parseF107,parseSolarWindMag,parseSolarWindSpeed,parseXray,parseRBN,parseWSPR,wsprURL,pskURL,pskQueryPlan,boundedFetch,rbnRegionalPrefix,rbnURLs} from '../src/sources.mjs';
+import {parseKp,parseF107,parseSolarWindMag,parseSolarWindSpeed,parseXray,parseRBN,parseWSPR,wsprURL,pskURL,pskQueryPlan,boundedFetch,rbnURLs,filterRBNByRadius} from '../src/sources.mjs';
 import {assistantReply} from '../src/assistant.mjs';
 import {parseIonograms,selectNearbyIonosonde,bandMufContext,MUF_MAX_AGE} from '../src/muf.mjs';
 import {countryForPoint,rankCountries,rankContinents} from '../src/geography.mjs';
@@ -223,12 +223,22 @@ test('Source comparison supports WSPR-only and RBN-only snapshots',()=>{
   assert.equal(rOnly.length,1);assert.equal(rOnly[0].source,'Reverse Beacon Network');
 });
 
-test('RBN regional query uses configured call prefix for both TX and skimmer directions',()=>{
-  assert.equal(rbnRegionalPrefix('PT2VHF'),'PT2');
-  assert.equal(rbnRegionalPrefix('PY1ABC'),'PY1');
-  const urls=rbnURLs({...settings,callsign:'PT2VHF',windowMinutes:30},now).map(u=>new URL(u));
-  assert.equal(urls.length,2);
-  assert.equal(urls[0].searchParams.get('call'),'PT2');
-  assert.equal(urls[1].searchParams.get('spotter'),'PT2');
-  assert.ok(urls.every(u=>u.searchParams.get('since')));
+test('RBN regional queries are band/time based and never infer geography from callsign prefix',()=>{
+  const urls=rbnURLs({...settings,callsign:'PT2VHF',windowMinutes:30,visible:['40 m','20 m','10 m']},now).map(u=>new URL(u));
+  assert.equal(urls.length,3);
+  assert.deepEqual(urls.map(u=>u.searchParams.get('band')),['40m','20m','10m']);
+  assert.ok(urls.every(u=>u.searchParams.get('since')&&u.searchParams.get('limit')==='1000'));
+  assert.ok(urls.every(u=>!u.searchParams.has('call')&&!u.searchParams.has('spotter')));
+});
+
+test('RBN region is defined only by real grid distance to configured radius',()=>{
+  const home={...settings,nearbyRadius:300};
+  const nearTx=spot('101',{source:'Reverse Beacon Network',txPosition:{lat:-15.9,lon:-47.8},rxPosition:{lat:50,lon:8}});
+  const nearRx=spot('102',{source:'Reverse Beacon Network',txPosition:{lat:40,lon:-3},rxPosition:{lat:-16.2,lon:-48}});
+  const bothFar=spot('103',{source:'Reverse Beacon Network',txPosition:{lat:40,lon:-3},rxPosition:{lat:50,lon:8}});
+  const bothNear=spot('104',{source:'Reverse Beacon Network',txPosition:{lat:-15.9,lon:-47.8},rxPosition:{lat:-16.2,lon:-48}});
+  const mobileWrongPrefix=spot('105',{source:'Reverse Beacon Network',tx:'PT2MOBILE',txPosition:{lat:-23.5,lon:-46.6},rxPosition:{lat:50,lon:8}});
+  const foreignCallNear=spot('106',{source:'Reverse Beacon Network',tx:'PY1XYZ',txPosition:{lat:-15.7,lon:-47.7},rxPosition:{lat:50,lon:8}});
+  const kept=filterRBNByRadius([nearTx,nearRx,bothFar,bothNear,mobileWrongPrefix,foreignCallNear],home);
+  assert.deepEqual(kept.map(s=>s.id),['101','102','106']);
 });
