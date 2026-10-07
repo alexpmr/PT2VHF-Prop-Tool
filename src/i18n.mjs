@@ -1435,3 +1435,44 @@ const EXTRA_MESSAGES_V029={
  }
 };
 for(const [code,extra] of Object.entries(EXTRA_MESSAGES_V029))Object.assign(MESSAGES[code],extra);
+
+
+const EXTRA_MESSAGES_V0210={
+  'pt-BR':{
+    mapType:'Mapa',mapDefault:'Padrão',mapLight:'Claro',mapDark:'Escuro',mapTerrain:'Relevo',
+    sourceDisabled:'Fonte desativada',
+    news0210:'• Fontes comparáveis diretamente na barra da Janela de observação: PSK, WSPR, RBN, NOAA, VOACAP e MUF.\n• Desligar uma fonte altera apenas a análise e a visualização corrente; o histórico coletado é preservado.\n• Novo seletor de mapa com bases Padrão, Claro, Escuro e Relevo, com preferência persistida.\n• Removidos definitivamente os controles Confirmada/Previsão; ambas continuam compondo automaticamente o Heatmap.',
+    helpMap:'O mapa usa Heatmap e agora permite escolher a base cartográfica Padrão, Claro, Escuro ou Relevo. Na mesma linha da Janela de observação, PSK, WSPR, RBN, NOAA, VOACAP e MUF podem ser ativados/desativados para comparação. A desativação não apaga dados coletados; apenas remove temporariamente a contribuição daquela fonte da análise atual.'
+  },
+  en:{
+    mapType:'Map',mapDefault:'Default',mapLight:'Light',mapDark:'Dark',mapTerrain:'Terrain',
+    sourceDisabled:'Source disabled',
+    news0210:'• Source comparison controls beside the Observation window: PSK, WSPR, RBN, NOAA, VOACAP and MUF.\n• Disabling a source affects only the current analysis and view; collected history is preserved.\n• New Default, Light, Dark and Terrain base maps with persistent selection.',
+    helpMap:'The Heatmap now supports Default, Light, Dark and Terrain base maps. PSK, WSPR, RBN, NOAA, VOACAP and MUF can be toggled beside the Observation window for comparison without deleting collected data.'
+  },
+  es:{
+    mapType:'Mapa',mapDefault:'Predeterminado',mapLight:'Claro',mapDark:'Oscuro',mapTerrain:'Relieve',
+    sourceDisabled:'Fuente desactivada',
+    news0210:'• Comparación de fuentes junto a la Ventana de observación.\n• Nuevos mapas Predeterminado, Claro, Oscuro y Relieve con selección persistente.',
+    helpMap:'El Heatmap permite elegir mapa Predeterminado, Claro, Oscuro o Relieve y activar/desactivar PSK, WSPR, RBN, NOAA, VOACAP y MUF sin borrar los datos recopilados.'
+  },
+  fr:{
+    mapType:'Carte',mapDefault:'Défaut',mapLight:'Clair',mapDark:'Sombre',mapTerrain:'Relief',
+    sourceDisabled:'Source désactivée',
+    news0210:'• Comparaison des sources près de la Fenêtre d’observation.\n• Nouvelles cartes Défaut, Clair, Sombre et Relief avec choix persistant.',
+    helpMap:'La Heatmap permet de choisir Défaut, Clair, Sombre ou Relief et d’activer/désactiver PSK, WSPR, RBN, NOAA, VOACAP et MUF sans supprimer les données.'
+  },
+  de:{
+    mapType:'Karte',mapDefault:'Standard',mapLight:'Hell',mapDark:'Dunkel',mapTerrain:'Relief',
+    sourceDisabled:'Quelle deaktiviert',
+    news0210:'• Quellenvergleich neben dem Beobachtungsfenster.\n• Neue Karten Standard, Hell, Dunkel und Relief mit gespeicherter Auswahl.',
+    helpMap:'Die Heatmap bietet Standard, Hell, Dunkel und Relief. PSK, WSPR, RBN, NOAA, VOACAP und MUF lassen sich vergleichen, ohne gespeicherte Daten zu löschen.'
+  },
+  it:{
+    mapType:'Mappa',mapDefault:'Predefinita',mapLight:'Chiara',mapDark:'Scura',mapTerrain:'Rilievo',
+    sourceDisabled:'Fonte disattivata',
+    news0210:'• Confronto delle fonti accanto alla Finestra di osservazione.\n• Nuove mappe Predefinita, Chiara, Scura e Rilievo con scelta persistente.',
+    helpMap:'La Heatmap offre mappe Predefinita, Chiara, Scura e Rilievo. PSK, WSPR, RBN, NOAA, VOACAP e MUF possono essere attivati/disattivati senza cancellare i dati raccolti.'
+  }
+};
+for(const [code,extra] of Object.entries(EXTRA_MESSAGES_V0210))Object.assign(MESSAGES[code],extra);
