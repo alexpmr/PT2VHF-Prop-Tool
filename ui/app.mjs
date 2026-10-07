@@ -15,7 +15,7 @@ const listeners=[],conversation=[{key:'welcome'}];
 const t=(key,vars)=>translate(language,key,vars);
 function previewSnapshot(settings) {
   if(!settings){try{settings=validateSettings(JSON.parse(localStorage.getItem('prop-settings'))||DEFAULT_SETTINGS);}catch{settings=validateSettings(DEFAULT_SETTINGS);}}
-  return {version:APP_VERSION,portable:false,settings,scope:'nearby',spots:[],voacapPredictions:[],bands:BANDS.map(b=>evaluateBand([],b.name)),kp:null,spaceWeather:{},sourceStatus:{psk:{state:'preview'},rbn:{state:'preview'},wspr:{state:'preview'},noaa:{state:'preview'},voacap:{state:'preview'}},activity:{rx:0,tx:0},logs:[],startupNews:null,update:{state:'development',notes:''},now:Date.now(),nextPSK:0};
+  return {version:APP_VERSION,portable:false,settings,scope:'nearby',spots:[],voacapPredictions:[],ionosonde:null,bands:BANDS.map(b=>evaluateBand([],b.name)),kp:null,spaceWeather:{},sourceStatus:{psk:{state:'preview'},rbn:{state:'preview'},wspr:{state:'preview'},noaa:{state:'preview'},voacap:{state:'preview'},muf:{state:'preview'}},activity:{rx:0,tx:0},logs:[],startupNews:null,update:{state:'development',notes:''},now:Date.now(),nextPSK:0};
 }
 const api=window.propTool||{
   snapshot:async()=>previewSnapshot(),
@@ -151,7 +151,7 @@ function render(snap){
     const row=document.createElement('div');row.className='bandRow';
     const label=document.createElement('strong');label.textContent=b.band;label.style.color=color(b.band);
     const state=document.createElement('span');state.className='state';state.textContent=b.chance===null?t('insufficient'):t(bandStates[b.state]||'none')+(b.trend!=='—'?' '+b.trend:'');
-    const basis=document.createElement('small');basis.className='basis';basis.textContent=t({estimated:'basisEstimated',observed:'basisObserved',fused:'basisFused',voacap:'basisVoacap',none:'basisNone'}[b.basis]||'basisNone')+(b.voacapScore!==null&&b.voacapScore!==undefined?' · VOACAP '+b.voacapScore+'%':'')+' · '+t('confidenceShort',{n:b.confidence??0});
+    const basis=document.createElement('small');basis.className='basis';basis.textContent=t({estimated:'basisEstimated',observed:'basisObserved',fused:'basisFused',voacap:'basisVoacap',none:'basisNone'}[b.basis]||'basisNone')+(b.voacapScore!==null&&b.voacapScore!==undefined?' · VOACAP '+b.voacapScore+'%':'')+(b.mufContext?' · MUF(3000) '+b.mufContext.referenceMHz.toFixed(1)+' MHz':'')+' · '+t('confidenceShort',{n:b.confidence??0});
     row.append(label,state,basis);$('bands').append(row);
   }
   const displayed=snap.bands.filter(b=>snap.settings.visible.includes(b.band)&&(!$('band').value||b.band===$('band').value));let zoneCount=0,pointCount=0;
@@ -170,6 +170,11 @@ function render(snap){
   $('mapNotice').classList.toggle('hidden',!configured||pointCount>0&&!estimateOnly);$('mapNotice').textContent=estimateOnly?t(onlyBand.band==='11 m'?'elevenMeterEstimateNotice':'estimateOnlyNotice',{band:onlyBand.band,score:onlyBand.chance??'—'}):status.state==='error'?t('sourceError'):status.state==='loading'?t('loading'):status.state==='preview'?t('previewNotice'):t('emptyTitle');$('mapNotice').title=estimateOnly?t('estimateNotConfirmed'):t('emptyBody');
   $('evidenceCount').textContent=t('counts',{n:pointCount,zones:zoneCount});const query=status.state==='online'?t('queryCount',{n:status.count??0}):sourceLabel(status);
   const rbnQuery=rbnStatus.state==='online'?`OK (${rbnStatus.count??0})`:sourceLabel(rbnStatus),wsprQuery=wsprStatus.state==='online'?`OK (${wsprStatus.count??0})`:sourceLabel(wsprStatus),voacapQuery=voacapStatus.state==='online'?`OK (${voacapStatus.targets??0})`:sourceLabel(voacapStatus);$('freshness').textContent=`PSK: ${query}${status.updated?' · '+age(status.updated):''} · WSPR: ${wsprQuery}${wsprStatus.updated?' · '+age(wsprStatus.updated):''} · RBN: ${rbnQuery}${rbnStatus.updated?' · '+age(rbnStatus.updated):''} · VOACAP: ${voacapQuery}${voacapStatus.updated?' · '+age(voacapStatus.updated):''}${snap.nextPSK>0?' · '+t('nextQuery',{n:Math.ceil(snap.nextPSK/60000)}):''}`;
+  const iono=snap.ionosonde,mufStatus=snap.sourceStatus.muf||{state:'waiting'};
+  $('mufValue').textContent=iono?.muf3000!=null?'MUF(3000): '+iono.muf3000.toFixed(1)+' MHz':'MUF(3000): —';
+  $('fof2Value').textContent=iono?.fof2!=null?iono.fof2.toFixed(1)+' MHz':'—';
+  $('mufDistance').textContent=iono?Math.round(iono.distanceKm)+' km':'—';
+  $('mufStation').textContent=iono?iono.name+' ('+iono.code+') · '+date(iono.timestamp)+' · '+t('mufReferenceWarning'):(mufStatus.detail||t('mufUnavailable'));
   const kp=snap.kp,sw=snap.spaceWeather||{};$('kp').textContent=kp?kp.value.toLocaleString(language,{minimumFractionDigits:1,maximumFractionDigits:1}):'—';$('kpState').textContent=kp?t(Date.now()-kp.timestamp>4*3600000?'oldMeasure':kp.value>=5?'elevated':'measurement'):sourceLabel(snap.sourceStatus.noaa);$('kpTime').textContent=kp?`${date(kp.timestamp)} · ${t('kpNote')}`:t('kpWaiting');$('sfi').textContent=sw.f107?.value??'—';$('bz').textContent=sw.bz?`${sw.bz.value} nT`:'—';$('wind').textContent=sw.wind?`${Math.round(sw.wind.value)} km/s`:'—';$('xray').textContent=sw.xray?.class??'—';
   renderUpdate(snap.update);renderLogs();
   if(snap.startupNews&&newsShownFor!==snap.startupNews.version){newsShownFor=snap.startupNews.version;$('newsVersion').textContent='v'+snap.startupNews.version;const notes=normalizeReleaseNotes(snap.startupNews.notes);$('newsNotes').textContent=notes||t('news027');if(!$('newsDialog').open)$('newsDialog').showModal();}
