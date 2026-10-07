@@ -2,6 +2,7 @@
 
 ## Entregue na v0.2.9
 
+- Interface do mapa simplificada: removidos os controles manuais **Confirmada / Previsão**; ambas as camadas passam a ser exibidas automaticamente no Heatmap.
 - MUF(3000)F2 e foF2 medidos por ionossondas via KC2G/GIRO; identificação, distância, atualização 15 min, limite de 90 min e panel Ionosfera.
 - Sinalização da referência MUF junto às bandas HF, sem confundir MUF(3000) com MUF exata do circuito.
 - LOGs de consulta e erros; textos nos seis idiomas; testes automatizados.
