@@ -151,7 +151,6 @@ function render(snap){
     const basis=document.createElement('small');basis.className='basis';basis.textContent=t({estimated:'basisEstimated',observed:'basisObserved',fused:'basisFused',none:'basisNone'}[b.basis]||'basisNone')+' · '+t('confidenceShort',{n:b.confidence??0});
     row.append(label,state,basis);$('bands').append(row);
   }
-  $('zones').replaceChildren();$('points').replaceChildren();
   const displayed=snap.bands.filter(b=>snap.settings.visible.includes(b.band)&&(!$('band').value||b.band===$('band').value));let zoneCount=0,pointCount=0;
   const showConfirmed=$('showConfirmed')?.checked!==false,showPredicted=$('showPredicted')?.checked!==false,shownBands=new Set(displayed.map(b=>b.band));
   const shownSpots=snap.spots.filter(p=>shownBands.has(p.band));
