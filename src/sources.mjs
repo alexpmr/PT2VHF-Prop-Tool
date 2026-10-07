@@ -126,9 +126,8 @@ export function filterRBNByRadius(spots,settings={}){
   if(!coordinates(settings.lat,settings.lon))return [];
   const radius=Number(settings.nearbyRadius)||300,home={lat:settings.lat,lon:settings.lon};
   return (spots||[]).filter(s=>{
-    const tx=coordinates(s.txPosition?.lat,s.txPosition?.lon)?distance(home,s.txPosition):Infinity;
-    const rx=coordinates(s.rxPosition?.lat,s.rxPosition?.lon)?distance(home,s.rxPosition):Infinity;
-    const txNear=tx<=radius,rxNear=rx<=radius;
+    if(!coordinates(s.txPosition?.lat,s.txPosition?.lon)||!coordinates(s.rxPosition?.lat,s.rxPosition?.lon))return false;
+    const tx=distance(home,s.txPosition),rx=distance(home,s.rxPosition),txNear=tx<=radius,rxNear=rx<=radius;
     return txNear!==rxNear;
   });
 }
