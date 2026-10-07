@@ -160,6 +160,8 @@
 
 ## Mapa e análise operacional
 
+- Adicionar **legenda do Heatmap diretamente no mapa**, explicando a escala de cores e a intensidade relativa da propagação/evidência. A legenda deve usar o mesmo gradiente efetivamente aplicado pelo renderer do Heatmap, indicar claramente níveis como **baixa, moderada, alta e muito alta intensidade**, e deixar explícito que a cor representa **densidade/intensidade relativa da evidência combinada**, não probabilidade absoluta de QSO. Deve permanecer visível e legível nos temas claro/escuro e em todos os tipos de mapa base, sem encobrir informações importantes. Quando a normalização do Heatmap variar com zoom/viewport, a legenda deve informar que a escala é relativa ao recorte atualmente visível.
+
 - Evoluir o seletor de mapa base já entregue com provedores **online opcionais** (ex.: satélite/topográfico de terceiros) somente após validar licença, termos de uso, atribuição e estratégia de fallback/cache; manter sempre as quatro bases offline atuais disponíveis.
 
 - Criar visão global separada da análise regional padrão, sem reintroduzir o antigo modo Minha estação.
