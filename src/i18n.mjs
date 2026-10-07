@@ -1511,3 +1511,50 @@ const EXTRA_MESSAGES_V0212={
   }
 };
 for(const [code,extra] of Object.entries(EXTRA_MESSAGES_V0212))Object.assign(MESSAGES[code],extra);
+
+
+const EXTRA_MESSAGES_V0213={
+  'pt-BR':{
+    heatLow:'Baixa',heatModerate:'Moderada',heatHigh:'Alta',heatVeryHigh:'Muito alta',
+    heatLegendNote:'Intensidade relativa da evidência combinada no recorte visível; não é probabilidade absoluta de QSO.',
+    quality_none:'Sem evidência',quality_low:'Baixa',quality_moderate:'Moderada',quality_good:'Boa',quality_excellent:'Ótima',
+    bandQualityTooltip:'{band}: {score}/100 · {quality}',
+    news0213:'• Cada banda ganha um bar-graph vertical de qualidade acima do botão: vermelho/baixo indica condição ruim e verde/alto indica ótima condição.\n• O indicador acompanha o score corrente e reage imediatamente às fontes ativas e à Janela de observação.\n• O Heatmap ganha legenda de cores e intensidade diretamente no mapa.\n• A legenda usa exatamente a mesma escala do renderer e deixa claro que a intensidade é relativa ao recorte visível, não probabilidade absoluta de QSO.'
+  },
+  en:{
+    heatLow:'Low',heatModerate:'Moderate',heatHigh:'High',heatVeryHigh:'Very high',
+    heatLegendNote:'Relative intensity of combined evidence in the visible viewport; not an absolute QSO probability.',
+    quality_none:'No evidence',quality_low:'Low',quality_moderate:'Moderate',quality_good:'Good',quality_excellent:'Excellent',
+    bandQualityTooltip:'{band}: {score}/100 · {quality}',
+    news0213:'• Each band now has a vertical quality bar above its button: low/red means poor conditions and tall/green means excellent conditions.\n• Bars follow the live score and active source/window selection.\n• The Heatmap now includes an on-map color/intensity legend using the exact renderer scale.'
+  },
+  es:{
+    heatLow:'Baja',heatModerate:'Moderada',heatHigh:'Alta',heatVeryHigh:'Muy alta',
+    heatLegendNote:'Intensidad relativa de la evidencia combinada en el área visible; no es una probabilidad absoluta de QSO.',
+    quality_none:'Sin evidencia',quality_low:'Baja',quality_moderate:'Moderada',quality_good:'Buena',quality_excellent:'Óptima',
+    bandQualityTooltip:'{band}: {score}/100 · {quality}',
+    news0213:'• Cada banda muestra una barra vertical de calidad y el Heatmap incluye una leyenda de color/intensidad.'
+  },
+  fr:{
+    heatLow:'Faible',heatModerate:'Modérée',heatHigh:'Élevée',heatVeryHigh:'Très élevée',
+    heatLegendNote:'Intensité relative des preuves combinées dans la zone visible ; ce n’est pas une probabilité absolue de QSO.',
+    quality_none:'Aucune preuve',quality_low:'Faible',quality_moderate:'Modérée',quality_good:'Bonne',quality_excellent:'Excellente',
+    bandQualityTooltip:'{band} : {score}/100 · {quality}',
+    news0213:'• Chaque bande affiche une barre verticale de qualité et la Heatmap comporte une légende couleur/intensité.'
+  },
+  de:{
+    heatLow:'Niedrig',heatModerate:'Mittel',heatHigh:'Hoch',heatVeryHigh:'Sehr hoch',
+    heatLegendNote:'Relative Intensität der kombinierten Evidenz im sichtbaren Ausschnitt; keine absolute QSO-Wahrscheinlichkeit.',
+    quality_none:'Keine Evidenz',quality_low:'Niedrig',quality_moderate:'Mittel',quality_good:'Gut',quality_excellent:'Sehr gut',
+    bandQualityTooltip:'{band}: {score}/100 · {quality}',
+    news0213:'• Jedes Band erhält einen vertikalen Qualitätsbalken; die Heatmap erhält eine Farb-/Intensitätslegende.'
+  },
+  it:{
+    heatLow:'Bassa',heatModerate:'Moderata',heatHigh:'Alta',heatVeryHigh:'Molto alta',
+    heatLegendNote:'Intensità relativa dell’evidenza combinata nell’area visibile; non è una probabilità assoluta di QSO.',
+    quality_none:'Nessuna evidenza',quality_low:'Bassa',quality_moderate:'Moderata',quality_good:'Buona',quality_excellent:'Ottima',
+    bandQualityTooltip:'{band}: {score}/100 · {quality}',
+    news0213:'• Ogni banda mostra una barra verticale di qualità e la Heatmap include una legenda colore/intensità.'
+  }
+};
+for(const [code,extra] of Object.entries(EXTRA_MESSAGES_V0213))Object.assign(MESSAGES[code],extra);
