@@ -41,13 +41,13 @@ function renderDensityHeatmap(){
   if(canvas.width!==width)canvas.width=width;if(canvas.height!==height)canvas.height=height;
   const ctx=canvas.getContext('2d');ctx.clearRect(0,0,width,height);
   const selected=$('band').value,shownBands=new Set(current.bands.filter(b=>current.settings.visible.includes(b.band)&&(!selected||b.band===selected)).map(b=>b.band));
-  const showConfirmed=$('showConfirmed')?.checked!==false,showPredicted=$('showPredicted')?.checked!==false,samples=[],projectScreen=mapProjector();if(!projectScreen)return;
-  if(showConfirmed)for(const s of current.spots){
+  const samples=[],projectScreen=mapProjector();if(!projectScreen)return;
+  for(const s of current.spots){
     if(!shownBands.has(s.band)||!s.endpoint)continue;const p=projectScreen(s.endpoint);if(!p)continue;
     const snr=Number.isFinite(s.snr)?Math.max(-30,Math.min(20,s.snr)): -10;
     samples.push({x:p.x,y:p.y,weight:.8+(snr+30)/100});
   }
-  if(showPredicted){
+  {
     for(const p0 of current.voacapPredictions||[]){if(!shownBands.has(p0.band)||!p0.target)continue;const p=projectScreen(p0.target);if(p)samples.push({x:p.x,y:p.y,weight:.25+.75*Math.max(0,Math.min(1,(p0.reliability??0)/100))});}
     for(const b of current.bands){
       if(!shownBands.has(b.band))continue;const weight=.18+.24*Math.max(0,Math.min(1,(b.chance??0)/100));
@@ -155,11 +155,11 @@ function render(snap){
     row.append(label,state,basis);$('bands').append(row);
   }
   const displayed=snap.bands.filter(b=>snap.settings.visible.includes(b.band)&&(!$('band').value||b.band===$('band').value));let zoneCount=0,pointCount=0;
-  const showConfirmed=$('showConfirmed')?.checked!==false,showPredicted=$('showPredicted')?.checked!==false,shownBands=new Set(displayed.map(b=>b.band));
+  const shownBands=new Set(displayed.map(b=>b.band));
   const shownSpots=snap.spots.filter(p=>shownBands.has(p.band));
   pointCount=shownSpots.length;
-  if(showPredicted)zoneCount+=displayed.reduce((n,b)=>n+(b.predictedZones||[]).length,0);
-  if(showConfirmed)zoneCount+=displayed.reduce((n,b)=>n+(b.confirmedZones||b.zones||[]).length,0);
+  zoneCount+=displayed.reduce((n,b)=>n+(b.predictedZones||[]).length,0);
+  zoneCount+=displayed.reduce((n,b)=>n+(b.confirmedZones||b.zones||[]).length,0);
   const ranked=rankCountries(shownSpots,countryFeatures,language,3),destHost=$('favoredDestinations');destHost.replaceChildren();
   if(!ranked.length){const empty=document.createElement('span');empty.className='destinationEmpty';empty.textContent=t('noFavoredDestinations');destHost.append(empty);}
   else for(const item of ranked){const row=document.createElement('div');row.className='destinationRow';const name=document.createElement('strong');name.textContent=item.name;const meta=document.createElement('span');meta.textContent=t('destinationMeta',{n:item.reports,sources:item.sources.length});row.append(name,meta);destHost.append(row);}
@@ -209,7 +209,7 @@ $('grid').onchange=()=>{const p=fromGrid($('grid').value.trim());if(p){$('lat').
 $('locate').onclick=()=>{if(!navigator.geolocation){toast('locationError');return;}$('locate').disabled=true;navigator.geolocation.getCurrentPosition(p=>{$('lat').value=p.coords.latitude;$('lon').value=p.coords.longitude;$('grid').value=toGrid(p.coords.latitude,p.coords.longitude);$('locate').disabled=false;toast('locationFilled',{n:Math.round(p.coords.accuracy)});},()=>{$('locate').disabled=false;toast('locationError');},{timeout:15000,maximumAge:300000,enableHighAccuracy:true});};
 for(const input of $('configForm').querySelectorAll('input')){input.addEventListener('invalid',()=>input.setCustomValidity(t('invalidSettings')));input.addEventListener('input',()=>input.setCustomValidity(''));}
 $('configForm').onsubmit=async e=>{e.preventDefault();const s={...current.settings};try{for(const id of ['lat','lon','power','alertMinScore','alertMinDistance','alertCooldown','updateMinutes','dataRefreshMinutes'])s[id]=Number($(id).value);s.callsign=$('callsign').value;for(const kind of ['visible','alertBands'])s[kind]=[...$('bandSettings').querySelectorAll(`input[data-kind="${kind}"]:checked`)].map(n=>n.dataset.band);s.antennas={...s.antennas};for(const n of $('bandSettings').querySelectorAll('select'))s.antennas[n.dataset.antenna]={...s.antennas[n.dataset.antenna],type:n.value};render(await api.configure(s));setPage('map');toast('saved');await refresh();}catch{configErrorKey='invalidSettings';$('configError').textContent=t(configErrorKey);}};
-for(const id of ['showConfirmed','showPredicted'])$(id).onchange=()=>render(current);
+
 $('band').onchange=()=>render(current);$('period').onchange=async()=>{try{const next=Number($('period').value);render(await api.configure({...current.settings,windowMinutes:next}));await refresh();}catch{toast('appError');}};
 async function refresh(){$('refresh').disabled=true;try{render(await api.refresh());}catch{toast('appError');}finally{$('refresh').disabled=false;}}
 $('refresh').onclick=()=>refresh();
