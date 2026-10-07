@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.2.10 — 2026-10-07
+
+- Fontes **PSK / WSPR / RBN / NOAA / VOACAP / MUF** ganham botões rápidos ao lado da Janela de observação.
+- Desativar uma fonte retira apenas sua contribuição do snapshot analítico atual; coleta, cache e histórico permanecem intactos.
+- Heatmap, Bandas agora, confiança, destinos observados, clima espacial e MUF passam a refletir imediatamente a combinação de fontes ativas.
+- Preferência das fontes é persistida no perfil.
+- Novo seletor de mapa base: **Padrão, Claro, Escuro e Relevo**, todos offline e compatíveis com o Heatmap.
+- Preferência de mapa base persistida sem criar dependência de provedores externos.
+- Painéis NOAA/MUF deixam claro quando a fonte correspondente está desativada.
+- Testes de configuração atualizados para filtros de fonte e mapa base.
+
 ## v0.2.9 — 2026-10-06
 
 - Nova fonte **KC2G/GIRO** de medições de ionossondas, consumida via HTTPS de `prop.kc2g.com/api/stations.json`.
