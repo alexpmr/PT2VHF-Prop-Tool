@@ -23,8 +23,9 @@ test('Great-circle distance and bearing cross the date line correctly',()=>{
   assert.ok(distance({lat:0,lon:179},{lat:0,lon:-179})<225);assert.ok(Math.abs(bearing({lat:0,lon:0},{lat:1,lon:0}))<.01);
 });
 test('All supported bands shown by default, update check defaults to 15 minutes and regional radius remains configurable',()=>{
-  assert.equal(DEFAULT_SETTINGS.visible.length,BANDS.length);assert.equal(DEFAULT_SETTINGS.nearbyRadius,300);assert.equal(DEFAULT_SETTINGS.alertBands.length,0);assert.equal(DEFAULT_SETTINGS.updateMinutes,15);
+  assert.equal(DEFAULT_SETTINGS.visible.length,BANDS.length);assert.equal(DEFAULT_SETTINGS.nearbyRadius,300);assert.equal(DEFAULT_SETTINGS.alertBands.length,0);assert.equal(DEFAULT_SETTINGS.updateMinutes,15);assert.equal(DEFAULT_SETTINGS.mapBase,'default');assert.equal(Object.values(DEFAULT_SETTINGS.sourceEnabled).every(Boolean),true);
   assert.throws(()=>validateSettings({...settings,lat:NaN}));assert.throws(()=>validateSettings({...settings,alertBands:['23 cm']}));assert.throws(()=>validateSettings({...settings,windowMinutes:'30'}));
+  assert.throws(()=>validateSettings({...settings,mapBase:'satellite'}));const filtered=validateSettings({...settings,mapBase:'terrain',sourceEnabled:{psk:false,wspr:true}});assert.equal(filtered.mapBase,'terrain');assert.equal(filtered.sourceEnabled.psk,false);assert.equal(filtered.sourceEnabled.wspr,true);assert.equal(filtered.sourceEnabled.rbn,true);
 });
 test('PSK parsing preserves both endpoint positions and mode',()=>{
   const data=parsePSK('<receptionReports><receptionReport senderCallsign="py1aaa" receiverCallsign="dl1abc" senderLocator="GH64" receiverLocator="JO31" frequency="14074000" flowStartSeconds="1800000000" mode="FT8" sNR="-11"/></receptionReports>');
