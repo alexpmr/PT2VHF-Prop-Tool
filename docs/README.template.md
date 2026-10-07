@@ -61,7 +61,7 @@ Abra **Configurações**, informe indicativo e posição da antena, ajuste banda
 
 ## Limites e roteiro
 
-A v0.2.6 ainda não possui modelo físico completo que use potência, ganho, altura, polarização e azimute da antena. **MUF/foF2, VOACAP, D-RAP, GloTEC/TEC, aurora espacial, DX Cluster e outras fontes** continuam no [roteiro](docs/BACKLOG.md). O WSPR independente já é consultado por meio do WSPR.live.
+A v{{VERSION}} ainda não possui modelo físico completo que use potência, ganho, altura, polarização e azimute da antena. **MUF/foF2, VOACAP, D-RAP, GloTEC/TEC, aurora espacial, DX Cluster e outras fontes** continuam no [roteiro](docs/BACKLOG.md). O WSPR independente já é consultado por meio do WSPR.live.
 
 Os dados RBN chegam por uma API pública de agregação e podem ter Grid ausente, especialmente para alguns indicativos internacionais. PSK Reporter e WSPR.live também dependem de participantes e localização reportada. O aplicativo rejeita evidências sem posição quando ela é necessária para inferência geográfica e mantém a origem de cada fonte para evitar dupla interpretação.
 
