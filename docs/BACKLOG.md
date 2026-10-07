@@ -1,5 +1,11 @@
 # Backlog consolidado — PT2VHF Prop Tool
 
+## Entregue na v0.2.9
+
+- MUF(3000)F2 e foF2 medidos por ionossondas via KC2G/GIRO; identificação, distância, atualização 15 min, limite de 90 min e panel Ionosfera.
+- Sinalização da referência MUF junto às bandas HF, sem confundir MUF(3000) com MUF exata do circuito.
+- LOGs de consulta e erros; textos nos seis idiomas; testes automatizados.
+
 ## Entregue na v0.2.8
 
 - **VOACAP local — primeira fase:** integração do motor VOACAPW para circuitos HF calculados localmente, sem consumir automaticamente voacap.com.
@@ -117,7 +123,7 @@
 ## Motor, fontes e modelagem
 
 - Integrar novas fontes somente após validar acesso, termos de uso, quotas e estabilidade: **DX Cluster/HamQTH**, **GIRO/KC2G**, **D-RAP**, **GloTEC/TEC**, aurora, prótons e outros produtos NOAA/SWPC. Não redistribuir mapas de terceiros sem autorização.
-- Integrar **MUF/foF2** para melhorar a leitura ionosférica e a estimativa de HF/11 m.
+- Evoluir MUF/foF2 já integrados: campo ionosférico interpolado, estimativa de MUF por trajetória/caminho real, integração opcional GloTEC/TEC, dados históricos e calibração para 11 m, sem confundir MUF(3000) com MUF de circuito.
 - Evoluir a integração **VOACAP** já implantada: adicionar SSN observado direto, modelos reais de antena por banda (ganho, altura, polarização e azimute), modo/RSN configurável, long path, cache mais sofisticado e eventualmente VOAAREA para cobertura independente de spots.
 - Calibrar o Prop Score/confiança com dados históricos e validação real por banda/região; os pesos operacionais atuais ainda não são probabilidades científicas de QSO.
 - Separar recepção unilateral de QSO confirmado e evitar converter automaticamente evidência FT8/WSPR em garantia equivalente para SSB/CW.
