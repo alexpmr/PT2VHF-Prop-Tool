@@ -1,5 +1,14 @@
 # Backlog consolidado — PT2VHF Prop Tool
 
+## Entregue na v0.2.13
+
+- Adicionada **legenda do Heatmap diretamente no mapa**, usando a mesma escala de cores do renderer.
+- A legenda identifica intensidade **baixa, moderada, alta e muito alta** e esclarece que a escala é relativa ao recorte visível, não probabilidade absoluta de QSO.
+- Cada botão de banda passa a exibir um **bar-graph vertical de qualidade**: vermelho/baixo em condições ruins, passando por laranja/amarelo, até verde/alto em condições ótimas.
+- O bar-graph acompanha o score corrente de cada banda e reage às fontes ativas e à Janela de observação.
+- Bandas sem evidência usam estado neutro; tooltip e acessibilidade mostram score e classificação.
+- Testes e smoke test atualizados para validar a escala compartilhada da legenda e os indicadores de banda.
+
 ## Entregue na v0.2.12
 
 - RBN regional redefinido por **posição + raio configurável em km**, sem usar prefixo de indicativo como critério geográfico.
@@ -159,10 +168,6 @@
 - Evoluir 11 m/PX com MUF/foF2, TEC/GloTEC e modelos F2/Es/TEP; manter estimativa solar sempre separada de confirmação geográfica.
 
 ## Mapa e análise operacional
-
-- Adicionar, **sobre/acima de cada botão de banda**, um indicador visual instantâneo de qualidade da propagação em formato **bar-graph vertical**. A altura e a cor devem refletir o estado/score atual da banda: **vermelho e baixo/fino** para propagação ruim, passando por laranja/amarelo para condições intermediárias, até **verde e mais alto** para ótima propagação. O objetivo é permitir identificar a melhor banda apenas com um olhar, sem precisar ler números. O indicador deve acompanhar em tempo real o score já calculado pelo motor, respeitar filtros/fontes ativas, Janela de observação e banda desabilitada/sem evidência, ter tooltip/aria-label com valor e classificação, permanecer legível nos temas claro/escuro e não aumentar excessivamente a altura da barra superior.
-
-- Adicionar **legenda do Heatmap diretamente no mapa**, explicando a escala de cores e a intensidade relativa da propagação/evidência. A legenda deve usar o mesmo gradiente efetivamente aplicado pelo renderer do Heatmap, indicar claramente níveis como **baixa, moderada, alta e muito alta intensidade**, e deixar explícito que a cor representa **densidade/intensidade relativa da evidência combinada**, não probabilidade absoluta de QSO. Deve permanecer visível e legível nos temas claro/escuro e em todos os tipos de mapa base, sem encobrir informações importantes. Quando a normalização do Heatmap variar com zoom/viewport, a legenda deve informar que a escala é relativa ao recorte atualmente visível.
 
 - Evoluir o seletor de mapa base já entregue com provedores **online opcionais** (ex.: satélite/topográfico de terceiros) somente após validar licença, termos de uso, atribuição e estratégia de fallback/cache; manter sempre as quatro bases offline atuais disponíveis.
 
