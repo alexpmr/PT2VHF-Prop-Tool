@@ -1,5 +1,14 @@
 # Backlog consolidado — PT2VHF Prop Tool
 
+## Entregue na v0.2.10
+
+- Controles rápidos de fontes na mesma linha da **Janela de observação**: PSK Reporter, WSPR.live, RBN, NOAA SWPC, VOACAP e KC2G/GIRO (MUF/foF2).
+- Cada fonte pode ser ligada/desligada para comparação sem interromper a coleta nem apagar histórico; Heatmap, scores, confiança, destinos e painéis usam somente as fontes ativas.
+- Estado ativo/inativo persistido no perfil e atualização imediata da análise ao alternar uma fonte.
+- Novo seletor de **mapa base** com quatro estilos offline: Padrão, Claro, Escuro e Relevo; preferência persistida e sem dependência externa.
+- Controles Confirmada/Previsão permanecem removidos; as duas naturezas de evidência são compostas automaticamente no Heatmap.
+- Testes e documentação atualizados para filtros de fonte e mapas base.
+
 ## Entregue na v0.2.9
 
 - Interface do mapa simplificada: removidos os controles manuais **Confirmada / Previsão**; ambas as camadas passam a ser exibidas automaticamente no Heatmap.
@@ -134,9 +143,7 @@
 
 ## Mapa e análise operacional
 
-- Na mesma linha da **Janela de observação**, adicionar controles rápidos das **fontes de dados**, permitindo ligar/desligar individualmente cada fonte para comparação visual e analítica. Incluir inicialmente **PSK Reporter, WSPR.live, Reverse Beacon Network, NOAA SWPC, VOACAP e KC2G/GIRO (MUF/foF2)**. Ao desativar uma fonte, remover sua contribuição apenas da visualização/cálculo corrente sem apagar os dados coletados em memória/histórico; ao reativar, restaurar imediatamente sua contribuição. Exibir estado visual claro de ativo/inativo e preservar a seleção do usuário. A comparação deve atualizar em tempo real o Heatmap, scores, confiança, destinos observados e demais métricas derivadas.
-
-- Adicionar seletor de **tipo de mapa/base cartográfica**, permitindo alternar entre diferentes estilos e provedores compatíveis (por exemplo: claro, escuro, satélite, relevo/topográfico e outros futuramente), preservando as camadas analíticas do PT2VHF Prop Tool — Heatmap, Observado, Previsão, MUF/ionosfera e demais overlays — independentemente do mapa de fundo selecionado. Persistir a preferência do usuário e manter fallback seguro para o mapa padrão/offline quando um provedor externo estiver indisponível.
+- Evoluir o seletor de mapa base já entregue com provedores **online opcionais** (ex.: satélite/topográfico de terceiros) somente após validar licença, termos de uso, atribuição e estratégia de fallback/cache; manter sempre as quatro bases offline atuais disponíveis.
 
 - Criar visão global separada da análise regional padrão, sem reintroduzir o antigo modo Minha estação.
 - Avaliar MapLibre e camadas independentes **Observado / Medido / Previsto**.
