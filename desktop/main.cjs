@@ -4,7 +4,7 @@ const {createReadStream,realpathSync}=require('node:fs');
 const {spawn}=require('node:child_process');
 const {pathToFileURL,fileURLToPath}=require('node:url');
 const {downloadAsset,launchHandoff}=require('./portable-update.cjs');
-let win,state,file,dataDir,domain,sources,alerts,i18n,versions,refreshing=false,checkingUpdate=false,downloadingUpdate=false;
+let win,state,file,dataDir,domain,sources,voacap,alerts,i18n,versions,refreshing=false,checkingUpdate=false,downloadingUpdate=false;
 let scope='nearby',lastUpdateCheck=0,persistQueue=Promise.resolve(),update={state:'idle',notes:'',version:null},updater,asset,pendingFile;
 let trafficLogs=[],trafficSeq=0,activity={rx:0,tx:0};const TRAFFIC_LIMIT=300;
 const portable=Boolean(process.env.PORTABLE_EXECUTABLE_DIR),smoke=process.argv.includes('--smoke-test'),captureDocs=process.argv.includes('--capture-docs');
@@ -21,14 +21,55 @@ app.on('window-all-closed',()=>app.quit());
 function persist(){const payload=JSON.stringify(state);const job=persistQueue.catch(()=>{}).then(async()=>{await fs.mkdir(path.dirname(file),{recursive:true});await fs.writeFile(file+'.tmp',payload,'utf8');await fs.rename(file+'.tmp',file);});persistQueue=job;return job;}
 function snapshot(){
   const now=Date.now(),spots=domain.relevantSpots(state.spots,state.settings,scope,now),spaceWeather=state.spaceWeather||{kp:state.kp};
-  const bands=domain.BANDS.map(b=>domain.evaluateBand(spots,b.name,now,spaceWeather)),dataInterval=Math.max(sources.PSK_INTERVAL,state.settings.dataRefreshMinutes*60000);
-  return {version:app.getVersion(),portable,settings:state.settings,scope,spots:spots.slice(-5000),bands,kp:spaceWeather.kp??state.kp,spaceWeather,sourceStatus:state.status,update,activity,logs:trafficLogs.slice(-TRAFFIC_LIMIT),startupNews:state.startupNews||null,now,nextPSK:Math.max(0,dataInterval-(now-state.attemptPSK))};
+  const voacapPredictions=state.voacapPredictions||[],bands=domain.BANDS.map(b=>domain.evaluateBand(spots,b.name,now,spaceWeather,voacapPredictions)),dataInterval=Math.max(sources.PSK_INTERVAL,state.settings.dataRefreshMinutes*60000);
+  return {version:app.getVersion(),portable,settings:state.settings,scope,spots:spots.slice(-5000),voacapPredictions:voacapPredictions.slice(-1000),bands,kp:spaceWeather.kp??state.kp,spaceWeather,sourceStatus:state.status,update,activity,logs:trafficLogs.slice(-TRAFFIC_LIMIT),startupNews:state.startupNews||null,now,nextPSK:Math.max(0,dataInterval-(now-state.attemptPSK))};
 }
 function emit(){if(win&&!win.isDestroyed())win.webContents.send('state',snapshot());}
 function recordTraffic(event){const item={id:++trafficSeq,timestamp:Date.now(),...event};trafficLogs.push(item);if(trafficLogs.length>TRAFFIC_LIMIT)trafficLogs.splice(0,trafficLogs.length-TRAFFIC_LIMIT);if(item.direction==='RX')activity={...activity,rx:item.timestamp};if(item.direction==='TX')activity={...activity,tx:item.timestamp};emit();return item;}
 function clearLogs(){trafficLogs=[];emit();return true;}
 async function exportLogs(){const result=await dialog.showSaveDialog(win,{title:'PT2VHF Prop Tool - LOGs',defaultPath:`PT2VHF-Prop-Tool-traffic-${new Date().toISOString().replace(/[:.]/g,'-')}.jsonl`,filters:[{name:'JSON Lines',extensions:['jsonl']},{name:'Text',extensions:['txt']}]});if(result.canceled||!result.filePath)return false;await fs.writeFile(result.filePath,trafficLogs.map(v=>JSON.stringify(v)).join('\n')+'\n','utf8');return true;}
 async function acknowledgeNews(){state.lastSeenVersion=app.getVersion();state.pendingNews=null;state.startupNews=null;await persist();emit();return true;}
+async function voacapRuntime(){
+  const root=process.env.PT2VHF_VOACAP_ROOT||(process.platform==='win32'?'C:\\itshfbc':'');
+  const bin=process.env.PT2VHF_VOACAP_BIN||(root?path.join(root,'bin_win','voacapw.exe'):'');
+  if(!root||!bin)throw new Error('VOACAP local não configurado');
+  await Promise.all([fs.access(root),fs.access(bin),fs.access(path.join(root,'run'))]);
+  return {root,bin};
+}
+async function executeVoacap(deck){
+  const runtime=await voacapRuntime(),id='pt2vhf_'+process.pid+'_'+Date.now()+'_'+crypto.randomBytes(3).toString('hex'),input=id+'.dat',output=id+'.out',run=path.join(runtime.root,'run'),inputPath=path.join(run,input),outputPath=path.join(run,output);
+  await fs.writeFile(inputPath,deck,'ascii');const started=Date.now();
+  recordTraffic({direction:'TX',source:'VOACAP',event:'local-engine',detail:input});
+  try{
+    await new Promise((resolve,reject)=>{
+      const child=spawn(runtime.bin,['silent',runtime.root,input,output],{cwd:path.dirname(runtime.bin),windowsHide:true,stdio:['ignore','ignore','pipe']});
+      let stderr='',settled=false;const timer=setTimeout(()=>{if(!settled){settled=true;child.kill();reject(new Error('Timeout VOACAP'));}},15000);
+      child.stderr.on('data',d=>{if(stderr.length<4096)stderr+=String(d);});
+      child.on('error',e=>{if(!settled){settled=true;clearTimeout(timer);reject(e);}});
+      child.on('exit',code=>{if(!settled){settled=true;clearTimeout(timer);code===0?resolve():reject(new Error('VOACAP exit '+code+(stderr?' · '+stderr.trim():'')));}});
+    });
+    const text=await fs.readFile(outputPath,'utf8');recordTraffic({direction:'RX',source:'VOACAP',event:'local-engine',status:'OK',bytes:Buffer.byteLength(text),durationMs:Date.now()-started,payload:text.slice(0,8192),truncated:text.length>8192});return text;
+  }finally{await Promise.allSettled([fs.unlink(inputPath),fs.unlink(outputPath)]);}
+}
+async function refreshVoacap(spots,now){
+  state.voacapPredictions=state.voacapPredictions||[];state.status.voacap=state.status.voacap||{state:'waiting'};
+  if(now-(state.attemptVOACAP||0)<voacap.VOACAP_INTERVAL)return;
+  state.attemptVOACAP=now;
+  const supported=state.settings.visible.filter(b=>voacap.VOACAP_BANDS[b]);if(!supported.length){state.status.voacap={state:'idle',detail:'Nenhuma banda HF VOACAP habilitada'};return;}
+  const targets=voacap.observedTargets(spots,state.settings);if(!targets.length){state.status.voacap={state:'waiting',detail:'Aguardando destinos observados'};return;}
+  state.status.voacap={state:'loading',detail:targets.length+' circuitos HF'};emit();
+  try{
+    await voacapRuntime();const f107=Number(state.spaceWeather?.f107?.value),ssn=Number.isFinite(f107)?Math.max(0,Math.min(300,Math.round((f107-67)*1.61))):100,predictions=[];
+    const home={lat:state.settings.lat,lon:state.settings.lon},date=new Date(now);
+    for(const target of targets){
+      const deck=voacap.buildVoacapDeck({date,tx:home,rx:target,power:state.settings.power,ssn});
+      const rel=voacap.predictionsForHour(await executeVoacap(deck),date.getUTCHours());
+      for(const band of supported){const reliability=rel[band];if(Number.isFinite(reliability))predictions.push({source:'VOACAP',evidence:'predicted',timestamp:Date.now(),band,reliability,target:{lat:target.lat,lon:target.lon},distance:target.distance,bearing:target.bearing});}
+    }
+    state.voacapPredictions=voacap.mergeVoacapPredictions(state.voacapPredictions,predictions,now);state.status.voacap={state:'online',updated:Date.now(),count:predictions.length,targets:targets.length,detail:targets.length+' circuitos · SSN '+ssn+' estimado de F10.7'};
+    recordTraffic({direction:'INFO',source:'VOACAP',event:'forecast',detail:predictions.length+' previsões · '+targets.length+' destinos'});
+  }catch(e){state.status.voacap={state:'unavailable',detail:e.message};recordTraffic({direction:'INFO',source:'VOACAP',event:'unavailable',detail:e.message});}
+}
 async function refresh(){
   scope='nearby';if(refreshing){emit();return snapshot();}refreshing=true;
   try{
@@ -82,7 +123,7 @@ async function refresh(){
         recordTraffic({direction:'INFO',source:'NOAA SWPC',event:'fusion-input',detail:parts.join(' · ')});
       }catch(e){state.status.noaa={...state.status.noaa,state:'error',detail:e.message};}})());
     }
-    emit();await Promise.all(work);state.spots=domain.mergeSpots(state.spots,[]);await persist();
+    emit();await Promise.all(work);state.spots=domain.mergeSpots(state.spots,[]);const regionalForVoacap=domain.relevantSpots(state.spots,state.settings,'nearby',Date.now());await refreshVoacap(regionalForVoacap,Date.now());await persist();
     const snap=snapshot(),healthy=(state.status.psk.state==='online'&&Date.now()-state.status.psk.updated<6*60000)||(state.status.rbn?.state==='online'&&Date.now()-state.status.rbn.updated<6*60000)||(state.status.wspr?.state==='online'&&Date.now()-state.status.wspr.updated<6*60000);
     for(const b of alerts.update(snap.bands,state.settings,Date.now(),healthy)){
       const metric=b.chance??b.score;if(Notification.isSupported())new Notification({title:t('opening')+' — '+b.band,body:t('alertText',{band:b.band,n:metric})}).show();
@@ -184,7 +225,7 @@ Remove-Item -LiteralPath $PSCommandPath -Force -ErrorAction SilentlyContinue
 async function rendererReady(){return win.webContents.executeJavaScript(`new Promise((resolve,reject)=>{const deadline=Date.now()+15000;const poll=setInterval(()=>{if(document.documentElement.dataset.ready==='true'){clearInterval(poll);const bands=document.querySelectorAll('.bandRow').length,land=document.querySelectorAll('#land path').length;if(bands===${state.settings.visible.length}&&document.querySelector('#band').options.length===${domain.BANDS.length+1}&&document.querySelectorAll('#bandButtons button').length===${state.settings.visible.length+1}&&document.querySelectorAll('#periodButtons button').length===3&&document.querySelector('#mapVisualization')===null&&document.querySelector('#favoredDestinations')&&land>100&&typeof window.propTool.snapshot==='function'&&typeof window.propTool.runUpdateFlow==='function'&&typeof window.propTool.clearLogs==='function'&&typeof window.propTool.factoryReset==='function')resolve(true);else reject(new Error('Interface, bridge or map failed'));}else if(Date.now()>deadline){clearInterval(poll);reject(new Error('Renderer timeout'));}},100);})`);}
 async function start(){
   if(smoke)console.log('Smoke startup: Electron ready');
-  if(process.platform==='win32')app.setAppUserModelId('br.pt2vhf.proptool');[domain,sources,i18n,versions]=await Promise.all([import('../src/domain.mjs'),import('../src/sources.mjs'),import('../src/i18n.mjs'),import('../src/updates.mjs')]);alerts=new domain.AlertMachine();
+  if(process.platform==='win32')app.setAppUserModelId('br.pt2vhf.proptool');[domain,sources,voacap,i18n,versions]=await Promise.all([import('../src/domain.mjs'),import('../src/sources.mjs'),import('../src/voacap.mjs'),import('../src/i18n.mjs'),import('../src/updates.mjs')]);alerts=new domain.AlertMachine();
   dataDir=portable?path.join(process.env.PORTABLE_EXECUTABLE_DIR,'data'):(smoke||captureDocs)?path.join(app.getPath('temp'),`pt2vhf-${captureDocs?'docs':'smoke'}-${process.pid}`):app.getPath('userData');file=path.join(dataDir,'state.json');
   state={schemaVersion:6,settings:domain.validateSettings(domain.DEFAULT_SETTINGS),spots:[],kp:null,spaceWeather:null,attemptPSK:0,attemptRBN:0,attemptWSPR:0,attemptKp:0,status:{psk:{state:'idle'},rbn:{state:'idle'},wspr:{state:'idle'},noaa:{state:'idle'}},lastSeenVersion:app.getVersion(),pendingNews:null,startupNews:null};
   try{const loaded=JSON.parse((await fs.readFile(file,'utf8')).replace(/^\uFEFF/,''));const previousSchema=loaded.schemaVersion||1;state={...state,...loaded,schemaVersion:6,settings:domain.migrateSettings(loaded.settings,previousSchema),spots:domain.mergeSpots(Array.isArray(loaded.spots)?loaded.spots:[],[]),status:{...state.status,...(loaded.status||{})}};if(state.pendingNews?.version===app.getVersion())state.startupNews=state.pendingNews;else if(!loaded.lastSeenVersion&&previousSchema<4)state.startupNews={version:app.getVersion(),notes:''};else if(loaded.lastSeenVersion&&loaded.lastSeenVersion!==app.getVersion())state.startupNews={version:app.getVersion(),notes:''};}catch(e){if(e.code!=='ENOENT'){console.error('Settings load failed:',e);if(smoke)throw e;await dialog.showMessageBox({type:'warning',message:t('settingsLoadError')});await fs.rename(file,file+'.invalid-'+Date.now()).catch(()=>{});}}
