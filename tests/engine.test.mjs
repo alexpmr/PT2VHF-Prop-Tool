@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {DEFAULT_SETTINGS,BANDS,toGrid,fromGrid,distance,bearing,validateSettings,parsePSK,relevantSpots,evaluateBand,spaceWeatherScore,mergeSpots,AlertMachine} from '../src/domain.mjs';
 import {parseKp,parseF107,parseSolarWindMag,parseSolarWindSpeed,parseXray,parseRBN,parseWSPR,wsprURL,pskURL,pskQueryPlan,boundedFetch} from '../src/sources.mjs';
 import {assistantReply} from '../src/assistant.mjs';
+import {countryForPoint,rankCountries} from '../src/geography.mjs';
 const now=1800000000000;
 const settings={...DEFAULT_SETTINGS,callsign:'PT2VHF',lat:-15.8,lon:-47.9,nearbyRadius:300};
 function spot(id,overrides={}){
@@ -52,7 +53,7 @@ test('Space weather contributes conservatively when regional observations are ab
   const band=evaluateBand([],'10 m',now,quiet);assert.ok(band.chance>0);assert.equal(band.basis,'estimated');assert.equal(band.confirmedZones.length,0);assert.equal(band.predictedZones.length,0);
   const eleven=evaluateBand([],'11 m',now,quiet);assert.ok(eleven.chance>0);assert.equal(eleven.basis,'estimated');assert.equal(eleven.reports,0);assert.equal(eleven.confirmedZones.length,0);
 });
-test('Regional observations dominate chance and produce confirmed/forecast polygons',()=>{
+test('Regional observations dominate chance and produce heatmap support zones',()=>{
   const reports=[
     spot('1',{rxPosition:{lat:50.5,lon:8.5}}),
     spot('2',{tx:'PY2BBB',rxPosition:{lat:50.5,lon:10.5}}),
@@ -66,7 +67,7 @@ test('Regional observations dominate chance and produce confirmed/forecast polyg
 test('Independent observation sources are identified without multiplying the same link pair',()=>{
   const a=spot('10',{source:'PSK Reporter'}),b=spot('11',{source:'WSPR.live',tx:a.tx,rx:a.rx,txPosition:a.txPosition,rxPosition:a.rxPosition,timestamp:a.timestamp});
   const data=relevantSpots([a,b],settings,'nearby',now),result=evaluateBand(data,'20 m',now,{kp:{value:2},f107:{value:150},bz:{value:1},wind:{value:400},xray:{class:'C1.0'}});
-  assert.equal(result.sourceCount,2);assert.equal(result.pairs,1);assert.equal(result.reports,2);assert.equal(result.basis,'fused');
+  assert.equal(result.sourceCount,2);assert.equal(result.pairs,1);assert.equal(result.reports,2);assert.equal(result.basis,'fused');assert.ok(result.confidence>0);assert.equal(result.independentEvents,1);assert.equal(result.convergedEvents,1);
 });
 test('Opening alerts use confirmed regional propagation rather than requiring own-station TX',()=>{
   const cfg={...settings,alertBands:['20 m'],alertMinScore:60,alertMinDistance:500};
@@ -120,6 +121,19 @@ test('Fetching follows only authorized redirects and reports TX/RX activity',asy
   await assert.rejects(boundedFetch('https://retrieve.pskreporter.info/query','text',async()=>new Response(null,{status:302,headers:{location:'https://evil.example/query'}})));
 });
 
+test('Offline geography resolves countries and ranks geolocated evidence',()=>{
+  const countries=[{type:'Feature',properties:{name:'Brasil',names:{'pt-BR':'Brasil',en:'Brazil'},iso3:'BRA',continent:'South America'},bbox:[-75,-35,-34,6],geometry:{type:'Polygon',coordinates:[[[-75,-35],[-34,-35],[-34,6],[-75,6],[-75,-35]]]}}];
+  assert.equal(countryForPoint({lat:-15.8,lon:-47.9},countries).iso3,'BRA');assert.equal(countryForPoint({lat:50,lon:8},countries),null);
+  const ranked=rankCountries([{endpoint:{lat:-15.8,lon:-47.9},source:'PSK Reporter',distance:900},{endpoint:{lat:-10,lon:-50},source:'WSPR.live',distance:1200}],countries,'en',3);
+  assert.equal(ranked[0].name,'Brazil');assert.equal(ranked[0].reports,2);assert.equal(ranked[0].sources.length,2);
+});
+test('Confidence falls when otherwise similar evidence gets older',()=>{
+  const fresh=[spot('20',{txGrid:'GH64AA',rxGrid:'JO31AA',origin:'regional-out',endpoint:{lat:50,lon:8},distance:8000,bearing:40})];
+  const stale=[{...fresh[0],timestamp:now-25*60000}];
+  const a=evaluateBand(fresh,'20 m',now,{}),b=evaluateBand(stale,'20 m',now,{});
+  assert.ok(a.confidence>b.confidence);assert.ok(a.score>=b.score);
+});
+
 test('Assistant routes different questions to different answers and respects selected/specific bands',()=>{
   const spots=[
     {...spot('1'),bearing:45,distance:1500,origin:'regional-out',endpoint:{lat:1,lon:1}},
@@ -130,6 +144,8 @@ test('Assistant routes different questions to different answers and respects sel
   const best=assistantReply('qual a melhor banda agora?',snapshot,'40 m');assert.equal(best.key,'assistantBest');assert.equal(best.vars.band,'20 m');
   assert.equal(assistantReply('como estão os 20 metros?',snapshot,'').key,'assistantBand');
   assert.equal(assistantReply('qual direção para 20m?',snapshot,'').key,'assistantDirection');
+  const countries=[{type:'Feature',properties:{name:'Teste',names:{'pt-BR':'País Teste'},iso3:'TST'},bbox:[0,0,3,3],geometry:{type:'Polygon',coordinates:[[[0,0],[3,0],[3,3],[0,3],[0,0]]]}}];
+  const countryAnswer=assistantReply('quais países estão favorecidos em 20m?',snapshot,'',{countries,language:'pt-BR'});assert.equal(countryAnswer.key,'assistantCountries');assert.match(countryAnswer.vars.countries,/País Teste/);
   assert.equal(assistantReply('como estão as fontes?',snapshot,'').key,'assistantSources');
   assert.equal(assistantReply('qual a janela de observação?',snapshot,'').key,'assistantWindow');
   assert.equal(assistantReply('o que é esse heatmap?',snapshot,'').key,'assistantHeatmap');
