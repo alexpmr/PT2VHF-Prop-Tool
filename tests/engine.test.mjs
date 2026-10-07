@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {DEFAULT_SETTINGS,BANDS,toGrid,fromGrid,distance,bearing,validateSettings,parsePSK,relevantSpots,evaluateBand,spaceWeatherScore,mergeSpots,AlertMachine} from '../src/domain.mjs';
-import {parseKp,parseF107,parseSolarWindMag,parseSolarWindSpeed,parseXray,parseRBN,parseWSPR,wsprURL,pskURL,pskQueryPlan,boundedFetch} from '../src/sources.mjs';
+import {DEFAULT_SETTINGS,BANDS,toGrid,fromGrid,distance,bearing,validateSettings,parsePSK,relevantSpots,evaluateBand,spaceWeatherScore,mergeSpots,filterSpotsBySources,AlertMachine} from '../src/domain.mjs';
+import {parseKp,parseF107,parseSolarWindMag,parseSolarWindSpeed,parseXray,parseRBN,parseWSPR,wsprURL,pskURL,pskQueryPlan,boundedFetch,rbnRegionalPrefix,rbnURLs} from '../src/sources.mjs';
 import {assistantReply} from '../src/assistant.mjs';
 import {parseIonograms,selectNearbyIonosonde,bandMufContext,MUF_MAX_AGE} from '../src/muf.mjs';
 import {countryForPoint,rankCountries,rankContinents} from '../src/geography.mjs';
@@ -199,4 +199,36 @@ test('MUF uses a nearby valid station and never asserts precise link cutoff',()=
  assert.equal(bandMufContext('2 m',near,now),null);
  assert.equal(selectNearbyIonosonde(rows,{lat:85,lon:85},now),null);
  assert.equal(bandMufContext('20 m',{...near,timestamp:now-MUF_MAX_AGE-1},now),null);
+});
+
+
+test('Source comparison keeps WSPR and RBN observations when PSK is disabled',()=>{
+  const p=spot('psk',{source:'PSK Reporter'});
+  const w=spot('wspr',{source:'WSPR.live',tx:'PT2AAA',rx:'DL1AAA'});
+  const r=spot('rbn',{source:'Reverse Beacon Network',tx:'PT2BBB',rx:'K1ABC'});
+  const filtered=filterSpotsBySources([p,w,r],{psk:false,wspr:true,rbn:true});
+  assert.deepEqual(filtered.map(s=>s.source),['WSPR.live','Reverse Beacon Network']);
+  const regional=relevantSpots(filtered,settings,'nearby',now);
+  assert.ok(regional.length>=2);
+  const band=evaluateBand(regional,'20 m',now,{kp:{value:2},f107:{value:150}});
+  assert.ok(band.reports>=2);assert.notEqual(band.basis,'none');assert.ok(band.chance>0);
+});
+
+test('Source comparison supports WSPR-only and RBN-only snapshots',()=>{
+  const w=spot('wspr-only',{source:'WSPR.live',tx:'PT2AAA',rx:'DL1AAA'});
+  const r=spot('rbn-only',{source:'Reverse Beacon Network',tx:'PT2BBB',rx:'K1ABC'});
+  const wOnly=relevantSpots(filterSpotsBySources([w,r],{psk:false,wspr:true,rbn:false}),settings,'nearby',now);
+  const rOnly=relevantSpots(filterSpotsBySources([w,r],{psk:false,wspr:false,rbn:true}),settings,'nearby',now);
+  assert.equal(wOnly.length,1);assert.equal(wOnly[0].source,'WSPR.live');
+  assert.equal(rOnly.length,1);assert.equal(rOnly[0].source,'Reverse Beacon Network');
+});
+
+test('RBN regional query uses configured call prefix for both TX and skimmer directions',()=>{
+  assert.equal(rbnRegionalPrefix('PT2VHF'),'PT2');
+  assert.equal(rbnRegionalPrefix('PY1ABC'),'PY1');
+  const urls=rbnURLs({...settings,callsign:'PT2VHF',windowMinutes:30},now).map(u=>new URL(u));
+  assert.equal(urls.length,2);
+  assert.equal(urls[0].searchParams.get('call'),'PT2');
+  assert.equal(urls[1].searchParams.get('spotter'),'PT2');
+  assert.ok(urls.every(u=>u.searchParams.get('since')));
 });
