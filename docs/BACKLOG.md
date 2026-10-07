@@ -1,5 +1,14 @@
 # Backlog consolidado — PT2VHF Prop Tool
 
+## Entregue na v0.2.8
+
+- **VOACAP local — primeira fase:** integração do motor VOACAPW para circuitos HF calculados localmente, sem consumir automaticamente voacap.com.
+- Detecção padrão em `C:\\itshfbc\\bin_win\\voacapw.exe`, com caminhos substituíveis por variáveis de ambiente.
+- Destinos de cálculo derivados apenas de evidências geolocalizadas PSK Reporter/WSPR.live/RBN, com limite de 12 circuitos recentes por ciclo.
+- Potência configurada aplicada ao deck; SSN provisoriamente estimado do F10.7 NOAA; confiabilidade REL da hora UTC atual fundida ao score sem virar evidência observada.
+- Heatmap Previsão e LOGs passam a exibir/registrar VOACAP.
+- Testes unitários para deck, parser, alvos e fusão.
+
 ## Entregue na v0.2.7
 
 - **Mapa exclusivamente Heatmap:** removido o seletor Heatmap/Polígonos, a preferência persistida e o renderer de polígonos. Perfis antigos com `mapView=polygons` migram automaticamente sem intervenção.
@@ -109,7 +118,7 @@
 
 - Integrar novas fontes somente após validar acesso, termos de uso, quotas e estabilidade: **DX Cluster/HamQTH**, **GIRO/KC2G**, **D-RAP**, **GloTEC/TEC**, aurora, prótons e outros produtos NOAA/SWPC. Não redistribuir mapas de terceiros sem autorização.
 - Integrar **MUF/foF2** para melhorar a leitura ionosférica e a estimativa de HF/11 m.
-- Implementar **VOACAP** ou motor equivalente para circuitos HF, considerando potência, antena, altura, ganho, polarização e azimute.
+- Evoluir a integração **VOACAP** já implantada: adicionar SSN observado direto, modelos reais de antena por banda (ganho, altura, polarização e azimute), modo/RSN configurável, long path, cache mais sofisticado e eventualmente VOAAREA para cobertura independente de spots.
 - Calibrar o Prop Score/confiança com dados históricos e validação real por banda/região; os pesos operacionais atuais ainda não são probabilidades científicas de QSO.
 - Separar recepção unilateral de QSO confirmado e evitar converter automaticamente evidência FT8/WSPR em garantia equivalente para SSB/CW.
 - Criar motor específico VHF/UHF para **Es, TEP, F2, tropo/ducting, aurora e meteor scatter**, explicitando mecanismo provável e nível de confiança.
