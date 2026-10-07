@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.2.8 — 2026-10-06
+
+- **VOACAP local** integrado como primeira camada física de previsão HF, sem automatizar o site voacap.com.
+- O aplicativo detecta o motor oficial Windows em `C:\\itshfbc\\bin_win\\voacapw.exe` ou pelos overrides `PT2VHF_VOACAP_ROOT` / `PT2VHF_VOACAP_BIN`.
+- Os destinos VOACAP são derivados exclusivamente de endpoints geolocalizados realmente observados por PSK Reporter, WSPR.live ou RBN; nenhum país/região é inventado apenas pelo modelo.
+- Até 12 circuitos recentes são calculados a cada 15 minutos, usando todas as bandas HF suportadas de 80 m a 10 m, incluindo 11 m.
+- A potência configurada da estação entra no deck VOACAP. O SSN inicial é estimado a partir do F10.7 medido pelo NOAA SWPC enquanto uma fonte direta de SSN não é incorporada.
+- A confiabilidade VOACAP da hora UTC atual é fundida ao score operacional sem ser contada como evidência observada.
+- A camada **Previsão** do Heatmap passa a incluir os destinos calculados pelo VOACAP com intensidade proporcional à confiabilidade.
+- LOGs registram execução local, duração, saída limitada para diagnóstico, quantidade de circuitos e indisponibilidade do motor.
+- Testes adicionados para geração do deck, parser REL, seleção de destinos e fusão no score.
+
 ## v0.2.7 — 2026-10-06
 
 - O mapa passa a operar **exclusivamente em Heatmap**. O seletor Heatmap/Polígonos, a preferência persistida e o renderer alternativo foram removidos; perfis antigos migram automaticamente.
