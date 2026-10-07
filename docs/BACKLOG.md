@@ -1,5 +1,14 @@
 # Backlog consolidado — PT2VHF Prop Tool
 
+## Entregue na v0.2.12
+
+- RBN regional redefinido por **posição + raio configurável em km**, sem usar prefixo de indicativo como critério geográfico.
+- Campo **Raio da região (km)** exposto em Configurações; 300 km por padrão, ajustável entre 1 e 2.000 km.
+- Consulta Vail ReRBN passa a ser feita por banda habilitada e Janela de observação; grids TX/RX são filtrados localmente pelo raio.
+- Somente enlaces que cruzam o limite regional (um extremo dentro, outro fora) alimentam a análise DX/Heatmap.
+- Enlaces totalmente locais, totalmente externos ou sem localização suficiente são excluídos da evidência geográfica.
+- Testes cobrem estação com prefixo local operando fora da região e estação com outro prefixo operando dentro do raio.
+
 ## Entregue na v0.2.11
 
 - Corrigida a comparação de fontes quando **PSK Reporter** está desligado.
