@@ -46,7 +46,7 @@ def link(label,url):return f'<link href="{url}" color="#08755b"><u>{label}</u></
 title('PT2VHF Prop Tool')
 p(f'Manual ilustrado • versão {version} • Windows 10/11 x64','SubManual')
 p('Estimativa de possibilidade de contato a partir da sua região, com observações reais, clima espacial, mapa offline e acompanhamento de bandas. Guia da edição instalada e portátil.')
-picture('01-inicio-escuro.png',maxh=108)
+picture('01-inicio-escuro.png',maxh=108,crop=(0,205,1440,850))
 p('Capturas reais do renderer em prévia local. Sem recepções inventadas; campos de localização são exemplos. As consultas de produção funcionam no aplicativo Windows.','CaptionManual')
 p('por Alex, PT2VHF','SubManual')
 new('1. Instalar e começar')
