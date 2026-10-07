@@ -1,10 +1,10 @@
-# PT2VHF Prop Tool — Downloads v0.2.7
+# PT2VHF Prop Tool — Downloads v0.2.9
 
 ## ⬇️ Baixe agora
 
-**[Instalador Windows x64](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.7/PT2VHF-Prop-Tool-0.2.7-x64-setup.exe)** · **[Portable Windows x64](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.7/PT2VHF-Prop-Tool-0.2.7-x64-portable.exe)** · **[Manual PDF](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.7/PT2VHF-Prop-Tool-0.2.7-Manual.pdf)**
+**[Instalador Windows x64](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.9/PT2VHF-Prop-Tool-0.2.9-x64-setup.exe)** · **[Portable Windows x64](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.9/PT2VHF-Prop-Tool-0.2.9-x64-portable.exe)** · **[Manual PDF](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.9/PT2VHF-Prop-Tool-0.2.9-Manual.pdf)**
 
-[SHA-256](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.7/SHA256SUMS.txt) · [Release v0.2.7](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/tag/v0.2.7) · [Última release](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/latest)
+[SHA-256](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.9/SHA256SUMS.txt) · [Release v0.2.9](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/tag/v0.2.9) · [Última release](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/latest)
 
 ## Sobre o PT2VHF Prop Tool
 
@@ -60,13 +60,13 @@ Abra **Configurações**, informe indicativo e posição da antena, ajuste banda
 - Em **11 m**, a indicação pode ser uma **estimativa solar/ionosférica**, não uma confirmação por spots. A interface sinaliza essa diferença.
 - Kp, SFI, Bz, vento solar e raios X são contexto físico global; confirmação geográfica exige dados espaciais/observacionais.
 
-## Ionosfera: MUF e foF2 (v0.2.9)
+## Ionosfera · MUF e foF2
 
-O aplicativo consulta a fonte KC2G/GIRO de ionossondas e apresenta **foF2** e **MUF(3000)F2** medidos pela estação ativa mais próxima (até 1.800 km). O dado deve ter no máximo 90 minutos; sua origem, horário e distância são informados. MUF(3000) refere-se aproximadamente a 3.000 km e **não é a MUF exata entre dois pontos específicos**. A informação complementa o VOACAP e os spots observados sem criar falsos contatos, previsões ou probabilidades de QSO.
+A fonte **KC2G/GIRO** fornece MUF(3000)F2 e foF2 medidos por ionossondas. O painel escolhe a estação válida mais próxima (até 1.800 km), rejeita dados com mais de 90 minutos e exibe distância, origem e horário. É contexto físico independente dos spots observados e da previsão VOACAP, não uma confirmação de QSO.
 
 ## Limites e roteiro
 
-A linha v0.2.8 inicia a integração **VOACAP local**: potência configurada, posição da estação, destino observado, hora/mês e SSN estimado a partir de F10.7 entram em circuitos ponto a ponto. Ainda faltam modelos completos de antena (ganho, altura, polarização e azimute), SSN observado direto, long path/VOAAREA e calibração por modo. **MUF/foF2, D-RAP, GloTEC/TEC, aurora espacial, DX Cluster e outras fontes** continuam no [roteiro](docs/BACKLOG.md).
+A v0.2.9 inclui VOACAP local (potência e circuito HF) e dados **foF2 / MUF(3000)F2** de ionossondas via KC2G/GIRO. A MUF(3000) é uma referência para aproximadamente 3.000 km, não o limite exato de qualquer percurso. Para a próxima fase ficam os modelos de antena (altura/ganho/polarização/azimute), MUF por circuito, interpolação ionosférica, GloTEC/TEC, aurora, DX Cluster e outras fontes. Detalhes no [backlog](docs/BACKLOG.md).
 
 Os dados RBN chegam por uma API pública de agregação e podem ter Grid ausente, especialmente para alguns indicativos internacionais. PSK Reporter e WSPR.live também dependem de participantes e localização reportada. O aplicativo rejeita evidências sem posição quando ela é necessária para inferência geográfica e mantém a origem de cada fonte para evitar dupla interpretação.
 
@@ -91,8 +91,8 @@ npm run dist:win
 
 - [PSK Reporter — API](https://www.pskreporter.info/pskdev.html)
 - [NOAA Space Weather Prediction Center](https://services.swpc.noaa.gov/)
-- [NTIA/ITS — VOACAP Propagation Model](https://its.ntia.gov/software/high-frequency/voacap-propagation-model/)
-- [KC2G — medições de ionossondas](https://prop.kc2g.com/api/stations.json)
+- [KC2G — dados de ionossondas](https://prop.kc2g.com/api/stations.json)
+- [VOACAP — modelo de propagação HF](https://its.ntia.gov/software/high-frequency/voacap-propagation-model/)
 - [WSPR.live — banco público WSPR](https://wspr.live/)
 - [Reverse Beacon Network](https://www.reversebeacon.net/)
 - [Vail ReRBN — API pública de spots RBN](https://vailrerbn.com/docs)
