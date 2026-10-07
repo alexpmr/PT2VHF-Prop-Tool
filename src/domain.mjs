@@ -4,11 +4,14 @@ export const BANDS = [
   ['15 m',21,21.45],['12 m',24.89,24.99],['11 m',26.965,27.855],['10 m',28,29.7],
   ['6 m',50,54],['2 m',144,148],['70 cm',430,440]
 ].map(([name,low,high])=>({name,low:low*1e6,high:high*1e6}));
+export const SOURCE_KEYS=['psk','wspr','rbn','noaa','voacap','muf'];
+export const MAP_BASES=['default','light','dark','terrain'];
 export const DEFAULT_SETTINGS = {
   callsign:'',lat:null,lon:null,power:100,antennas:Object.fromEntries(BANDS.map(b=>[b.name,{type:'Vertical'}])),
   visible:BANDS.map(b=>b.name),alertBands:[],alertMinScore:65,
   alertMinDistance:800,alertCooldown:30,windowMinutes:30,
-  updateMinutes:15,dataRefreshMinutes:5,nearbyRadius:300,language:'pt-BR',theme:'dark'
+  updateMinutes:15,dataRefreshMinutes:5,nearbyRadius:300,language:'pt-BR',theme:'dark',
+  mapBase:'default',sourceEnabled:Object.fromEntries(SOURCE_KEYS.map(k=>[k,true]))
 };
 export function coordinates(lat,lon) {
   return typeof lat==='number' && typeof lon==='number' && Number.isFinite(lat) && Number.isFinite(lon) && lat>=-90 && lat<=90 && lon>=-180 && lon<=180;
@@ -58,6 +61,9 @@ export function validateSettings(input) {
   s.antennas=Object.fromEntries(BANDS.map(b=>[b.name,{type:'Vertical',...s.antennas[b.name]}]));
   if(!['pt-BR','en','es','fr','de','it'].includes(s.language))throw new Error('Idioma inválido');
   if(!['dark','light'].includes(s.theme))throw new Error('Tema inválido');
+  if(!MAP_BASES.includes(s.mapBase))throw new Error('Mapa inválido');
+  if(!s.sourceEnabled||typeof s.sourceEnabled!=='object'||Array.isArray(s.sourceEnabled))s.sourceEnabled={};
+  s.sourceEnabled=Object.fromEntries(SOURCE_KEYS.map(k=>[k,s.sourceEnabled[k]!==false]));
   delete s.mapView;
   return s;
 }
