@@ -1382,3 +1382,56 @@ const EXTRA_MESSAGES_V028={
   }
 };
 for(const [code,extra] of Object.entries(EXTRA_MESSAGES_V028))Object.assign(MESSAGES[code],extra);
+
+
+const EXTRA_MESSAGES_V029={
+ 'pt-BR':{
+   ionosphereTitle:'Ionosfera · referência local',
+   mufSource:'Dados reais de ionossondas (foF2 e MUF(3000)F2) disponibilizados pelo KC2G/GIRO. Usa a estação próxima com medição recente; não é MUF exata de um circuito.',
+   mufReferenceWarning:'MUF(3000)F2 da ionossonda; não é limite exato do seu trajeto.',
+   mufUnavailable:'Sem ionossonda recente próxima.',
+   news029:'• Painel Ionosfera com MUF(3000)F2 e foF2 de ionossonda próxima, horário e distância.\\n• Nova fonte KC2G/GIRO com LOGs, atualização a cada 15 minutos e descarte de leituras antigas.\\n• A referência MUF contextualiza as bandas HF sem substituir VOACAP nem gerar previsão/contato fictício.',
+   helpData:'PSK Reporter, WSPR.live e RBN fornecem spots observados; NOAA SWPC informa clima espacial; VOACAP local prevê circuitos HF. KC2G/GIRO fornece medições foF2 e MUF(3000)F2 de ionossondas com hora/distância. MUF(3000) é uma referência para percurso de aproximadamente 3.000 km, não previsão precisa do seu enlace ou confirmação de QSO.'
+ },
+ en:{
+   ionosphereTitle:'Ionosphere · local reference',
+   mufSource:'Real ionosonde measurements (foF2 and MUF(3000)F2) from KC2G/GIRO. Uses a nearby station with recent data; not an exact per-path MUF.',
+   mufReferenceWarning:'Station MUF(3000)F2; not a precise limit for your path.',
+   mufUnavailable:'No recent ionosonde nearby.',
+   news029:'• Ionosphere panel with MUF(3000)F2 and foF2, station name, age, and distance.\\n• New KC2G/GIRO source with LOGs, 15-minute refresh and freshness rejection.',
+   helpData:'PSK Reporter, WSPR.live and RBN provide observed spots; NOAA SWPC provides space weather; local VOACAP models HF paths. KC2G/GIRO provides timestamped foF2 and MUF(3000)F2 ionosonde values. Station MUF(3000) is not a precise path limit or QSO confirmation.'
+ },
+ es:{
+   ionosphereTitle:'Ionosfera · referencia local',
+   mufSource:'Mediciones reales de ionosondas foF2 y MUF(3000)F2 de KC2G/GIRO.',
+   mufReferenceWarning:'MUF(3000)F2 de la ionosonda, no límite exacto del trayecto.',
+   mufUnavailable:'Sin ionosonda reciente cercana.',
+   news029:'• Ionosfera con MUF(3000)F2 y foF2 de estación cercana.\\n• Nueva fuente KC2G/GIRO con registros y validación temporal.',
+   helpData:'KC2G/GIRO aporta mediciones foF2 y MUF(3000)F2, diferentes de spots observados y de las predicciones VOACAP. La MUF(3000) no representa el límite exacto de un circuito.'
+ },
+ fr:{
+   ionosphereTitle:'Ionosphère · référence locale',
+   mufSource:'Mesures réelles foF2 et MUF(3000)F2 par ionosondes KC2G/GIRO.',
+   mufReferenceWarning:'MUF(3000)F2 de la sonde, pas une limite exacte de liaison.',
+   mufUnavailable:'Aucune ionosonde récente à proximité.',
+   news029:'• Données ionosphériques MUF(3000)F2 et foF2.\\n• Source KC2G/GIRO, journal et validation temporelle.',
+   helpData:'KC2G/GIRO fournit les mesures foF2 et MUF(3000)F2 des ionosondes. La MUF(3000) ne représente pas la limite exacte de votre circuit.'
+ },
+ de:{
+   ionosphereTitle:'Ionosphäre · lokale Referenz',
+   mufSource:'Reale Ionsondenmessungen foF2 und MUF(3000)F2 von KC2G/GIRO.',
+   mufReferenceWarning:'MUF(3000)F2 der Ionsonde, keine exakte Streckengrenze.',
+   mufUnavailable:'Keine aktuelle Ionsonde in der Nähe.',
+   news029:'• Anzeige von MUF(3000)F2 und foF2.\\n• KC2G/GIRO Datenquelle mit Aktualitätsprüfung.',
+   helpData:'KC2G/GIRO stellt foF2- und MUF(3000)F2-Werte von Ionsonden bereit. MUF(3000) ist keine genaue Grenze für eine einzelne Funkstrecke.'
+ },
+ it:{
+   ionosphereTitle:'Ionosfera · riferimento locale',
+   mufSource:'Misure reali foF2 e MUF(3000)F2 dalle ionosonde KC2G/GIRO.',
+   mufReferenceWarning:'MUF(3000)F2 della ionosonda, non limite preciso del collegamento.',
+   mufUnavailable:'Nessuna ionosonda recente nelle vicinanze.',
+   news029:'• Pannello ionosfera con MUF(3000)F2 e foF2.\\n• Nuova fonte KC2G/GIRO con verifica temporale.',
+   helpData:'KC2G/GIRO offre foF2 e MUF(3000)F2 di ionosonde. La MUF(3000) non è il limite esatto di un collegamento.'
+ }
+};
+for(const [code,extra] of Object.entries(EXTRA_MESSAGES_V029))Object.assign(MESSAGES[code],extra);
