@@ -1,4 +1,4 @@
-import {parsePSK,bandFor,fromGrid} from './domain.mjs';
+import {parsePSK,bandFor,fromGrid,coordinates,distance} from './domain.mjs';
 import {APP_VERSION} from './version.mjs';
 export const PSK_INTERVAL=300000;
 export const IONO_INTERVAL=900000;
@@ -116,22 +116,32 @@ export function parseRBN(payload){
   }
   return out;
 }
-export function rbnRegionalPrefix(callsign){
-  const call=String(callsign||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
-  const m=call.match(/^([A-Z0-9]{1,3}\d)/);
-  return m?.[1]||'';
+export const RBN_BAND_CODES={'160 m':'160m','80 m':'80m','60 m':'60m','40 m':'40m','30 m':'30m','20 m':'20m','17 m':'17m','15 m':'15m','12 m':'12m','10 m':'10m','6 m':'6m'};
+export function rbnURLs(settings={},now=Date.now(),offset=0){
+  const since=Math.floor((now-Math.max(5,Math.min(60,Number(settings.windowMinutes)||30))*60000)/1000);
+  const visible=(Array.isArray(settings.visible)?settings.visible:[]).map(v=>RBN_BAND_CODES[v]).filter(Boolean);
+  return [...new Set(visible)].map(band=>'https://vailrerbn.com/api/v1/spots?limit=1000&offset='+offset+'&since='+since+'&band='+encodeURIComponent(band));
 }
-export function rbnURLs(settings={},now=Date.now()){
-  const since=new Date(now-Math.max(5,Math.min(60,Number(settings.windowMinutes)||30))*60000).toISOString();
-  const prefix=rbnRegionalPrefix(settings.callsign);
-  const base='https://vailrerbn.com/api/v1/spots?limit=1000&since='+encodeURIComponent(since);
-  return prefix?[base+'&call='+encodeURIComponent(prefix),base+'&spotter='+encodeURIComponent(prefix)]:[base];
+export function filterRBNByRadius(spots,settings={}){
+  if(!coordinates(settings.lat,settings.lon))return [];
+  const radius=Number(settings.nearbyRadius)||300,home={lat:settings.lat,lon:settings.lon};
+  return (spots||[]).filter(s=>{
+    const tx=coordinates(s.txPosition?.lat,s.txPosition?.lon)?distance(home,s.txPosition):Infinity;
+    const rx=coordinates(s.rxPosition?.lat,s.rxPosition?.lon)?distance(home,s.rxPosition):Infinity;
+    const txNear=tx<=radius,rxNear=rx<=radius;
+    return txNear!==rxNear;
+  });
 }
 export async function loadRBN(settings={},fetchImpl,activity){
-  const payloads=await Promise.all(rbnURLs(settings).map(url=>boundedFetch(url,'json',fetchImpl,activity)));
+  const firstURLs=rbnURLs(settings);
+  if(!firstURLs.length)return [];
+  const first=await Promise.all(firstURLs.map(url=>boundedFetch(url,'json',fetchImpl,activity)));
+  const payloads=[...first],secondURLs=[];
+  first.forEach((payload,i)=>{if(Number(payload?.total)>1000&&Array.isArray(payload?.spots)&&payload.spots.length>=1000)secondURLs.push(rbnURLs(settings,Date.now(),1000)[i]);});
+  if(secondURLs.length)payloads.push(...await Promise.all(secondURLs.filter(Boolean).map(url=>boundedFetch(url,'json',fetchImpl,activity))));
   const merged=new Map();
   for(const payload of payloads)for(const spot of parseRBN(payload))merged.set(spot.id,spot);
-  return [...merged.values()].sort((a,b)=>a.timestamp-b.timestamp);
+  return filterRBNByRadius([...merged.values()],settings).sort((a,b)=>a.timestamp-b.timestamp);
 }
 
 const WSPR_BAND_CODES={'160 m':1,'80 m':3,'60 m':5,'40 m':7,'30 m':10,'20 m':14,'17 m':18,'15 m':21,'12 m':24,'10 m':28,'6 m':50,'2 m':144,'70 cm':432};
