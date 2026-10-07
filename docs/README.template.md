@@ -29,11 +29,13 @@ Aplicativo experimental para Windows 10/11 x64 que estima **onde há possibilida
 - O motor mantém separados **observado**, **medido** e **estimado**. PSK Reporter, RBN e WSPR.live contribuem como observações; NOAA SWPC contribui como condição física. A **confiança** é calculada separadamente da chance e considera diversidade de fontes, precisão geográfica, idade das evidências e convergência independente.
 - **11 m / PX:** quando não há fonte observacional compatível, a banda continua recebendo uma estimativa solar/ionosférica conservadora a partir dos dados NOAA, claramente marcada como estimativa e sem inventar regiões no Heatmap.
 - O mapa opera **exclusivamente em Heatmap**, com gradiente multicolor de densidade: tons frios indicam menor concentração e tons quentes maior concentração. A camada é recalculada conforme zoom e deslocamento; não existe mais alternância para Polígonos.
-- **Confirmada** e **Previsão** continuam como camadas independentes dentro do Heatmap. A composição agrega evidências por viewport/zoom e normaliza a intensidade para evitar saturação em branco.
+- Evidências observadas e previstas continuam diferenciadas internamente e são compostas automaticamente no Heatmap; os antigos controles manuais Confirmada/Previsão foram removidos.
 - O painel **Destinos observados** usa fronteiras offline Natural Earth para identificar os principais países presentes nas evidências geolocalizadas do filtro atual.
 - As áreas previstas permanecem geograficamente conservadoras: dependem de geometria observacional disponível e não inventam continentes/regiões apenas a partir de índices globais. O cursor mostra direção/azimute e distância desde a estação configurada.
 - Painel de clima espacial exibe **Kp, SFI, Bz, Vsw e X-Ray**.
 - Histórico local de até 24 h; análise nos últimos 15, 30 ou 60 minutos. Refresh automático do mapa a cada **5 minutos por padrão**, configurável.
+- **Comparação de fontes:** PSK, WSPR, RBN, NOAA, VOACAP e MUF podem ser ligados/desligados diretamente ao lado da Janela de observação. O filtro afeta somente o snapshot analítico/visual atual; a coleta e o histórico permanecem preservados.
+- **Mapa base selecionável:** Padrão, Claro, Escuro e Relevo funcionam offline e preservam o Heatmap e todas as camadas analíticas. A escolha fica salva no perfil.
 - Aba **LOGs** registra TX, RX, fonte, endpoint, status, latência, bytes, erros e prévia limitada do payload, incluindo PSK Reporter, WSPR.live, RBN, NOAA e GitHub.
 - Verificação de versões a cada **15 minutos** por padrão, configurável. O botão de versão verifica imediatamente e, havendo release nova, inicia o fluxo automático de atualização.
 - Na primeira abertura após atualizar, um popup mostra as novidades uma única vez. HTML/Markdown recebido do GitHub é convertido para texto seguro e legível, sem exibir tags ou atributos internos.
