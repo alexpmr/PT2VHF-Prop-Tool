@@ -4,6 +4,7 @@ import {DEFAULT_SETTINGS,BANDS,toGrid,fromGrid,distance,bearing,validateSettings
 import {parseKp,parseF107,parseSolarWindMag,parseSolarWindSpeed,parseXray,parseRBN,parseWSPR,wsprURL,pskURL,pskQueryPlan,boundedFetch} from '../src/sources.mjs';
 import {assistantReply} from '../src/assistant.mjs';
 import {countryForPoint,rankCountries,rankContinents} from '../src/geography.mjs';
+import {buildVoacapDeck,parseVoacapReliability,predictionsForHour,observedTargets,VOACAP_BANDS} from '../src/voacap.mjs';
 const now=1800000000000;
 const settings={...DEFAULT_SETTINGS,callsign:'PT2VHF',lat:-15.8,lon:-47.9,nearbyRadius:300};
 function spot(id,overrides={}){
@@ -152,4 +153,24 @@ test('Assistant routes different questions to different answers and respects sel
   assert.equal(assistantReply('qual a janela de observação?',snapshot,'').key,'assistantWindow');
   assert.equal(assistantReply('o que é esse heatmap?',snapshot,'').key,'assistantHeatmap');
   assert.equal(assistantReply('banana com rádio?',snapshot,'').key,'assistantUnknown');
+});
+
+
+test('VOACAP deck uses local point-to-point HF frequencies and configured power',()=>{
+  const deck=buildVoacapDeck({date:new Date('2026-10-06T22:00:00Z'),tx:{lat:-15.8,lon:-47.9},rx:{lat:51,lon:7},power:100,ssn:120});
+  assert.match(deck,/COEFFS\s+CCIR/);assert.match(deck,/MONTH\s+2026\s+10\.00/);assert.match(deck,/SUNSPOT\s+120\.0/);
+  assert.match(deck,/14\.175/);assert.match(deck,/27\.185/);assert.match(deck,/28\.850/);assert.match(deck,/METHOD\s+30/);
+});
+test('VOACAP REL parser rotates UTC 24 to hour zero and returns per-band percentages',()=>{
+  const rows=[];for(let h=1;h<=24;h++){const vals=Object.keys(VOACAP_BANDS).map((_,i)=>((h+i)%10)/10);rows.push(' 0.50 '+vals.map(v=>v.toFixed(2)).join(' ')+' REL');}
+  const parsed=parseVoacapReliability(rows.join('\n'));assert.equal(parsed.length,24);assert.equal(parsed[0][0],40);
+  const byBand=predictionsForHour(rows.join('\n'),0);assert.equal(byBand['80 m'],40);assert.ok(Number.isFinite(byBand['10 m']));
+});
+test('VOACAP targets are derived only from geolocated observed endpoints',()=>{
+  const data=relevantSpots([spot('1'),spot('2',{rxPosition:{lat:40,lon:-3}})],settings,'nearby',now);
+  const targets=observedTargets(data,settings,12);assert.equal(targets.length,2);assert.ok(targets.every(v=>Number.isFinite(v.distance)&&Number.isFinite(v.bearing)));
+});
+test('VOACAP reliability contributes to HF chance without becoming observed evidence',()=>{
+  const predicted=[{band:'20 m',reliability:82,timestamp:now,target:{lat:50,lon:8}}];
+  const b=evaluateBand([],'20 m',now,{},predicted);assert.equal(b.basis,'voacap');assert.equal(b.voacapScore,82);assert.ok(b.chance>0);assert.equal(b.reports,0);
 });
