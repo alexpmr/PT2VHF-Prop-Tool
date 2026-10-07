@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.2.9 — 2026-10-06
+
+- Nova fonte **KC2G/GIRO** de medições de ionossondas, consumida via HTTPS de `prop.kc2g.com/api/stations.json`.
+- Parser validado de **foF2**, **MUF(3000)F2**, coordenadas, hora da leitura, identificação da ionossonda e indicador de confiança quando fornecido.
+- Seleção da ionossonda mais próxima a até 1.800 km, com medição de no máximo 90 minutos; não são exibidas medições vencidas.
+- Painel **Ionosfera** mostra MUF(3000), foF2, distância e data/hora do dado.
+- O contexto MUF aparece junto às bandas HF, sem modificar artificialmente o score/VOACAP nem converter MUF(3000) em limite absoluto de um circuito.
+- Atualização automática da fonte a cada 15 minutos, LOGs completos e estados de indisponibilidade sem bloquear demais fontes.
+- Tradução PT-BR, EN, ES, FR, DE, IT; testes para parsing e seleção.
+
 ## v0.2.8 — 2026-10-06
 
 - **VOACAP local** integrado como primeira camada física de previsão HF, sem automatizar o site voacap.com.
