@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.2.11 — 2026-10-07
+
+- Corrigido o cenário em que desligar **PSK Reporter** podia deixar o mapa sem evidências úteis mesmo com outras fontes ativas.
+- A filtragem de fontes observacionais foi centralizada e passa a manter WSPR.live e RBN independentes do PSK.
+- RBN agora consulta o prefixo regional do indicativo configurado nos dois sentidos: estações DX da região (`call`) e skimmers da região (`spotter`), respeitando a Janela de observação.
+- A consulta RBN global de 1.000 spots deixa de ser a única base para a análise regional.
+- VOACAP deixa de criar novos circuitos a partir de fontes observacionais desativadas.
+- Testes cobrem PSK desligado, WSPR isolado, RBN isolado e URLs RBN regionais.
+
 ## v0.2.10 — 2026-10-07
 
 - Fontes **PSK / WSPR / RBN / NOAA / VOACAP / MUF** ganham botões rápidos ao lado da Janela de observação.
