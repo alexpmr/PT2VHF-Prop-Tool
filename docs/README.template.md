@@ -39,6 +39,7 @@ Aplicativo experimental para Windows 10/11 x64 que estima **onde há possibilida
 - Na primeira abertura após atualizar, um popup mostra as novidades uma única vez. HTML/Markdown recebido do GitHub é convertido para texto seguro e legível, sem exibir tags ou atributos internos.
 - Atualização instalada por electron-updater/NSIS e atualização portátil com substituição segura e recuperação da versão anterior. Ao iniciar a atualização, a aplicação mostra **percentual, bytes transferidos/total e velocidade quando disponíveis**; depois de validar o pacote, fecha, instala/substitui a nova versão **sem perguntas** e abre novamente automaticamente.
 - **Reiniciar de fábrica** em Configurações apaga configurações, estação, preferências, histórico, cache, LOGs e dados locais, preserva a versão instalada e reabre o aplicativo como primeira execução.
+- **Assistente local** interpreta perguntas sobre melhor banda, banda específica, direção/azimute, tráfego, fontes, score/confiança e agora também **países ou regiões favorecidos**, usando a mesma evidência geolocalizada do motor e a base offline de países.
 
 ## Instalar e começar
 
