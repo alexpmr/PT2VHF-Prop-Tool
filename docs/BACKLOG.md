@@ -1,5 +1,13 @@
 # Backlog consolidado — PT2VHF Prop Tool
 
+## Entregue na v0.2.11
+
+- Corrigida a comparação de fontes quando **PSK Reporter** está desligado.
+- WSPR.live e Reverse Beacon Network passam a continuar alimentando observações e Heatmap de forma independente.
+- Consulta RBN passa a usar o **prefixo regional do indicativo configurado** para pesquisar tanto estações transmitindo quanto skimmers da região, em vez de depender apenas dos 1.000 spots globais mais recentes.
+- VOACAP passa a derivar novos alvos somente das fontes observacionais atualmente habilitadas.
+- Testes de regressão adicionados para PSK desligado, WSPR-only, RBN-only e geração das consultas RBN regionais.
+
 ## Entregue na v0.2.10
 
 - Controles rápidos de fontes na mesma linha da **Janela de observação**: PSK Reporter, WSPR.live, RBN, NOAA SWPC, VOACAP e KC2G/GIRO (MUF/foF2).
@@ -142,8 +150,6 @@
 - Evoluir 11 m/PX com MUF/foF2, TEC/GloTEC e modelos F2/Es/TEP; manter estimativa solar sempre separada de confirmação geográfica.
 
 ## Mapa e análise operacional
-
-- Corrigir a comparação de fontes: ao desativar **PSK Reporter**, o mapa e o painel **Bandas agora** não podem ficar vazios se ainda houver dados válidos de **WSPR.live, RBN, NOAA, VOACAP ou KC2G/GIRO**. Revisar a filtragem do snapshot e a lógica de elegibilidade por banda para garantir que cada fonte ativa contribua de forma independente. Em especial, WSPR/RBN devem continuar alimentando observações e Heatmap; NOAA/VOACAP/MUF devem continuar sustentando estimativas/previsões onde aplicável. Adicionar testes de regressão cobrindo PSK desligado com as demais fontes ligadas e combinações parciais de fontes.
 
 - Evoluir o seletor de mapa base já entregue com provedores **online opcionais** (ex.: satélite/topográfico de terceiros) somente após validar licença, termos de uso, atribuição e estratégia de fallback/cache; manter sempre as quatro bases offline atuais disponíveis.
 
