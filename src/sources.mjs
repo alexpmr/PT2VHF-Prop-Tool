@@ -116,9 +116,22 @@ export function parseRBN(payload){
   }
   return out;
 }
-export async function loadRBN(fetchImpl,activity){
-  const data=await boundedFetch('https://vailrerbn.com/api/v1/spots?limit=1000','json',fetchImpl,activity);
-  return parseRBN(data);
+export function rbnRegionalPrefix(callsign){
+  const call=String(callsign||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  const m=call.match(/^([A-Z0-9]{1,3}\d)/);
+  return m?.[1]||'';
+}
+export function rbnURLs(settings={},now=Date.now()){
+  const since=new Date(now-Math.max(5,Math.min(60,Number(settings.windowMinutes)||30))*60000).toISOString();
+  const prefix=rbnRegionalPrefix(settings.callsign);
+  const base='https://vailrerbn.com/api/v1/spots?limit=1000&since='+encodeURIComponent(since);
+  return prefix?[base+'&call='+encodeURIComponent(prefix),base+'&spotter='+encodeURIComponent(prefix)]:[base];
+}
+export async function loadRBN(settings={},fetchImpl,activity){
+  const payloads=await Promise.all(rbnURLs(settings).map(url=>boundedFetch(url,'json',fetchImpl,activity)));
+  const merged=new Map();
+  for(const payload of payloads)for(const spot of parseRBN(payload))merged.set(spot.id,spot);
+  return [...merged.values()].sort((a,b)=>a.timestamp-b.timestamp);
 }
 
 const WSPR_BAND_CODES={'160 m':1,'80 m':3,'60 m':5,'40 m':7,'30 m':10,'20 m':14,'17 m':18,'15 m':21,'12 m':24,'10 m':28,'6 m':50,'2 m':144,'70 cm':432};
