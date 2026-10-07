@@ -1,10 +1,10 @@
-# PT2VHF Prop Tool — Downloads v0.2.9
+# PT2VHF Prop Tool — Downloads v0.2.10
 
 ## ⬇️ Baixe agora
 
-**[Instalador Windows x64](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.9/PT2VHF-Prop-Tool-0.2.9-x64-setup.exe)** · **[Portable Windows x64](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.9/PT2VHF-Prop-Tool-0.2.9-x64-portable.exe)** · **[Manual PDF](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.9/PT2VHF-Prop-Tool-0.2.9-Manual.pdf)**
+**[Instalador Windows x64](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.10/PT2VHF-Prop-Tool-0.2.10-x64-setup.exe)** · **[Portable Windows x64](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.10/PT2VHF-Prop-Tool-0.2.10-x64-portable.exe)** · **[Manual PDF](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.10/PT2VHF-Prop-Tool-0.2.10-Manual.pdf)**
 
-[SHA-256](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.9/SHA256SUMS.txt) · [Release v0.2.9](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/tag/v0.2.9) · [Última release](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/latest)
+[SHA-256](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.10/SHA256SUMS.txt) · [Release v0.2.10](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/tag/v0.2.10) · [Última release](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/latest)
 
 ## Sobre o PT2VHF Prop Tool
 
@@ -29,11 +29,13 @@ Aplicativo experimental para Windows 10/11 x64 que estima **onde há possibilida
 - O motor mantém separados **observado**, **medido** e **estimado**. PSK Reporter, RBN e WSPR.live contribuem como observações; NOAA SWPC contribui como condição física. A **confiança** é calculada separadamente da chance e considera diversidade de fontes, precisão geográfica, idade das evidências e convergência independente.
 - **11 m / PX:** quando não há fonte observacional compatível, a banda continua recebendo uma estimativa solar/ionosférica conservadora a partir dos dados NOAA, claramente marcada como estimativa e sem inventar regiões no Heatmap.
 - O mapa opera **exclusivamente em Heatmap**, com gradiente multicolor de densidade: tons frios indicam menor concentração e tons quentes maior concentração. A camada é recalculada conforme zoom e deslocamento; não existe mais alternância para Polígonos.
-- **Confirmada** e **Previsão** continuam como camadas independentes dentro do Heatmap. A composição agrega evidências por viewport/zoom e normaliza a intensidade para evitar saturação em branco.
+- Evidências observadas e previstas continuam diferenciadas internamente e são compostas automaticamente no Heatmap; os antigos controles manuais Confirmada/Previsão foram removidos.
 - O painel **Destinos observados** usa fronteiras offline Natural Earth para identificar os principais países presentes nas evidências geolocalizadas do filtro atual.
 - As áreas previstas permanecem geograficamente conservadoras: dependem de geometria observacional disponível e não inventam continentes/regiões apenas a partir de índices globais. O cursor mostra direção/azimute e distância desde a estação configurada.
 - Painel de clima espacial exibe **Kp, SFI, Bz, Vsw e X-Ray**.
 - Histórico local de até 24 h; análise nos últimos 15, 30 ou 60 minutos. Refresh automático do mapa a cada **5 minutos por padrão**, configurável.
+- **Comparação de fontes:** PSK, WSPR, RBN, NOAA, VOACAP e MUF podem ser ligados/desligados diretamente ao lado da Janela de observação. O filtro afeta somente o snapshot analítico/visual atual; a coleta e o histórico permanecem preservados.
+- **Mapa base selecionável:** Padrão, Claro, Escuro e Relevo funcionam offline e preservam o Heatmap e todas as camadas analíticas. A escolha fica salva no perfil.
 - Aba **LOGs** registra TX, RX, fonte, endpoint, status, latência, bytes, erros e prévia limitada do payload, incluindo PSK Reporter, WSPR.live, RBN, NOAA e GitHub.
 - Verificação de versões a cada **15 minutos** por padrão, configurável. O botão de versão verifica imediatamente e, havendo release nova, inicia o fluxo automático de atualização.
 - Na primeira abertura após atualizar, um popup mostra as novidades uma única vez. HTML/Markdown recebido do GitHub é convertido para texto seguro e legível, sem exibir tags ou atributos internos.
@@ -66,7 +68,7 @@ A fonte **KC2G/GIRO** fornece MUF(3000)F2 e foF2 medidos por ionossondas. O pain
 
 ## Limites e roteiro
 
-A v0.2.9 inclui VOACAP local (potência e circuito HF) e dados **foF2 / MUF(3000)F2** de ionossondas via KC2G/GIRO. A MUF(3000) é uma referência para aproximadamente 3.000 km, não o limite exato de qualquer percurso. Para a próxima fase ficam os modelos de antena (altura/ganho/polarização/azimute), MUF por circuito, interpolação ionosférica, GloTEC/TEC, aurora, DX Cluster e outras fontes. Detalhes no [backlog](docs/BACKLOG.md).
+A v0.2.10 inclui VOACAP local (potência e circuito HF) e dados **foF2 / MUF(3000)F2** de ionossondas via KC2G/GIRO. A MUF(3000) é uma referência para aproximadamente 3.000 km, não o limite exato de qualquer percurso. Para a próxima fase ficam os modelos de antena (altura/ganho/polarização/azimute), MUF por circuito, interpolação ionosférica, GloTEC/TEC, aurora, DX Cluster e outras fontes. Detalhes no [backlog](docs/BACKLOG.md).
 
 Os dados RBN chegam por uma API pública de agregação e podem ter Grid ausente, especialmente para alguns indicativos internacionais. PSK Reporter e WSPR.live também dependem de participantes e localização reportada. O aplicativo rejeita evidências sem posição quando ela é necessária para inferência geográfica e mantém a origem de cada fonte para evitar dupla interpretação.
 
