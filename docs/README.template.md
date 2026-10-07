@@ -34,7 +34,7 @@ Aplicativo experimental para Windows 10/11 x64 que estima **onde há possibilida
 - As áreas previstas permanecem geograficamente conservadoras: dependem de geometria observacional disponível e não inventam continentes/regiões apenas a partir de índices globais. O cursor mostra direção/azimute e distância desde a estação configurada.
 - Painel de clima espacial exibe **Kp, SFI, Bz, Vsw e X-Ray**.
 - Histórico local de até 24 h; análise nos últimos 15, 30 ou 60 minutos. Refresh automático do mapa a cada **5 minutos por padrão**, configurável.
-- **Comparação de fontes:** PSK, WSPR, RBN, NOAA, VOACAP e MUF podem ser ligados/desligados diretamente ao lado da Janela de observação. O filtro afeta somente o snapshot analítico/visual atual; a coleta e o histórico permanecem preservados.
+- **Comparação de fontes:** PSK, WSPR, RBN, NOAA, VOACAP e MUF podem ser ligados/desligados diretamente ao lado da Janela de observação. O filtro afeta somente o snapshot analítico/visual atual; a coleta e o histórico permanecem preservados. WSPR e RBN continuam operando sem PSK; o RBN usa o prefixo regional do indicativo nos filtros `call` e `spotter` para não depender apenas do feed global.
 - **Mapa base selecionável:** Padrão, Claro, Escuro e Relevo funcionam offline e preservam o Heatmap e todas as camadas analíticas. A escolha fica salva no perfil.
 - Aba **LOGs** registra TX, RX, fonte, endpoint, status, latência, bytes, erros e prévia limitada do payload, incluindo PSK Reporter, WSPR.live, RBN, NOAA e GitHub.
 - Verificação de versões a cada **15 minutos** por padrão, configurável. O botão de versão verifica imediatamente e, havendo release nova, inicia o fluxo automático de atualização.
