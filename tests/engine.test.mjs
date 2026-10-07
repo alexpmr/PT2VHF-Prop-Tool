@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {DEFAULT_SETTINGS,BANDS,toGrid,fromGrid,distance,bearing,validateSettings,parsePSK,relevantSpots,evaluateBand,spaceWeatherScore,mergeSpots,AlertMachine} from '../src/domain.mjs';
 import {parseKp,parseF107,parseSolarWindMag,parseSolarWindSpeed,parseXray,parseRBN,parseWSPR,wsprURL,pskURL,pskQueryPlan,boundedFetch} from '../src/sources.mjs';
 import {assistantReply} from '../src/assistant.mjs';
+import {parseIonograms,selectNearbyIonosonde,bandMufContext,MUF_MAX_AGE} from '../src/muf.mjs';
 import {countryForPoint,rankCountries,rankContinents} from '../src/geography.mjs';
 import {buildVoacapDeck,parseVoacapReliability,predictionsForHour,observedTargets,VOACAP_BANDS} from '../src/voacap.mjs';
 const now=1800000000000;
@@ -173,4 +174,28 @@ test('VOACAP targets are derived only from geolocated observed endpoints',()=>{
 test('VOACAP reliability contributes to HF chance without becoming observed evidence',()=>{
   const predicted=[{band:'20 m',reliability:82,timestamp:now,target:{lat:50,lon:8}}];
   const b=evaluateBand([],'20 m',now,{},predicted);assert.equal(b.basis,'voacap');assert.equal(b.voacapScore,82);assert.ok(b.chance>0);assert.equal(b.reports,0);
+});
+
+test('Ionogram adapter keeps only recent physically plausible MUF and foF2 values',()=>{
+ const recent=new Date(now-10*60000).toISOString();
+ const rows=parseIonograms([
+  {station:{code:'BR001',name:'Brasil',latitude:'-15.8',longitude:'312.1'},time:recent,fof2:9.2,mufd:29.6,cs:78},
+  {station:{code:'OLD',latitude:'-15.9',longitude:'-47.9'},time:new Date(now-MUF_MAX_AGE-1000).toISOString(),fof2:10,mufd:30},
+  {station:{code:'BAD',latitude:'-95',longitude:'-47'},time:recent,fof2:12,mufd:40},
+  {station:{code:'ZERO',latitude:'-13',longitude:'-48'},time:recent,fof2:0,mufd:0}
+ ],now);
+ assert.equal(rows.length,1);assert.equal(rows[0].lon,-47.89999999999998);assert.equal(rows[0].muf3000,29.6);assert.equal(rows[0].fof2,9.2);
+});
+test('MUF uses a nearby valid station and never asserts precise link cutoff',()=>{
+ const rows=parseIonograms([
+   {station:{code:'CLOSE',name:'Near',latitude:-16,longitude:-48},time:new Date(now-10*60000).toISOString(),fof2:8.5,mufd:24.5},
+   {station:{code:'FAR',name:'Far',latitude:42,longitude:11},time:new Date(now-10*60000).toISOString(),fof2:15,mufd:45}
+ ],now);
+ const near=selectNearbyIonosonde(rows,{lat:-15.8,lon:-47.9},now);
+ assert.equal(near.code,'CLOSE');
+ assert.equal(bandMufContext('15 m',near,now).level,'within');
+ assert.equal(bandMufContext('10 m',near,now).level,'above');
+ assert.equal(bandMufContext('2 m',near,now),null);
+ assert.equal(selectNearbyIonosonde(rows,{lat:85,lon:85},now),null);
+ assert.equal(bandMufContext('20 m',{...near,timestamp:now-MUF_MAX_AGE-1},now),null);
 });
