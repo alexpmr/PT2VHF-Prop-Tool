@@ -60,6 +60,10 @@ Abra **Configurações**, informe indicativo e posição da antena, ajuste banda
 - Em **11 m**, a indicação pode ser uma **estimativa solar/ionosférica**, não uma confirmação por spots. A interface sinaliza essa diferença.
 - Kp, SFI, Bz, vento solar e raios X são contexto físico global; confirmação geográfica exige dados espaciais/observacionais.
 
+## Ionosfera: MUF e foF2 (v0.2.9)
+
+O aplicativo consulta a fonte KC2G/GIRO de ionossondas e apresenta **foF2** e **MUF(3000)F2** medidos pela estação ativa mais próxima (até 1.800 km). O dado deve ter no máximo 90 minutos; sua origem, horário e distância são informados. MUF(3000) refere-se aproximadamente a 3.000 km e **não é a MUF exata entre dois pontos específicos**. A informação complementa o VOACAP e os spots observados sem criar falsos contatos, previsões ou probabilidades de QSO.
+
 ## Limites e roteiro
 
 A linha v0.2.8 inicia a integração **VOACAP local**: potência configurada, posição da estação, destino observado, hora/mês e SSN estimado a partir de F10.7 entram em circuitos ponto a ponto. Ainda faltam modelos completos de antena (ganho, altura, polarização e azimute), SSN observado direto, long path/VOAAREA e calibração por modo. **MUF/foF2, D-RAP, GloTEC/TEC, aurora espacial, DX Cluster e outras fontes** continuam no [roteiro](docs/BACKLOG.md).
@@ -88,6 +92,7 @@ npm run dist:win
 - [PSK Reporter — API](https://www.pskreporter.info/pskdev.html)
 - [NOAA Space Weather Prediction Center](https://services.swpc.noaa.gov/)
 - [NTIA/ITS — VOACAP Propagation Model](https://its.ntia.gov/software/high-frequency/voacap-propagation-model/)
+- [KC2G — medições de ionossondas](https://prop.kc2g.com/api/stations.json)
 - [WSPR.live — banco público WSPR](https://wspr.live/)
 - [Reverse Beacon Network](https://www.reversebeacon.net/)
 - [Vail ReRBN — API pública de spots RBN](https://vailrerbn.com/docs)
