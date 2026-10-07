@@ -6,6 +6,7 @@ import {assistantReply} from '../src/assistant.mjs';
 import {parseIonograms,selectNearbyIonosonde,bandMufContext,MUF_MAX_AGE} from '../src/muf.mjs';
 import {countryForPoint,rankCountries,rankContinents} from '../src/geography.mjs';
 import {buildVoacapDeck,parseVoacapReliability,predictionsForHour,observedTargets,VOACAP_BANDS} from '../src/voacap.mjs';
+import {propagationQuality,heatLegendStops,HEAT_STOPS} from '../src/heatmap.mjs';
 const now=1800000000000;
 const settings={...DEFAULT_SETTINGS,callsign:'PT2VHF',lat:-15.8,lon:-47.9,nearbyRadius:300};
 function spot(id,overrides={}){
@@ -241,4 +242,21 @@ test('RBN region is defined only by real grid distance to configured radius',()=
   const foreignCallNear=spot('106',{source:'Reverse Beacon Network',tx:'PY1XYZ',txPosition:{lat:-15.7,lon:-47.7},rxPosition:{lat:50,lon:8}});
   const kept=filterRBNByRadius([nearTx,nearRx,bothFar,bothNear,mobileWrongPrefix,foreignCallNear],home);
   assert.deepEqual(kept.map(s=>s.id),['101','102','106']);
+});
+
+
+test('Band quality bar maps score to increasing height and red-to-green levels',()=>{
+  const none=propagationQuality(null),low=propagationQuality(10),mid=propagationQuality(50),high=propagationQuality(90);
+  assert.equal(none.level,'none');assert.equal(none.value,null);
+  assert.equal(low.level,'low');assert.equal(mid.level,'good');assert.equal(high.level,'excellent');
+  assert.ok(low.height<mid.height&&mid.height<high.height);
+  assert.ok(low.color[0]>low.color[1]);
+  assert.ok(high.color[1]>high.color[0]);
+});
+
+test('Heatmap legend reuses the exact renderer color stops',()=>{
+  const legend=heatLegendStops();
+  assert.equal(legend.length,HEAT_STOPS.length);
+  assert.deepEqual(legend.map(s=>s.position),HEAT_STOPS.map(s=>s[0]));
+  assert.deepEqual(legend.map(s=>s.color),HEAT_STOPS.map(s=>s[1]));
 });
