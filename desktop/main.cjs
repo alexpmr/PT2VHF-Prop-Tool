@@ -4,7 +4,7 @@ const {createReadStream,realpathSync}=require('node:fs');
 const {spawn}=require('node:child_process');
 const {pathToFileURL,fileURLToPath}=require('node:url');
 const {downloadAsset,launchHandoff}=require('./portable-update.cjs');
-let win,state,file,dataDir,domain,sources,voacap,alerts,i18n,versions,refreshing=false,checkingUpdate=false,downloadingUpdate=false;
+let win,state,file,dataDir,domain,sources,voacap,muf,alerts,i18n,versions,refreshing=false,checkingUpdate=false,downloadingUpdate=false;
 let scope='nearby',lastUpdateCheck=0,persistQueue=Promise.resolve(),update={state:'idle',notes:'',version:null},updater,asset,pendingFile;
 let trafficLogs=[],trafficSeq=0,activity={rx:0,tx:0};const TRAFFIC_LIMIT=300;
 const portable=Boolean(process.env.PORTABLE_EXECUTABLE_DIR),smoke=process.argv.includes('--smoke-test'),captureDocs=process.argv.includes('--capture-docs');
@@ -21,8 +21,8 @@ app.on('window-all-closed',()=>app.quit());
 function persist(){const payload=JSON.stringify(state);const job=persistQueue.catch(()=>{}).then(async()=>{await fs.mkdir(path.dirname(file),{recursive:true});await fs.writeFile(file+'.tmp',payload,'utf8');await fs.rename(file+'.tmp',file);});persistQueue=job;return job;}
 function snapshot(){
   const now=Date.now(),spots=domain.relevantSpots(state.spots,state.settings,scope,now),spaceWeather=state.spaceWeather||{kp:state.kp};
-  const voacapPredictions=state.voacapPredictions||[],bands=domain.BANDS.map(b=>domain.evaluateBand(spots,b.name,now,spaceWeather,voacapPredictions)),dataInterval=Math.max(sources.PSK_INTERVAL,state.settings.dataRefreshMinutes*60000);
-  return {version:app.getVersion(),portable,settings:state.settings,scope,spots:spots.slice(-5000),voacapPredictions:voacapPredictions.slice(-1000),bands,kp:spaceWeather.kp??state.kp,spaceWeather,sourceStatus:state.status,update,activity,logs:trafficLogs.slice(-TRAFFIC_LIMIT),startupNews:state.startupNews||null,now,nextPSK:Math.max(0,dataInterval-(now-state.attemptPSK))};
+  const voacapPredictions=state.voacapPredictions||[],bands=domain.BANDS.map(b=>domain.evaluateBand(spots,b.name,now,spaceWeather,voacapPredictions)).map(b=>({...b,mufContext:muf.bandMufContext(b.band,state.ionosonde,now)})),dataInterval=Math.max(sources.PSK_INTERVAL,state.settings.dataRefreshMinutes*60000);
+  return {version:app.getVersion(),portable,settings:state.settings,scope,spots:spots.slice(-5000),voacapPredictions:voacapPredictions.slice(-1000),ionosonde:(state.ionosonde&&now-state.ionosonde.timestamp<=muf.MUF_MAX_AGE?state.ionosonde:null),bands,kp:spaceWeather.kp??state.kp,spaceWeather,sourceStatus:state.status,update,activity,logs:trafficLogs.slice(-TRAFFIC_LIMIT),startupNews:state.startupNews||null,now,nextPSK:Math.max(0,dataInterval-(now-state.attemptPSK))};
 }
 function emit(){if(win&&!win.isDestroyed())win.webContents.send('state',snapshot());}
 function recordTraffic(event){const item={id:++trafficSeq,timestamp:Date.now(),...event};trafficLogs.push(item);if(trafficLogs.length>TRAFFIC_LIMIT)trafficLogs.splice(0,trafficLogs.length-TRAFFIC_LIMIT);if(item.direction==='RX')activity={...activity,rx:item.timestamp};if(item.direction==='TX')activity={...activity,tx:item.timestamp};emit();return item;}
@@ -79,8 +79,8 @@ async function refresh(){
     const pskPlan=canQuery?sources.pskQueryPlan(state.settings,state.status.psk?.coverage,now,dataInterval,grid4):null,wsprPlan=canWSPR?sources.pskQueryPlan(state.settings,state.status.wspr?.coverage,now,wsprInterval,grid4):null;
     const forceBackfill=Boolean(pskPlan?.mode==='backfill'&&(state.status.psk?.requestedWindowMinutes!==state.settings.windowMinutes||state.status.psk?.requestedGrid!==grid4));
     const forceWSPRBackfill=Boolean(wsprPlan?.mode==='backfill'&&(state.status.wspr?.requestedWindowMinutes!==state.settings.windowMinutes||state.status.wspr?.requestedGrid!==grid4));
-    const duePSK=canQuery&&(state.attemptPSK===0||now-state.attemptPSK>=dataInterval||forceBackfill),dueRBN=hasPosition&&now-(state.attemptRBN||0)>=rbnInterval,dueWSPR=canWSPR&&(state.attemptWSPR===0||now-state.attemptWSPR>=wsprInterval||forceWSPRBackfill),dueNOAA=now-state.attemptKp>=noaaInterval;
-    if(duePSK)state.attemptPSK=now;if(dueRBN)state.attemptRBN=now;if(dueWSPR)state.attemptWSPR=now;if(dueNOAA)state.attemptKp=now;await persist();const work=[];
+    const duePSK=canQuery&&(state.attemptPSK===0||now-state.attemptPSK>=dataInterval||forceBackfill),dueRBN=hasPosition&&now-(state.attemptRBN||0)>=rbnInterval,dueWSPR=canWSPR&&(state.attemptWSPR===0||now-state.attemptWSPR>=wsprInterval||forceWSPRBackfill),dueNOAA=now-state.attemptKp>=noaaInterval,dueMUF=hasPosition&&now-(state.attemptMUF||0)>=sources.IONO_INTERVAL;
+    if(duePSK)state.attemptPSK=now;if(dueRBN)state.attemptRBN=now;if(dueWSPR)state.attemptWSPR=now;if(dueNOAA)state.attemptKp=now;if(dueMUF)state.attemptMUF=now;await persist();const work=[];
     if(duePSK){
       const querySettings={...state.settings},queryScope='nearby',plan=sources.pskQueryPlan(querySettings,state.status.psk?.coverage,now,dataInterval,grid4);
       state.status.psk={...state.status.psk,state:'loading',requestedWindowMinutes:querySettings.windowMinutes,requestedGrid:grid4};
@@ -122,6 +122,19 @@ async function refresh(){
         const parts=[state.spaceWeather.kp?`Kp ${state.spaceWeather.kp.value}`:'',state.spaceWeather.f107?`SFI ${state.spaceWeather.f107.value}`:'',state.spaceWeather.bz?`Bz ${state.spaceWeather.bz.value} nT`:'',state.spaceWeather.wind?`Vsw ${state.spaceWeather.wind.value} km/s`:'',state.spaceWeather.xray?`X-ray ${state.spaceWeather.xray.class}`:''].filter(Boolean);
         recordTraffic({direction:'INFO',source:'NOAA SWPC',event:'fusion-input',detail:parts.join(' · ')});
       }catch(e){state.status.noaa={...state.status.noaa,state:'error',detail:e.message};}})());
+    }
+    if(dueMUF){
+      state.status.muf={state:'loading'};emit();
+      work.push((async()=>{try{
+        const rows=muf.parseIonograms(await sources.loadIonosondes(undefined,recordTraffic),Date.now());
+        const station=muf.selectNearbyIonosonde(rows,{lat:state.settings.lat,lon:state.settings.lon},Date.now());
+        state.ionosonde=station;
+        state.status.muf=station?{state:'online',updated:station.timestamp,count:rows.length,detail:station.name+' · '+Math.round(station.distanceKm)+' km · MUF(3000) '+(station.muf3000??'—')+' MHz'}:{state:'waiting',updated:Date.now(),count:rows.length,detail:'Sem ionossonda recente a até 1800 km da estação'};
+        recordTraffic({direction:'INFO',source:'KC2G / GIRO',event:'ionosonde',detail:state.status.muf.detail});
+      }catch(e){
+        state.ionosonde=null;state.status.muf={state:'error',detail:e.message};
+        recordTraffic({direction:'INFO',source:'KC2G / GIRO',event:'ionosonde-error',error:e.message});
+      }})());
     }
     emit();await Promise.all(work);state.spots=domain.mergeSpots(state.spots,[]);const regionalForVoacap=domain.relevantSpots(state.spots,state.settings,'nearby',Date.now());await refreshVoacap(regionalForVoacap,Date.now());await persist();
     const snap=snapshot(),healthy=(state.status.psk.state==='online'&&Date.now()-state.status.psk.updated<6*60000)||(state.status.rbn?.state==='online'&&Date.now()-state.status.rbn.updated<6*60000)||(state.status.wspr?.state==='online'&&Date.now()-state.status.wspr.updated<6*60000);
@@ -225,9 +238,9 @@ Remove-Item -LiteralPath $PSCommandPath -Force -ErrorAction SilentlyContinue
 async function rendererReady(){return win.webContents.executeJavaScript(`new Promise((resolve,reject)=>{const deadline=Date.now()+15000;const poll=setInterval(()=>{if(document.documentElement.dataset.ready==='true'){clearInterval(poll);const bands=document.querySelectorAll('.bandRow').length,land=document.querySelectorAll('#land path').length;if(bands===${state.settings.visible.length}&&document.querySelector('#band').options.length===${domain.BANDS.length+1}&&document.querySelectorAll('#bandButtons button').length===${state.settings.visible.length+1}&&document.querySelectorAll('#periodButtons button').length===3&&document.querySelector('#mapVisualization')===null&&document.querySelector('#favoredDestinations')&&land>100&&typeof window.propTool.snapshot==='function'&&typeof window.propTool.runUpdateFlow==='function'&&typeof window.propTool.clearLogs==='function'&&typeof window.propTool.factoryReset==='function')resolve(true);else reject(new Error('Interface, bridge or map failed'));}else if(Date.now()>deadline){clearInterval(poll);reject(new Error('Renderer timeout'));}},100);})`);}
 async function start(){
   if(smoke)console.log('Smoke startup: Electron ready');
-  if(process.platform==='win32')app.setAppUserModelId('br.pt2vhf.proptool');[domain,sources,voacap,i18n,versions]=await Promise.all([import('../src/domain.mjs'),import('../src/sources.mjs'),import('../src/voacap.mjs'),import('../src/i18n.mjs'),import('../src/updates.mjs')]);alerts=new domain.AlertMachine();
+  if(process.platform==='win32')app.setAppUserModelId('br.pt2vhf.proptool');[domain,sources,voacap,muf,i18n,versions]=await Promise.all([import('../src/domain.mjs'),import('../src/sources.mjs'),import('../src/voacap.mjs'),import('../src/muf.mjs'),import('../src/i18n.mjs'),import('../src/updates.mjs')]);alerts=new domain.AlertMachine();
   dataDir=portable?path.join(process.env.PORTABLE_EXECUTABLE_DIR,'data'):(smoke||captureDocs)?path.join(app.getPath('temp'),`pt2vhf-${captureDocs?'docs':'smoke'}-${process.pid}`):app.getPath('userData');file=path.join(dataDir,'state.json');
-  state={schemaVersion:6,settings:domain.validateSettings(domain.DEFAULT_SETTINGS),spots:[],kp:null,spaceWeather:null,attemptPSK:0,attemptRBN:0,attemptWSPR:0,attemptKp:0,status:{psk:{state:'idle'},rbn:{state:'idle'},wspr:{state:'idle'},noaa:{state:'idle'}},lastSeenVersion:app.getVersion(),pendingNews:null,startupNews:null};
+  state={schemaVersion:6,settings:domain.validateSettings(domain.DEFAULT_SETTINGS),spots:[],kp:null,spaceWeather:null,attemptPSK:0,attemptRBN:0,attemptWSPR:0,attemptKp:0,attemptMUF:0,ionosonde:null,status:{psk:{state:'idle'},rbn:{state:'idle'},wspr:{state:'idle'},noaa:{state:'idle'},muf:{state:'idle'}},lastSeenVersion:app.getVersion(),pendingNews:null,startupNews:null};
   try{const loaded=JSON.parse((await fs.readFile(file,'utf8')).replace(/^\uFEFF/,''));const previousSchema=loaded.schemaVersion||1;state={...state,...loaded,schemaVersion:6,settings:domain.migrateSettings(loaded.settings,previousSchema),spots:domain.mergeSpots(Array.isArray(loaded.spots)?loaded.spots:[],[]),status:{...state.status,...(loaded.status||{})}};if(state.pendingNews?.version===app.getVersion())state.startupNews=state.pendingNews;else if(!loaded.lastSeenVersion&&previousSchema<4)state.startupNews={version:app.getVersion(),notes:''};else if(loaded.lastSeenVersion&&loaded.lastSeenVersion!==app.getVersion())state.startupNews={version:app.getVersion(),notes:''};}catch(e){if(e.code!=='ENOENT'){console.error('Settings load failed:',e);if(smoke)throw e;await dialog.showMessageBox({type:'warning',message:t('settingsLoadError')});await fs.rename(file,file+'.invalid-'+Date.now()).catch(()=>{});}}
   if(captureDocs){const p=domain.fromGrid('GH64');state.settings=domain.validateSettings({...domain.DEFAULT_SETTINGS,callsign:'PT2VHF',lat:p.lat,lon:p.lon,language:'pt-BR',theme:'dark'});}
   if(smoke)console.log('Smoke startup: settings loaded',file,state.settings.visible.length);
