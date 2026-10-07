@@ -103,6 +103,15 @@ export function parsePSK(xml) {
   }
   return result;
 }
+export function sourceKeyForSpot(spot){
+  if(spot?.source==='PSK Reporter')return 'psk';
+  if(spot?.source==='WSPR.live')return 'wspr';
+  if(spot?.source==='Reverse Beacon Network')return 'rbn';
+  return null;
+}
+export function filterSpotsBySources(spots,sourceEnabled={}){
+  return (spots||[]).filter(s=>{const key=sourceKeyForSpot(s);return !key||sourceEnabled[key]!==false;});
+}
 export function relevantSpots(spots,settings,scope='nearby',now=Date.now()) {
   if(!coordinates(settings.lat,settings.lon))return [];
   const home={lat:settings.lat,lon:settings.lon},seen=new Set(),out=[];
