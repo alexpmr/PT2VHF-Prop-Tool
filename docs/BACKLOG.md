@@ -134,6 +134,8 @@
 
 ## Mapa e análise operacional
 
+- Na mesma linha da **Janela de observação**, adicionar controles rápidos das **fontes de dados**, permitindo ligar/desligar individualmente cada fonte para comparação visual e analítica. Incluir inicialmente **PSK Reporter, WSPR.live, Reverse Beacon Network, NOAA SWPC, VOACAP e KC2G/GIRO (MUF/foF2)**. Ao desativar uma fonte, remover sua contribuição apenas da visualização/cálculo corrente sem apagar os dados coletados em memória/histórico; ao reativar, restaurar imediatamente sua contribuição. Exibir estado visual claro de ativo/inativo e preservar a seleção do usuário. A comparação deve atualizar em tempo real o Heatmap, scores, confiança, destinos observados e demais métricas derivadas.
+
 - Adicionar seletor de **tipo de mapa/base cartográfica**, permitindo alternar entre diferentes estilos e provedores compatíveis (por exemplo: claro, escuro, satélite, relevo/topográfico e outros futuramente), preservando as camadas analíticas do PT2VHF Prop Tool — Heatmap, Observado, Previsão, MUF/ionosfera e demais overlays — independentemente do mapa de fundo selecionado. Persistir a preferência do usuário e manter fallback seguro para o mapa padrão/offline quando um provedor externo estiver indisponível.
 
 - Criar visão global separada da análise regional padrão, sem reintroduzir o antigo modo Minha estação.
