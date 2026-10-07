@@ -133,6 +133,8 @@
 
 ## Mapa e análise operacional
 
+- Adicionar seletor de **tipo de mapa/base cartográfica**, permitindo alternar entre diferentes estilos e provedores compatíveis (por exemplo: claro, escuro, satélite, relevo/topográfico e outros futuramente), preservando as camadas analíticas do PT2VHF Prop Tool — Heatmap, Observado, Previsão, MUF/ionosfera e demais overlays — independentemente do mapa de fundo selecionado. Persistir a preferência do usuário e manter fallback seguro para o mapa padrão/offline quando um provedor externo estiver indisponível.
+
 - Criar visão global separada da análise regional padrão, sem reintroduzir o antigo modo Minha estação.
 - Avaliar MapLibre e camadas independentes **Observado / Medido / Previsto**.
 - Evoluir o Heatmap com interpolação/contornos mais sofisticados, incerteza espacial explícita e suavização configurável.
