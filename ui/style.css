@@ -104,3 +104,14 @@ select option,select optgroup{background:#0b1523;color:#d6e1ef}
 .heatLegendScale small{font-size:8px;line-height:1.25;color:var(--muted)}
 :root[data-theme=light] .heatLegendBar{border-color:#17253755}
 @media(max-width:1100px){.bandButtons button{min-height:35px}.bandQuality{height:20px}.bandQuality i{width:5px}.heatLegendScale{min-width:270px}.heatLegendLabels{font-size:8px}.heatLegendScale small{font-size:7px}}
+
+.activityToggle{display:flex;align-items:center;gap:5px;font-size:12px}.activityToggle input{width:auto}
+.activityFilters{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:8px 12px;border-top:1px solid var(--border);font-size:12px}.activityFilters input{max-width:180px}.activityFilters select{max-width:210px}
+#activityMarkers{position:absolute;inset:0;pointer-events:none;overflow:hidden}.activityMarker{position:absolute;pointer-events:auto;transform:translate(-50%,-50%);padding:0;width:22px;height:22px;line-height:18px;border:1px solid currentColor;background:var(--activity-panel);border-radius:50%;font-size:18px;z-index:4}
+.stationDetail{position:absolute;right:12px;top:75px;width:270px;max-height:calc(100% - 145px);overflow:auto;background:var(--activity-panel);border:1px solid var(--border);border-radius:10px;padding:14px;z-index:8;box-shadow:0 5px 25px #0006}.stationDetail p{font-size:12px;margin:7px 0}.closeStation{float:right;padding:2px 8px}
+.sourceHealth{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:15px 0}.healthCard{padding:12px;border:1px solid var(--border);border-radius:8px}.healthCard strong,.healthCard span,.healthCard small{display:block}.healthCard p{font-size:12px;overflow-wrap:anywhere;margin:7px 0}.healthCard.online span{color:#41c99d}.healthCard.error span,.healthCard.stale span{color:#edac68}
+#pinWindow[aria-pressed=true]{border-color:#41c99d;color:#41c99d}#briefButton{margin:8px 0}
+@media(max-width:1100px){.sourceHealth{grid-template-columns:repeat(2,minmax(0,1fr))}.activityFilters{gap:5px}.stationDetail{width:240px}}
+
+:root{--activity-panel:#101b2a}html[data-theme=light]{--activity-panel:#ffffff}
+#activityMarkers{z-index:5}.activityFilters select,.activityFilters input{font-size:12px;padding:6px 9px}

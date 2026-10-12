@@ -11,7 +11,7 @@ export const DEFAULT_SETTINGS = {
   visible:BANDS.map(b=>b.name),alertBands:[],alertMinScore:65,
   alertMinDistance:800,alertCooldown:30,windowMinutes:30,
   updateMinutes:15,dataRefreshMinutes:5,nearbyRadius:300,language:'pt-BR',theme:'dark',
-  mapBase:'default',sourceEnabled:Object.fromEntries(SOURCE_KEYS.map(k=>[k,true]))
+  mapBase:'default',showActivity:true,alwaysOnTop:false,assistantFocus:'balanced',sourceEnabled:Object.fromEntries(SOURCE_KEYS.map(k=>[k,true]))
 };
 export function coordinates(lat,lon) {
   return typeof lat==='number' && typeof lon==='number' && Number.isFinite(lat) && Number.isFinite(lon) && lat>=-90 && lat<=90 && lon>=-180 && lon<=180;
@@ -64,6 +64,8 @@ export function validateSettings(input) {
   if(!MAP_BASES.includes(s.mapBase))throw new Error('Mapa inválido');
   if(!s.sourceEnabled||typeof s.sourceEnabled!=='object'||Array.isArray(s.sourceEnabled))s.sourceEnabled={};
   s.sourceEnabled=Object.fromEntries(SOURCE_KEYS.map(k=>[k,s.sourceEnabled[k]!==false]));
+  if(!['balanced','observed','confidence'].includes(s.assistantFocus))throw new Error('Perfil do assistente inválido');
+  for(const key of ['showActivity','alwaysOnTop'])if(typeof s[key]!=='boolean')throw new Error('Preferência inválida: '+key);
   delete s.mapView;
   return s;
 }

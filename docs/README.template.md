@@ -107,3 +107,13 @@ npm run dist:win
 Licença do projeto a definir antes da distribuição pública definitiva. As licenças das dependências/runtime são preservadas.
 
 por Alex, PT2VHF
+
+## Novidades da v0.2.14
+
+- Estações observadas no mapa por banda; filtros de modo/direção/indicativo e detalhes de recepção, rumo e distância. Até 120 marcadores recentes.
+- Saúde das seis fontes em LOGs com horário, erros, dados antigos e cobertura incompleta.
+- Assistente local com resumo operacional e foco configurável: índice, recepções ou confiança. Sem IA generativa ou envio externo.
+- Sempre no topo na edição desktop. Preferências preservadas entre reinícios.
+- Recepção unilateral não é QSO confirmado; filtros dos marcadores não alteram o heatmap ou o motor.
+
+Veja [a avaliação do VarAC 16.1.8](docs/VARAC-16.1.8.md) para decisões de escopo e integrações futuras.

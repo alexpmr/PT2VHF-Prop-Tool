@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.14 - 2026-10-12
+
+- Camada de estações observadas, agrupada por estação remota/banda, com filtros de modo/direção/indicativo, detalhes, centralização e rumo curto.
+- Diagnóstico das seis fontes com estados independentes, horários, dados antigos e cobertura incompleta.
+- Resumo operacional e perfil local do assistente: maior índice, apenas recepções ou prioridade por confiança.
+- Janela desktop sempre no topo com persistência.
+- Seis idiomas, manual ilustrado atualizado e avaliação de escopo do VarAC 16.1.8.
+- Testes de regressão para filtros, expiração, provenance, preferências e perfis. Capturas atuais do renderer no pipeline.
+
 ## v0.2.13 — 2026-10-07
 
 - Novo **bar-graph vertical sobre cada banda** para leitura instantânea da qualidade atual.

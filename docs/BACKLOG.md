@@ -1,5 +1,20 @@
 # Backlog consolidado — PT2VHF Prop Tool
 
+## Entregue na v0.2.14
+
+- Estações observadas no mapa e filtros por modo/direção/indicativo; agrupamento por estação/banda, detalhes de fonte/horário/recepção e rumo curto.
+- Diagnóstico das seis fontes, incluindo dados antigos e cobertura incompleta.
+- Resumo operacional com três perfis locais, sem IA generativa.
+- Sempre no topo no desktop.
+- Comparação do anúncio VarAC 16.1.8 em `VARAC-16.1.8.md`.
+
+## Integrações decorrentes da avaliação VarAC
+
+- Rotor PstRotator/Hamlib opcional: comando manual inicial, limites, leitura de posição e confirmação de erro; validar protocolo oficial e hardware antes de automação.
+- Histórico/replay persistente e visão global própria: modelar armazenamento, quotas e cobertura antes de prometer seis meses de atividade mundial.
+- IA generativa personalizada: snapshots auditáveis, perfil separado das regras de evidência e credenciais protegidas.
+- Modo operacional compacto e destaque de eventos de propagação com controle de ruído.
+
 ## Entregue na v0.2.13
 
 - Adicionada **legenda do Heatmap diretamente no mapa**, usando a mesma escala de cores do renderer.
