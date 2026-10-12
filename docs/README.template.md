@@ -108,8 +108,9 @@ Licença do projeto a definir antes da distribuição pública definitiva. As li
 
 por Alex, PT2VHF
 
-## Novidades da v0.2.17
+## Novidades da v0.2.18
 
+- Melhor índice atual destacado por fundo/borda dourados nos botões das bandas, com três pulsos para novas líderes e empates explícitos. A seleção do mapa permanece independente.
 - Popups automáticos de propagação removidos; condições das bandas no painel e eventos configurados em LOGs.
 - Mapa preserva o Heatmap; removidos os círculos de estações acrescentados na v0.2.14, seus filtros e detalhes.
 - Saúde das seis fontes em LOGs com horário, erros, dados antigos e cobertura incompleta.

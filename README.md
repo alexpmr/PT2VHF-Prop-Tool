@@ -1,10 +1,10 @@
-# PT2VHF Prop Tool — Downloads v0.2.17
+# PT2VHF Prop Tool — Downloads v0.2.18
 
 ## ⬇️ Baixe agora
 
-**[Instalador Windows x64](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.17/PT2VHF-Prop-Tool-0.2.17-x64-setup.exe)** · **[Portable Windows x64](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.17/PT2VHF-Prop-Tool-0.2.17-x64-portable.exe)** · **[Manual PDF](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.17/PT2VHF-Prop-Tool-0.2.17-Manual.pdf)**
+**[Instalador Windows x64](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.18/PT2VHF-Prop-Tool-0.2.18-x64-setup.exe)** · **[Portable Windows x64](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.18/PT2VHF-Prop-Tool-0.2.18-x64-portable.exe)** · **[Manual PDF](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.18/PT2VHF-Prop-Tool-0.2.18-Manual.pdf)**
 
-[SHA-256](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.17/SHA256SUMS.txt) · [Release v0.2.17](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/tag/v0.2.17) · [Última release](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/latest)
+[SHA-256](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.18/SHA256SUMS.txt) · [Release v0.2.18](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/tag/v0.2.18) · [Última release](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/latest)
 
 ## Sobre o PT2VHF Prop Tool
 
@@ -70,7 +70,7 @@ A fonte **KC2G/GIRO** fornece MUF(3000)F2 e foF2 medidos por ionossondas. O pain
 
 ## Limites e roteiro
 
-A v0.2.17 inclui VOACAP local (potência e circuito HF) e dados **foF2 / MUF(3000)F2** de ionossondas via KC2G/GIRO. A MUF(3000) é uma referência para aproximadamente 3.000 km, não o limite exato de qualquer percurso. Para a próxima fase ficam os modelos de antena (altura/ganho/polarização/azimute), MUF por circuito, interpolação ionosférica, GloTEC/TEC, aurora, DX Cluster e outras fontes. Detalhes no [backlog](docs/BACKLOG.md).
+A v0.2.18 inclui VOACAP local (potência e circuito HF) e dados **foF2 / MUF(3000)F2** de ionossondas via KC2G/GIRO. A MUF(3000) é uma referência para aproximadamente 3.000 km, não o limite exato de qualquer percurso. Para a próxima fase ficam os modelos de antena (altura/ganho/polarização/azimute), MUF por circuito, interpolação ionosférica, GloTEC/TEC, aurora, DX Cluster e outras fontes. Detalhes no [backlog](docs/BACKLOG.md).
 
 Os dados RBN chegam por uma API pública de agregação e podem ter Grid ausente, especialmente para alguns indicativos internacionais. PSK Reporter e WSPR.live também dependem de participantes e localização reportada. O aplicativo rejeita evidências sem posição quando ela é necessária para inferência geográfica e mantém a origem de cada fonte para evitar dupla interpretação.
 
@@ -108,8 +108,9 @@ Licença do projeto a definir antes da distribuição pública definitiva. As li
 
 por Alex, PT2VHF
 
-## Novidades da v0.2.17
+## Novidades da v0.2.18
 
+- Melhor índice atual destacado por fundo/borda dourados nos botões das bandas, com três pulsos para novas líderes e empates explícitos. A seleção do mapa permanece independente.
 - Popups automáticos de propagação removidos; condições das bandas no painel e eventos configurados em LOGs.
 - Mapa preserva o Heatmap; removidos os círculos de estações acrescentados na v0.2.14, seus filtros e detalhes.
 - Saúde das seis fontes em LOGs com horário, erros, dados antigos e cobertura incompleta.

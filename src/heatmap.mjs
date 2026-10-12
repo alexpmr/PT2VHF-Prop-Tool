@@ -2,6 +2,12 @@ export const HEAT_STOPS=[
   [0.00,[32,55,170]],[0.20,[30,111,214]],[0.40,[25,190,201]],
   [0.58,[47,202,110]],[0.74,[238,218,73]],[0.88,[244,139,47]],[1.00,[224,52,45]]
 ];
+export function leadingBands(bands,visible){
+  const eligible=(bands||[]).filter(b=>visible.includes(b.band)&&Number.isFinite(b.chance)&&b.chance>=0&&b.chance<=100&&b.basis!=='none');
+  if(!eligible.length)return [];
+  const highest=Math.max(...eligible.map(b=>b.chance));
+  return [...new Set(eligible.filter(b=>b.chance===highest).map(b=>b.band))].sort();
+}
 export function clamp01(value){return Math.max(0,Math.min(1,Number(value)||0));}
 export function kernelRadius(scale=1){
   const z=Math.max(1,Math.min(6,Number(scale)||1));

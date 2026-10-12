@@ -2,7 +2,7 @@ import {BANDS,DEFAULT_SETTINGS,validateSettings,toGrid,fromGrid,coordinates,eval
 import {LANGUAGES,translate} from '../src/i18n.mjs';
 import {APP_VERSION} from '../src/version.mjs';
 import {normalizeReleaseNotes} from '../src/release-notes.mjs';
-import {aggregateHeatSamples,heatColor,kernelRadius,propagationQuality,heatLegendStops} from '../src/heatmap.mjs';
+import {aggregateHeatSamples,heatColor,kernelRadius,propagationQuality,heatLegendStops,leadingBands} from '../src/heatmap.mjs';
 import {assistantReply} from '../src/assistant.mjs';
 import {sourceHealth,assistantBrief} from '../src/activity.mjs';
 import {rankCountries} from '../src/geography.mjs';
@@ -11,6 +11,7 @@ const colors=['#bab1dc','#ad9ce5','#738fea','#76a8fa','#6bbee9','#57d3b4','#b0de
 const SOURCE_CONTROLS=[['psk','PSK'],['wspr','WSPR'],['rbn','RBN'],['noaa','NOAA'],['voacap','VOACAP'],['muf','MUF']];
 const color=band=>colors[BANDS.findIndex(b=>b.name===band)]||'#6fe2bf';
 let current,scale=1,tx=0,ty=0,pointer,page='map',language='pt-BR',toastTimer,toastKey,configErrorKey,logsPaused=false,newsShownFor=null,heatFrame=0,updateFlowActive=false,countryFeatures=[];
+let previousLeaders=new Set();
 const heatScratch=document.createElement('canvas');
 let lastActivity={rx:0,tx:0},ledTimers={rx:null,tx:null};
 const listeners=[],conversation=[{key:'welcome'}];
@@ -96,20 +97,23 @@ for(const item of LANGUAGES){const button=document.createElement('button');butto
 function compactBandLabel(name){return name.replace(/\s+/g,'');}
 function renderBandControls(){
   if($('band').value&&!current.settings.visible.includes($('band').value))$('band').value='';
-  const selected=$('band').value,host=$('bandButtons');host.replaceChildren();
+  const selected=$('band').value,host=$('bandButtons'),leaders=new Set(leadingBands(current.bands,current.settings.visible)),existing=new Map([...host.children].map(b=>[b.dataset.band,b])),used=new Set();
+  let index=0;
   const choices=[['',t('allBands')],...current.settings.visible.map(name=>[name,compactBandLabel(name)])];
   for(const [value,label] of choices){
-    const b=document.createElement('button');b.type='button';b.dataset.band=value;b.classList.toggle('active',selected===value);b.setAttribute('role','radio');b.setAttribute('aria-checked',String(selected===value));
+    const b=existing.get(value)||document.createElement('button');b.type='button';b.dataset.band=value;b.classList.toggle('active',selected===value);b.classList.toggle('bestBand',leaders.has(value));b.setAttribute('role','radio');b.setAttribute('aria-checked',String(selected===value));b.replaceChildren();used.add(value);
+    if(!leaders.has(value))b.classList.remove('leaderPulse');else if(!previousLeaders.has(value)){b.classList.add('leaderPulse');b.onanimationend=()=>b.classList.remove('leaderPulse');}
     if(value){
       const band=current.bands.find(x=>x.band===value),q=propagationQuality(band?.chance);
       const graph=document.createElement('span');graph.className='bandQuality';graph.setAttribute('aria-hidden','true');
       const bar=document.createElement('i');bar.style.height=q.height+'px';bar.style.background='rgb('+q.color.join(',')+')';graph.append(bar);
       const text=document.createElement('span');text.className='bandLabel';text.textContent=label;b.append(graph,text);
       const quality=t('quality_'+q.level),score=q.value===null?'—':q.value;
-      b.title=t('bandQualityTooltip',{band:value,score,quality});b.setAttribute('aria-label',t('bandQualityTooltip',{band:value,score,quality}));
+      b.title=t('bandQualityTooltip',{band:value,score,quality});if(leaders.has(value)){const basis=t({observed:'basisObserved',estimated:'basisEstimated',fused:'basisFused',voacap:'basisVoacap'}[band?.basis]||'basisNone');b.title=t(leaders.size>1?'leadingTie':'leadingBand')+' · '+b.title+' · '+t('confidenceShort',{n:band?.confidence??0})+' · '+basis;}b.setAttribute('aria-label',b.title);
     }else{const text=document.createElement('span');text.className='bandLabel';text.textContent=label;b.append(text);}
-    b.onclick=()=>{$('band').value=value;render(current);};host.append(b);
+    b.onclick=()=>{$('band').value=value;render(current);};if(host.children[index]!==b)host.insertBefore(b,host.children[index]||null);index++;
   }
+  for(const b of [...host.children])if(!used.has(b.dataset.band))b.remove();previousLeaders=leaders;
 }
 function renderHeatLegend(){
   const bar=$('heatLegendBar');if(!bar)return;
@@ -205,7 +209,7 @@ function render(snap){
   $('mufStation').textContent=!mufActive?t('sourceDisabled'):(iono?iono.name+' ('+iono.code+') · '+date(iono.timestamp)+' · '+t('mufReferenceWarning'):(mufStatus.detail||t('mufUnavailable')));
   const kp=snap.kp,sw=snap.spaceWeather||{};$('kp').textContent=kp?kp.value.toLocaleString(language,{minimumFractionDigits:1,maximumFractionDigits:1}):'—';$('kpState').textContent=!noaaActive?t('sourceDisabled'):(kp?t(Date.now()-kp.timestamp>4*3600000?'oldMeasure':kp.value>=5?'elevated':'measurement'):sourceLabel(snap.sourceStatus.noaa));$('kpTime').textContent=kp?`${date(kp.timestamp)} · ${t('kpNote')}`:t('kpWaiting');$('sfi').textContent=sw.f107?.value??'—';$('bz').textContent=sw.bz?`${sw.bz.value} nT`:'—';$('wind').textContent=sw.wind?`${Math.round(sw.wind.value)} km/s`:'—';$('xray').textContent=sw.xray?.class??'—';
   $('pinWindow').setAttribute('aria-pressed',String(snap.settings.alwaysOnTop));renderSourceHealth();renderUpdate(snap.update);renderLogs();
-  if(snap.startupNews&&newsShownFor!==snap.startupNews.version){newsShownFor=snap.startupNews.version;$('newsVersion').textContent='v'+snap.startupNews.version;const notes=normalizeReleaseNotes(snap.startupNews.notes);$('newsNotes').textContent=notes||t('news0217');if(!$('newsDialog').open)$('newsDialog').showModal();}
+  if(snap.startupNews&&newsShownFor!==snap.startupNews.version){newsShownFor=snap.startupNews.version;$('newsVersion').textContent='v'+snap.startupNews.version;const notes=normalizeReleaseNotes(snap.startupNews.notes);$('newsNotes').textContent=notes||t('news0218');if(!$('newsDialog').open)$('newsDialog').showModal();}
 }
 
 function renderSourceHealth(){

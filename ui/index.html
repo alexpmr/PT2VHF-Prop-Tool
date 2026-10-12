@@ -7,7 +7,7 @@
 </head>
 <body>
   <header>
-    <div class="topLine"><div class="brand"><span class="logo">◉</span><div><strong>PT2VHF <span>PROP TOOL</span> <span id="appVersion">v0.2.17</span></strong><small data-i18n="subtitle"></small></div></div>
+    <div class="topLine"><div class="brand"><span class="logo">◉</span><div><strong>PT2VHF <span>PROP TOOL</span> <span id="appVersion">v0.2.18</span></strong><small data-i18n="subtitle"></small></div></div>
       <div class="headerActions"><div class="trafficLights" data-i18n-title="trafficActivity"><span><i id="rxLed" class="trafficLed rx"></i>RX</span><span><i id="txLed" class="trafficLed tx"></i>TX</span></div><span id="status" class="pill"></span><details id="languageMenu"><summary><img id="languageFlag" src="flags/br.svg" alt=""><span id="currentLanguage">Português (Brasil)</span></summary><div id="languages"></div></details><button id="themeButton"></button></div>
     </div>
     <div class="navLine"><nav data-i18n-aria="navigation"><button id="mapTab" data-page="map" data-i18n="map" class="selected"></button><button id="settingsButton" data-page="settings" data-i18n="settings"></button><button id="logsTab" data-page="logs" data-i18n="logs"></button><button id="helpTab" data-page="help" data-i18n="help"></button><button id="aboutTab" data-page="about" data-i18n="about"></button></nav><button id="version" class="updateButton" data-i18n="checkUpdate"></button></div>
@@ -53,7 +53,7 @@
     <article><h2 data-i18n="helpDataTitle"></h2><p data-i18n="helpData"></p></article>
     <article><h2 data-i18n="helpUpdateTitle"></h2><p data-i18n="helpUpdate"></p></article>
     <article><h2 data-i18n="helpStorageTitle"></h2><p data-i18n="helpStorage"></p></article>
-    <button id="openManual" data-i18n="manual"></button>
+    <article><h2 data-i18n="leadingBand"></h2><p data-i18n="bestBandHelp"></p></article><button id="openManual" data-i18n="manual"></button>
   </section>
   <section id="settingsPage" class="page hidden"><form id="configForm"><div class="dialogHead"><div><small data-i18n="settings"></small><h1 data-i18n="settings"></h1></div></div>
     <div class="fields"><label><span data-i18n="callsign"></span><input id="callsign" maxlength="20" placeholder="PT2VHF" required pattern="[A-Za-z0-9/]{3,20}"></label><label><span data-i18n="power"></span><input id="power" type="number" min="0" max="10000" value="100" required></label>

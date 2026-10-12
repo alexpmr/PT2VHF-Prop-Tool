@@ -1,5 +1,11 @@
 # Backlog consolidado — PT2VHF Prop Tool
 
+## Entregue na v0.2.18
+
+- Issue #8: destaque persistente de fundo/borda para a banda com maior índice entre as habilitadas.
+- Três pulsos suaves para nova líder, sem animação reiniciada pelo refresh e com respeito a movimento reduzido.
+- Empates explícitos, seleção independente do mapa e ausência de vencedor sem dados.
+
 ## Entregue na v0.2.17
 
 - Removido o popup automático de propagação solicitado pelo usuário: sem diálogo modal nem notificação Windows, na inicialização ou durante a atualização dos dados.

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.18 - 2026-10-12
+
+- Melhor índice de propagação destacado por fundo e borda dourados nos botões superiores, preservando as barras de qualidade.
+- Três pulsos suaves quando uma banda passa a liderar; sem reiniciar animação a cada refresh, sem piscar continuamente.
+- Empates destacam todas as líderes; bandas desabilitadas ou sem dados suficientes não concorrem.
+- Seleção do mapa independente do destaque; acessibilidade, movimento reduzido e seis idiomas.
+- Manual ilustrado atualizado; mantém remoção de círculos e popups automáticos de propagação.
+
 ## 0.2.17 - 2026-10-12
 
 - Removidos os popups automáticos de propagação na abertura e durante o uso, tanto o diálogo da aplicação quanto a notificação do Windows.
