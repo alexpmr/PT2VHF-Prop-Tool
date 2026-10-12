@@ -1,6 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {leadingBands} from '../src/heatmap.mjs';
+import {spaceWeatherScore,evaluateBand} from '../src/domain.mjs';
+test('Missing NOAA measurements never invent an estimated leader at startup',()=>{
+ for(const value of [null,undefined,'',' ',false,{value:null},{value:''}]){
+  const space={kp:value};assert.equal(spaceWeatherScore('20 m',space),null);
+  const b=evaluateBand([],'20 m',Date.now(),space);assert.equal(b.chance,null);assert.deepEqual(leadingBands([b],['20 m']),[]);
+ }
+});
+test('A measured Kp of zero remains valid, including the normalized metric format',()=>{
+ assert.equal(spaceWeatherScore('20 m',{kp:0}),68);
+ assert.equal(spaceWeatherScore('20 m',{kp:{value:0,timestamp:Date.now()}}),68);
+});
 test('Leadership considers only enabled bands with valid evidence and current scores',()=>{
  const bands=[{band:'20 m',chance:70,basis:'observed'},{band:'40 m',chance:90,basis:'fused'},{band:'10 m',chance:99,basis:'none'},{band:'15 m',chance:null,basis:'none'}];
  assert.deepEqual(leadingBands(bands,['20 m','40 m','10 m','15 m']),['40 m']);

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.19 - 2026-10-12
+
+- Versão completa com destaque dourado da melhor banda, três pulsos suaves para novas líderes, empates explícitos e seleção do mapa independente.
+- Corrigido o estado inicial sem medições: Kp ausente não é convertido em zero nem gera índices estimados artificiais. Kp zero real continua válido.
+- Testes de regressão para métricas ausentes/vazias e preservação de zero medido; manual ilustrado atualizado.
+- Mantém remoção de círculos extras e popups de propagação.
+
 ## 0.2.18 - 2026-10-12
 
 - Melhor índice de propagação destacado por fundo e borda dourados nos botões superiores, preservando as barras de qualidade.

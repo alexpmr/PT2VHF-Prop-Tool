@@ -1,5 +1,9 @@
 # Backlog consolidado — PT2VHF Prop Tool
 
+## Entregue na v0.2.19
+
+- Destaque da melhor banda (issue #8), acrescido da correção de ausência de medições NOAA: campos nulos/vazios não criam score artificial; Kp zero real é preservado.
+
 ## Entregue na v0.2.18
 
 - Issue #8: destaque persistente de fundo/borda para a banda com maior índice entre as habilitadas.

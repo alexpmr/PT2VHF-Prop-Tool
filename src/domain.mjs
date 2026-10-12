@@ -182,7 +182,7 @@ export function forecastZonesFor(spots,band,chance) {
   if(!Number.isFinite(chance)||chance<25)return [];
   return buildZones(spots,band,4,2,1,'predicted');
 }
-function numericMetric(value){const n=Number(value?.value??value);return Number.isFinite(n)?n:null;}
+function numericMetric(value){const raw=value&&typeof value==='object'?value.value:value;if(raw===null||raw===undefined||typeof raw==='boolean'||typeof raw==='string'&&!raw.trim())return null;const n=Number(raw);return Number.isFinite(n)?n:null;}
 export function spaceWeatherScore(band,space={}) {
   const f107=numericMetric(space.f107),kp=numericMetric(space.kp),wind=numericMetric(space.wind),bz=numericMetric(space.bz);
   const xray=String(space.xray?.class??space.xrayClass??'').toUpperCase();
