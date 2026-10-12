@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.15 - 2026-10-12
+
+- Versão completa com as melhorias da v0.2.14: estações observadas, filtros, rumo/distância, diagnóstico de seis fontes, resumo local configurável e janela sempre no topo.
+- Corrigidos os recortes do manual ilustrado em capturas Windows com resolução/DPI diferentes; imagens passam a respeitar as dimensões reais, sem preenchimento preto.
+- Manual de 14 páginas, seis idiomas e pacotes Windows instalado/portátil validados pelo pipeline.
+
 ## 0.2.14 - 2026-10-12
 
 - Camada de estações observadas, agrupada por estação remota/banda, com filtros de modo/direção/indicativo, detalhes, centralização e rumo curto.

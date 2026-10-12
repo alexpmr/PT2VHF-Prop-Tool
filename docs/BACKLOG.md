@@ -1,5 +1,9 @@
 # Backlog consolidado — PT2VHF Prop Tool
 
+## Entregue na v0.2.15
+
+- Revisão completa da v0.2.14, corrigindo recortes do manual quando a resolução/DPI de captura varia.
+
 ## Entregue na v0.2.14
 
 - Estações observadas no mapa e filtros por modo/direção/indicativo; agrupamento por estação/banda, detalhes de fonte/horário/recepção e rumo curto.

@@ -34,7 +34,15 @@ def new(text):story.append(PageBreak());title(text)
 def bullet(text):p('• '+text)
 def picture(name,maxw=265,maxh=112,crop=None):
  im=PILImage.open(root/'docs/screenshots'/name)
- if crop:im=im.crop(crop)
+ if crop:
+  # Full renderer captures vary with runner DPI and display dimensions.
+  if name in {'01-inicio-escuro.png','03-mapa-claro.png','05-idiomas.png'}:
+   sx,sy=im.width/1440,im.height/980
+   crop=tuple(round(v*(sx if i%2==0 else sy)) for i,v in enumerate(crop))
+  x1,y1,x2,y2=crop
+  crop=(max(0,x1),max(0,y1),min(im.width,x2),min(im.height,y2))
+  if crop[2]<=crop[0] or crop[3]<=crop[1]:raise ValueError('Invalid screenshot crop: '+name)
+  im=im.crop(crop)
  buf=BytesIO();im.save(buf,format='PNG');buf.seek(0)
  ratio=min(maxw*mm/im.width,maxh*mm/im.height)
  pic=Image(buf,width=im.width*ratio,height=im.height*ratio);pic.hAlign='LEFT';story.append(pic);story.append(Spacer(1,3*mm))
