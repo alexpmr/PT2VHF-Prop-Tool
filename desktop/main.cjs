@@ -1,4 +1,4 @@
-const {app,BrowserWindow,ipcMain,session,dialog,Notification,shell}=require('electron');
+const {app,BrowserWindow,ipcMain,session,dialog,shell}=require('electron');
 const fs=require('node:fs/promises'),path=require('node:path'),crypto=require('node:crypto');
 const {createReadStream,realpathSync}=require('node:fs');
 const {spawn}=require('node:child_process');
@@ -143,8 +143,7 @@ async function refresh(){
     emit();await Promise.all(work);state.spots=domain.mergeSpots(state.spots,[]);const regionalForVoacap=domain.filterSpotsBySources(domain.relevantSpots(state.spots,state.settings,'nearby',Date.now()),state.settings.sourceEnabled||{});await refreshVoacap(regionalForVoacap,Date.now());await persist();
     const snap=snapshot(),healthy=(state.status.psk.state==='online'&&Date.now()-state.status.psk.updated<6*60000)||(state.status.rbn?.state==='online'&&Date.now()-state.status.rbn.updated<6*60000)||(state.status.wspr?.state==='online'&&Date.now()-state.status.wspr.updated<6*60000);
     for(const b of alerts.update(snap.bands,state.settings,Date.now(),healthy)){
-      const metric=b.chance??b.score;if(Notification.isSupported())new Notification({title:t('opening')+' — '+b.band,body:t('alertText',{band:b.band,n:metric})}).show();
-      win.webContents.send('state',{...snapshot(),alert:{band:b.band,score:metric}});
+      const metric=b.chance??b.score;recordTraffic({direction:'INFO',source:'Propagação',event:'band-opening',detail:t('alertText',{band:b.band,n:metric})});
     }
     emit();return snapshot();
   }finally{refreshing=false;}

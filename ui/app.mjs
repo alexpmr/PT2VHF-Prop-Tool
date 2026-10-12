@@ -10,7 +10,7 @@ const $=id=>document.getElementById(id),NS='http://www.w3.org/2000/svg';
 const colors=['#bab1dc','#ad9ce5','#738fea','#76a8fa','#6bbee9','#57d3b4','#b0de74','#e4da68','#efbd7a','#ef837a','#dca0f0','#86dbf1','#ecade0','#90cda0'];
 const SOURCE_CONTROLS=[['psk','PSK'],['wspr','WSPR'],['rbn','RBN'],['noaa','NOAA'],['voacap','VOACAP'],['muf','MUF']];
 const color=band=>colors[BANDS.findIndex(b=>b.name===band)]||'#6fe2bf';
-let current,alertBand,scale=1,tx=0,ty=0,pointer,page='map',language='pt-BR',toastTimer,toastKey,configErrorKey,logsPaused=false,newsShownFor=null,heatFrame=0,updateFlowActive=false,countryFeatures=[];
+let current,scale=1,tx=0,ty=0,pointer,page='map',language='pt-BR',toastTimer,toastKey,configErrorKey,logsPaused=false,newsShownFor=null,heatFrame=0,updateFlowActive=false,countryFeatures=[];
 const heatScratch=document.createElement('canvas');
 let lastActivity={rx:0,tx:0},ledTimers={rx:null,tx:null};
 const listeners=[],conversation=[{key:'welcome'}];
@@ -205,8 +205,7 @@ function render(snap){
   $('mufStation').textContent=!mufActive?t('sourceDisabled'):(iono?iono.name+' ('+iono.code+') · '+date(iono.timestamp)+' · '+t('mufReferenceWarning'):(mufStatus.detail||t('mufUnavailable')));
   const kp=snap.kp,sw=snap.spaceWeather||{};$('kp').textContent=kp?kp.value.toLocaleString(language,{minimumFractionDigits:1,maximumFractionDigits:1}):'—';$('kpState').textContent=!noaaActive?t('sourceDisabled'):(kp?t(Date.now()-kp.timestamp>4*3600000?'oldMeasure':kp.value>=5?'elevated':'measurement'):sourceLabel(snap.sourceStatus.noaa));$('kpTime').textContent=kp?`${date(kp.timestamp)} · ${t('kpNote')}`:t('kpWaiting');$('sfi').textContent=sw.f107?.value??'—';$('bz').textContent=sw.bz?`${sw.bz.value} nT`:'—';$('wind').textContent=sw.wind?`${Math.round(sw.wind.value)} km/s`:'—';$('xray').textContent=sw.xray?.class??'—';
   $('pinWindow').setAttribute('aria-pressed',String(snap.settings.alwaysOnTop));renderSourceHealth();renderUpdate(snap.update);renderLogs();
-  if(snap.startupNews&&newsShownFor!==snap.startupNews.version){newsShownFor=snap.startupNews.version;$('newsVersion').textContent='v'+snap.startupNews.version;const notes=normalizeReleaseNotes(snap.startupNews.notes);$('newsNotes').textContent=notes||t('news0216');if(!$('newsDialog').open)$('newsDialog').showModal();}
-  if(snap.alert){alertBand=snap.alert.band;$('alertText').textContent=t('alertText',{band:alertBand,n:snap.alert.score});if(!$('alertDialog').open)$('alertDialog').showModal();}
+  if(snap.startupNews&&newsShownFor!==snap.startupNews.version){newsShownFor=snap.startupNews.version;$('newsVersion').textContent='v'+snap.startupNews.version;const notes=normalizeReleaseNotes(snap.startupNews.notes);$('newsNotes').textContent=notes||t('news0217');if(!$('newsDialog').open)$('newsDialog').showModal();}
 }
 
 function renderSourceHealth(){
@@ -270,7 +269,6 @@ $('closeUpdate').onclick=()=>{if(!updateFlowActive)$('updateDialog').close();};$
 for(const [id,target] of [['openProject','project'],['openIssues','issues'],['openProfile','profile'],['openManual','manual']])$(id).onclick=()=>api.openLink(target).catch(()=>toast('appError'));
 $('factoryReset').onclick=async()=>{if(!window.confirm(t('factoryResetConfirm')))return;$('factoryReset').disabled=true;try{await api.factoryReset();}catch{$('factoryReset').disabled=false;toast('factoryResetError');}};
 $('closeNews').onclick=async()=>{try{await api.acknowledgeNews();}finally{$('newsDialog').close();}};
-$('dismissAlert').onclick=()=>$('alertDialog').close();$('viewAlert').onclick=()=>{$('band').value=alertBand;$('alertDialog').close();setPage('map');render(current);};
 $('zoomIn').onclick=()=>zoom(1.4);$('zoomOut').onclick=()=>zoom(1/1.4);$('resetMap').onclick=()=>{scale=1;tx=ty=0;mapTransform();};window.addEventListener('resize',scheduleMapOverlays);$('map').addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY<0?1.12:1/1.12);},{passive:false});
 function updateCursorReadout(e){
   const info=$('cursorInfo');if(!current||!coordinates(current.settings.lat,current.settings.lon)){info.classList.add('hidden');return;}

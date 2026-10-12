@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.17 - 2026-10-12
+
+- Removidos os popups automáticos de propagação na abertura e durante o uso, tanto o diálogo da aplicação quanto a notificação do Windows.
+- Condições das bandas continuam disponíveis no painel Bandas agora; eventos de abertura, quando configurados, são apenas registrados em LOGs.
+- Mantidas as correções da v0.2.16: sem círculos extras no mapa, diagnóstico de fontes, resumo local configurável, janela no topo e recortes corretos no manual.
+
 ## 0.2.16 - 2026-10-12
 
 - Removida a camada de marcadores circulares de estações, conforme solicitação do usuário; mapa mantém o Heatmap anterior.

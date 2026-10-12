@@ -1,5 +1,10 @@
 # Backlog consolidado — PT2VHF Prop Tool
 
+## Entregue na v0.2.17
+
+- Removido o popup automático de propagação solicitado pelo usuário: sem diálogo modal nem notificação Windows, na inicialização ou durante a atualização dos dados.
+- Painel Bandas agora preservado; eventos configurados somente em LOGs.
+
 ## Entregue na v0.2.16
 
 - Atendido o relato: os círculos de estações adicionados na v0.2.14 não faziam parte do mapa previsto. A camada, seus filtros e detalhes foram removidos.
