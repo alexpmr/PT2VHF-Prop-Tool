@@ -32,6 +32,6 @@ test('Assistant profiles change recommendations without mutating evidence or inv
 });
 test('Old profiles acquire safe defaults while new preferences are validated',()=>{
   const old={...settings};delete old.assistantFocus;delete old.showActivity;delete old.alwaysOnTop;
-  const migrated=migrateSettings(old);assert.equal(migrated.showActivity,true);assert.equal(migrated.alwaysOnTop,false);assert.equal(migrated.assistantFocus,'balanced');
+  const migrated=migrateSettings({...old,showActivity:true});assert.equal(Object.hasOwn(migrated,'showActivity'),false);assert.equal(migrated.alwaysOnTop,false);assert.equal(migrated.assistantFocus,'balanced');
   assert.throws(()=>validateSettings({...settings,assistantFocus:'invent'}));assert.throws(()=>validateSettings({...settings,alwaysOnTop:'yes'}));
 });

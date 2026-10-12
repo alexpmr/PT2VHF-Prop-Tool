@@ -1,5 +1,10 @@
 # Backlog consolidado — PT2VHF Prop Tool
 
+## Entregue na v0.2.16
+
+- Atendido o relato: os círculos de estações adicionados na v0.2.14 não faziam parte do mapa previsto. A camada, seus filtros e detalhes foram removidos.
+- Heatmap preservado; diagnóstico das fontes, perfil local, janela no topo e correção do manual mantidos.
+
 ## Entregue na v0.2.15
 
 - Revisão completa da v0.2.14, corrigindo recortes do manual quando a resolução/DPI de captura varia.

@@ -4,9 +4,9 @@ Fonte oficial: https://www.varac-hamradio.com/varac-releases (11/10/2026). O ped
 
 | Ideia | Situação no Prop Tool | Decisão |
 | --- | --- | --- |
-| Mapa de atividade | Heatmap regional, bandas, janelas e fontes já existiam | v0.2.14 acrescenta estações observadas, detalhes e filtros específicos |
+| Mapa de atividade | Heatmap regional, bandas, janelas e fontes já existiam | Marcadores experimentados na v0.2.14 e removidos na v0.2.16 a pedido do usuário; manter Heatmap |
 | Histórico de seis meses e atividade global | Coleta regional e retenção local limitada | Backlog: cobertura, quotas, armazenamento e replay; não prometer visão global completa |
-| Ações sobre estação | Rumo ao cursor já existia | v0.2.14: detalhes de recepção, centralizar e rumo curto por estação |
+| Ações sobre estação | Rumo ao cursor já existia | Painel por estação removido na v0.2.16; mantém rumo/distância ao cursor |
 | Sempre no topo | Ausente | v0.2.14: preferência desktop persistente |
 | Controle de rotor | Ausente | Backlog opcional PstRotator/Hamlib com validação de protocolo e hardware |
 | Personalização de IA | Assistente determinístico já existia | v0.2.14: foco do resumo local; IA generativa continua separada no backlog |
@@ -19,6 +19,6 @@ Fonte oficial: https://www.varac-hamradio.com/varac-releases (11/10/2026). O ped
 
 ## Limites da adaptação
 
-Marcadores derivam somente de recepções geolocalizadas e regionais presentes no snapshot, agrupadas por remoto/banda. Não indicam estação online, beacon próprio do Prop Tool nem QSO confirmado. Filtros dos marcadores não alteram heatmap, score ou alertas. Não há consulta nova a VarAC nem redistribuição de dados do VarAC.
+A v0.2.16 remove marcadores e detalhes por estação, preservando a visualização Heatmap solicitada. O motor continua usando recepções geolocalizadas regionais; elas não indicam estação online nem QSO confirmado. Não há consulta nova a VarAC nem redistribuição de dados do VarAC.
 
 O perfil do assistente escolhe o critério do resumo; não muda pesos ou transforma índices operacionais em probabilidades científicas. Rumo é geométrico desde o centro regional até locator aproximado, sem comandar antena.

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.16 - 2026-10-12
+
+- Removida a camada de marcadores circulares de estações, conforme solicitação do usuário; mapa mantém o Heatmap anterior.
+- Removidos filtros exclusivos dos marcadores e painel de detalhes da estação.
+- Mantidos diagnóstico das fontes, resumo local configurável, janela sempre no topo e correção dos recortes do manual.
+- Migração descarta a preferência antiga de marcadores, preservando as demais configurações e os dados.
+
 ## 0.2.15 - 2026-10-12
 
 - Versão completa com as melhorias da v0.2.14: estações observadas, filtros, rumo/distância, diagnóstico de seis fontes, resumo local configurável e janela sempre no topo.

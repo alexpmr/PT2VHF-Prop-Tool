@@ -4,14 +4,13 @@ import {APP_VERSION} from '../src/version.mjs';
 import {normalizeReleaseNotes} from '../src/release-notes.mjs';
 import {aggregateHeatSamples,heatColor,kernelRadius,propagationQuality,heatLegendStops} from '../src/heatmap.mjs';
 import {assistantReply} from '../src/assistant.mjs';
-import {activityStations,sourceHealth,assistantBrief} from '../src/activity.mjs';
+import {sourceHealth,assistantBrief} from '../src/activity.mjs';
 import {rankCountries} from '../src/geography.mjs';
 const $=id=>document.getElementById(id),NS='http://www.w3.org/2000/svg';
 const colors=['#bab1dc','#ad9ce5','#738fea','#76a8fa','#6bbee9','#57d3b4','#b0de74','#e4da68','#efbd7a','#ef837a','#dca0f0','#86dbf1','#ecade0','#90cda0'];
 const SOURCE_CONTROLS=[['psk','PSK'],['wspr','WSPR'],['rbn','RBN'],['noaa','NOAA'],['voacap','VOACAP'],['muf','MUF']];
 const color=band=>colors[BANDS.findIndex(b=>b.name===band)]||'#6fe2bf';
 let current,alertBand,scale=1,tx=0,ty=0,pointer,page='map',language='pt-BR',toastTimer,toastKey,configErrorKey,logsPaused=false,newsShownFor=null,heatFrame=0,updateFlowActive=false,countryFeatures=[];
-let selectedActivity=null;
 const heatScratch=document.createElement('canvas');
 let lastActivity={rx:0,tx:0},ledTimers={rx:null,tx:null};
 const listeners=[],conversation=[{key:'welcome'}];
@@ -84,7 +83,7 @@ function updateHomeOverlay(){
   const p=screenPosition({lat:current.settings.lat,lon:current.settings.lon});if(!p||p.x<-30||p.y<-30||p.x>p.width+30||p.y>p.height+30){home.style.display='none';return;}
   home.style.display='flex';home.style.left=p.x+'px';home.style.top=p.y+'px';home.querySelector('span').textContent=current.settings.callsign||'';
 }
-function renderMapOverlays(){renderDensityHeatmap();updateHomeOverlay();renderActivity();}
+function renderMapOverlays(){renderDensityHeatmap();updateHomeOverlay();}
 function scheduleMapOverlays(){cancelAnimationFrame(heatFrame);heatFrame=requestAnimationFrame(renderMapOverlays);}
 function mapTransform(){$('world').setAttribute('transform',`translate(${tx} ${ty}) scale(${scale})`);scheduleMapOverlays();}
 function zoom(f){const next=Math.max(1,Math.min(6,scale*f));tx=540-(540-tx)*next/scale;ty=270-(270-ty)*next/scale;scale=next;mapTransform();}
@@ -205,19 +204,11 @@ function render(snap){
   $('mufDistance').textContent=iono?Math.round(iono.distanceKm)+' km':'—';
   $('mufStation').textContent=!mufActive?t('sourceDisabled'):(iono?iono.name+' ('+iono.code+') · '+date(iono.timestamp)+' · '+t('mufReferenceWarning'):(mufStatus.detail||t('mufUnavailable')));
   const kp=snap.kp,sw=snap.spaceWeather||{};$('kp').textContent=kp?kp.value.toLocaleString(language,{minimumFractionDigits:1,maximumFractionDigits:1}):'—';$('kpState').textContent=!noaaActive?t('sourceDisabled'):(kp?t(Date.now()-kp.timestamp>4*3600000?'oldMeasure':kp.value>=5?'elevated':'measurement'):sourceLabel(snap.sourceStatus.noaa));$('kpTime').textContent=kp?`${date(kp.timestamp)} · ${t('kpNote')}`:t('kpWaiting');$('sfi').textContent=sw.f107?.value??'—';$('bz').textContent=sw.bz?`${sw.bz.value} nT`:'—';$('wind').textContent=sw.wind?`${Math.round(sw.wind.value)} km/s`:'—';$('xray').textContent=sw.xray?.class??'—';
-  renderActivityControls();renderSourceHealth();renderUpdate(snap.update);renderLogs();
-  if(snap.startupNews&&newsShownFor!==snap.startupNews.version){newsShownFor=snap.startupNews.version;$('newsVersion').textContent='v'+snap.startupNews.version;const notes=normalizeReleaseNotes(snap.startupNews.notes);$('newsNotes').textContent=notes||t('news0214');if(!$('newsDialog').open)$('newsDialog').showModal();}
+  $('pinWindow').setAttribute('aria-pressed',String(snap.settings.alwaysOnTop));renderSourceHealth();renderUpdate(snap.update);renderLogs();
+  if(snap.startupNews&&newsShownFor!==snap.startupNews.version){newsShownFor=snap.startupNews.version;$('newsVersion').textContent='v'+snap.startupNews.version;const notes=normalizeReleaseNotes(snap.startupNews.notes);$('newsNotes').textContent=notes||t('news0216');if(!$('newsDialog').open)$('newsDialog').showModal();}
   if(snap.alert){alertBand=snap.alert.band;$('alertText').textContent=t('alertText',{band:alertBand,n:snap.alert.score});if(!$('alertDialog').open)$('alertDialog').showModal();}
 }
 
-function renderActivityControls(){
-  $('showActivity').checked=current.settings.showActivity;
-  $('pinWindow').setAttribute('aria-pressed',String(current.settings.alwaysOnTop));
-  const mode=$('activityMode').value,modes=[...new Set(current.spots.filter(s=>current.settings.visible.includes(s.band)).map(s=>s.mode).filter(Boolean))].sort();
-  $('activityMode').replaceChildren();const all=document.createElement('option');all.value='';all.textContent=t('allModes');$('activityMode').append(all);
-  for(const value of modes){const o=document.createElement('option');o.value=o.textContent=value;$('activityMode').append(o);}
-  $('activityMode').value=modes.includes(mode)?mode:'';
-}
 function renderSourceHealth(){
   const host=$('sourceHealth');host.replaceChildren();
   for(const item of sourceHealth(current)){
@@ -229,27 +220,6 @@ function renderSourceHealth(){
     card.append(name,state,when,detail);if(item.incomplete){const warn=document.createElement('small');warn.textContent=t('incompleteCoverage');card.append(warn);}host.append(card);
   }
 }
-function renderActivity(){
-  if(!current)return;
-  const stations=activityStations(current,{band:$('band').value,mode:$('activityMode').value,direction:$('activityDirection').value,search:$('activitySearch').value});
-  const host=$('activityMarkers');host.replaceChildren();
-  const visible=stations.slice(0,120);$('activityCount').textContent=t('activityCount',{n:stations.length,shown:Math.min(120,stations.length)});
-  if(current.settings.showActivity)for(const station of visible){
-    const p=screenPosition(station.position);if(!p||p.x<0||p.y<0||p.x>p.width||p.y>p.height)continue;
-    const button=document.createElement('button');button.type='button';button.className='activityMarker';button.textContent='●';button.style.left=p.x+'px';button.style.top=p.y+'px';button.style.color=color(station.band);
-    button.title=station.call+' · '+station.band+' · '+age(station.latest);button.setAttribute('aria-label',button.title);
-    button.onclick=()=>{selectedActivity=station.key;renderActivity();};host.append(button);
-  }
-  const detail=$('stationDetail'),station=stations.find(s=>s.key===selectedActivity);detail.replaceChildren();detail.classList.toggle('hidden',!station||!current.settings.showActivity);
-  if(!station)return;
-  const close=document.createElement('button');close.type='button';close.textContent='×';close.className='closeStation';close.setAttribute('aria-label',t('close'));close.onclick=()=>{selectedActivity=null;renderActivity();};
-  const title=document.createElement('strong');title.textContent=station.call+' · '+station.band;
-  const lines=[t('receptionOnly'),station.sources.join(' / '),station.modes.join(' / ')+' · '+(station.frequency/1e6).toFixed(4)+' MHz',station.tx+' → '+station.rx,date(station.latest)+' · '+age(station.latest),t('reportCount',{n:station.reports}),station.directions.map(d=>t(d==='out'?'flowOut':'flowIn')).join(' / '),t('aiming',{degrees:Number.isFinite(station.bearing)?Math.round(station.bearing):'—',km:Number.isFinite(station.distance)?Math.round(station.distance):'—'}),t('locatorPrecision')];
-  detail.append(close,title);for(const line of lines){const p=document.createElement('p');p.textContent=line;detail.append(p);}
-  if(Number.isFinite(station.snr)){const p=document.createElement('p');p.textContent='SNR '+station.snr+' dB';detail.append(p);}
-  const focus=document.createElement('button');focus.type='button';focus.textContent=t('centerStation');focus.onclick=()=>{scale=Math.max(scale,2);const [x,y]=project([station.position.lon,station.position.lat]);tx=540-x*scale;ty=270-y*scale;mapTransform();};detail.append(focus);
-}
-
 function formatBytes(value){const n=Number(value);if(!Number.isFinite(n)||n<0)return '';if(n<1024)return n+' B';if(n<1048576)return (n/1024).toFixed(1)+' KB';return (n/1048576).toFixed(n>=104857600?0:1)+' MB';}
 function renderUpdate(u){
   const key={current:'currentVersion',available:'newVersion',checking:'checking',downloading:'downloading',downloaded:'downloaded',installing:'installingUpdate',error:'updateError',development:'development'}[u.state]||'checkUpdate';
@@ -274,9 +244,7 @@ function setPage(next){if(!['map','logs','settings','help','about'].includes(nex
 for(const button of document.querySelectorAll('[data-page]'))button.onclick=()=>setPage(button.dataset.page);$('emptyConfigure').onclick=()=>setPage('settings');
 async function changePreference(key,value){try{render(await api.configure({...current.settings,[key]:value}));}catch{toast('appError');}}
 $('themeButton').onclick=()=>changePreference('theme',current.settings.theme==='dark'?'light':'dark');
-$('showActivity').onchange=()=>changePreference('showActivity',$('showActivity').checked);
 $('pinWindow').disabled=!window.propTool;$('pinWindow').onclick=()=>changePreference('alwaysOnTop',!current.settings.alwaysOnTop);
-for(const id of ['activityMode','activityDirection'])$(id).onchange=()=>{selectedActivity=null;renderActivity();};$('activitySearch').oninput=()=>{selectedActivity=null;renderActivity();};
 $('briefButton').onclick=()=>{conversation.push(assistantBrief(current,$('band').value));renderConversation();$('conversation').scrollTop=$('conversation').scrollHeight;};
 $('mapBase').onchange=()=>changePreference('mapBase',$('mapBase').value);
 for(const id of ['lat','lon'])$(id).oninput=()=>{const lat=Number($('lat').value),lon=Number($('lon').value);if($('lat').value&&$('lon').value&&coordinates(lat,lon))$('grid').value=toGrid(lat,lon);};
