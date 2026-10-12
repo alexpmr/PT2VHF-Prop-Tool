@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.20 - 2026-10-12
+
+- Versão completa com destaque dourado da melhor banda, três pulsos para novas líderes, empates explícitos e seleção do mapa independente.
+- Mantida a correção de campos NOAA ausentes, sem índices artificiais na inicialização.
+- Corrigida a captura do manual após rolagem: aguardar a pintura da janela antes de capturar o recorte, mostrando o destaque no exemplo ilustrado.
+- Mantém remoção de círculos extras e popups automáticos de propagação.
+
 ## 0.2.19 - 2026-10-12
 
 - Versão completa com destaque dourado da melhor banda, três pulsos suaves para novas líderes, empates explícitos e seleção do mapa independente.
