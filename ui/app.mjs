@@ -11,6 +11,16 @@ const colors=['#bab1dc','#ad9ce5','#738fea','#76a8fa','#6bbee9','#57d3b4','#b0de
 const SOURCE_CONTROLS=[['psk','PSK'],['wspr','WSPR'],['rbn','RBN'],['noaa','NOAA'],['voacap','VOACAP'],['muf','MUF']];
 const color=band=>colors[BANDS.findIndex(b=>b.name===band)]||'#6fe2bf';
 let current,scale=1,tx=0,ty=0,pointer,page='map',language='pt-BR',toastTimer,toastKey,configErrorKey,logsPaused=false,newsShownFor=null,heatFrame=0,updateFlowActive=false,countryFeatures=[];
+// Ao detectar versão nova, pergunta se deseja atualizar; "Depois" adia a mesma versão por 24 h.
+const UPDATE_PROMPT_SNOOZE_MS=24*60*60*1000;let updatePromptedFor=null;
+function maybePromptUpdate(u){
+  if(u?.state!=='available'||!u.version||updateFlowActive||updatePromptedFor===u.version)return;
+  try{const at=Number(localStorage.getItem('updatePromptSnooze.'+u.version)||0);if(at&&Date.now()-at<UPDATE_PROMPT_SNOOZE_MS)return;}catch{}
+  if(document.querySelector('dialog[open]')){setTimeout(()=>maybePromptUpdate(current?.update),5000);return;}
+  updatePromptedFor=u.version;$('updatePromptMessage').textContent=t('updatePromptQuestion',{version:u.version});$('updatePromptDialog').showModal();
+}
+$('updatePromptNow').onclick=()=>{$('updatePromptDialog').close();$('version').onclick();};
+$('updatePromptLater').onclick=()=>{try{localStorage.setItem('updatePromptSnooze.'+updatePromptedFor,String(Date.now()));}catch{}$('updatePromptDialog').close();};
 let previousLeaders=new Set();
 const heatScratch=document.createElement('canvas');
 let lastActivity={rx:0,tx:0},ledTimers={rx:null,tx:null};
@@ -235,6 +245,7 @@ function renderUpdate(u){
   const parts=[];if(Number.isFinite(u.transferred)&&u.transferred>=0)parts.push(formatBytes(u.transferred)+(Number.isFinite(u.total)&&u.total>0?' / '+formatBytes(u.total):''));if(Number.isFinite(u.bytesPerSecond)&&u.bytesPerSecond>0)parts.push(formatBytes(u.bytesPerSecond)+'/s');
   $('updateStats').textContent=parts.join(' · ');$('updateStats').classList.toggle('hidden',!progressVisible||!parts.length);
   $('updateDialog').dataset.busy=String(busy);
+  maybePromptUpdate(u);
   if(updateFlowActive&&!$('updateDialog').open)$('updateDialog').showModal();
 }
 function toast(key,vars={}){toastKey={key,vars};clearTimeout(toastTimer);$('toast').textContent=t(key,vars);$('toast').style.display='block';toastTimer=setTimeout(()=>{$('toast').style.display='none';toastKey=null;},6000);}
