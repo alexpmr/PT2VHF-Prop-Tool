@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.21 - 2026-10-21
+
+- Atualizações: ao detectar versão nova, além do botão no menu superior, abre um aviso perguntando se deseja atualizar agora ("Atualizar agora" segue o fluxo do botão de versão, com verificação SHA-256). "Depois" adia a mesma versão por 24 horas; o aviso não abre sobre outro diálogo. Textos em todos os idiomas do aplicativo.
+
 ## 0.2.20 - 2026-10-12
 
 - Versão completa com destaque dourado da melhor banda, três pulsos para novas líderes, empates explícitos e seleção do mapa independente.
