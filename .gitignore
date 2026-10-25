@@ -4,3 +4,4 @@ artifacts/
 *.log
 data/
 .env
+.badges/

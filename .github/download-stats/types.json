@@ -1,0 +1,21 @@
+{
+ "types": [
+  [
+   "setup",
+   "-setup\\.exe$"
+  ],
+  [
+   "portable",
+   "-portable\\.exe$"
+  ],
+  [
+   "manual",
+   "-Manual\\.pdf$"
+  ]
+ ],
+ "groups": {},
+ "total": [
+  "setup",
+  "portable"
+ ]
+}

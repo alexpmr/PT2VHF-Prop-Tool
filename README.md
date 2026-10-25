@@ -6,6 +6,13 @@
 
 [SHA-256](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.2.21/SHA256SUMS.txt) · [Release v0.2.21](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/tag/v0.2.21) · [Última release](https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/latest)
 
+| Downloads (todas as versões) | |
+|---|---:|
+| Instalador Windows x64 | ![downloads](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Falexpmr%2FPT2VHF-Prop-Tool%2Fbadges%2Fdownloads%2Fsetup.json) |
+| Portable Windows x64 | ![downloads](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Falexpmr%2FPT2VHF-Prop-Tool%2Fbadges%2Fdownloads%2Fportable.json) |
+| Manual PDF | ![downloads](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Falexpmr%2FPT2VHF-Prop-Tool%2Fbadges%2Fdownloads%2Fmanual.json) |
+| **Total (instalador + portable)** | ![downloads](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Falexpmr%2FPT2VHF-Prop-Tool%2Fbadges%2Fdownloads%2Ftotal.json) |
+
 ## Sobre o PT2VHF Prop Tool
 
 Aplicativo experimental para Windows 10/11 x64 que estima **onde há possibilidade de contato a partir da região da estação**, combinando observações reais de propagação, clima espacial e visualização geográfica.
