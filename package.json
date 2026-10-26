@@ -1,11 +1,11 @@
 {
   "name": "pt2vhf-prop-tool",
-  "version": "0.2.21",
+  "version": "0.2.22",
   "private": true,
   "description": "Análise de evidências de propagação personalizada à estação",
   "author": "Alex Rodrigues, PT2VHF",
   "main": "desktop/main.cjs",
-  "repository": "https://github.com/alexpmr/PT2VHF-Prop-Tool",
+  "repository": "https://gitlab.com/pt2vhf-group/pt2vhf-prop-tool",
   "scripts": {
     "start": "electron .",
     "test": "node --test tests/*.test.mjs",
@@ -54,9 +54,8 @@
     },
     "publish": [
       {
-        "provider": "github",
-        "owner": "alexpmr",
-        "repo": "PT2VHF-Prop-Tool"
+        "provider": "generic",
+        "url": "https://www.pt2vhf.com/downloads/prop-tool/"
       }
     ]
   }

@@ -32,9 +32,9 @@ export function pskURL(settings,scope='nearby',lookbackSeconds=observationWindow
   }
   return 'https://retrieve.pskreporter.info/query?'+q.toString();
 }
-const AUTHORIZED_HOSTS=new Set(['retrieve.pskreporter.info','services.swpc.noaa.gov','api.github.com','vailrerbn.com','db1.wspr.live','prop.kc2g.com']);
+const AUTHORIZED_HOSTS=new Set(['retrieve.pskreporter.info','services.swpc.noaa.gov','www.pt2vhf.com','vailrerbn.com','db1.wspr.live','prop.kc2g.com']);
 const MAX_RESPONSE_BYTES=6e6,MAX_REDIRECTS=3,LOG_PREVIEW_BYTES=8192;
-function sourceName(host){return host==='retrieve.pskreporter.info'?'PSK Reporter':host==='services.swpc.noaa.gov'?'NOAA SWPC':host==='api.github.com'?'GitHub':host==='vailrerbn.com'?'Reverse Beacon Network':host==='db1.wspr.live'?'WSPR.live':host==='prop.kc2g.com'?'KC2G / GIRO':'HTTP';}
+function sourceName(host){return host==='retrieve.pskreporter.info'?'PSK Reporter':host==='services.swpc.noaa.gov'?'NOAA SWPC':host==='www.pt2vhf.com'?'PT2VHF Updates':host==='vailrerbn.com'?'Reverse Beacon Network':host==='db1.wspr.live'?'WSPR.live':host==='prop.kc2g.com'?'KC2G / GIRO':'HTTP';}
 function validateEndpoint(value){const u=value instanceof URL?value:new URL(value);if(u.protocol!=='https:'||u.username||u.password||!AUTHORIZED_HOSTS.has(u.hostname))throw new Error('Fonte não autorizada');return u;}
 export async function boundedFetch(url,format='text',fetchImpl=fetch,activity=()=>{}) {
   let current=validateEndpoint(url),response,redirects=0;const started=Date.now(),method='GET';

@@ -42,15 +42,21 @@ test('Release notes sanitize HTML, Markdown and plain text without exposing raw 
  assert.equal(normalizeReleaseNotes('Texto simples'),'Texto simples');assert.doesNotMatch(normalizeReleaseNotes('&lt;h2&gt;Título&lt;/h2&gt;&lt;li&gt;Item&lt;/li&gt;'),/[<>]/);
 });
 
-const release={tag_name:'v0.3.0',draft:false,prerelease:false,assets:[{name:'PT2VHF-Prop-Tool-0.3.0-x64-portable.exe',state:'uploaded',size:60000000,digest:'sha256:'+'a'.repeat(64),browser_download_url:'https://github.com/alexpmr/PT2VHF-Prop-Tool/releases/download/v0.3.0/PT2VHF-Prop-Tool-0.3.0-x64-portable.exe'}]};
-test('Release checking rejects malformed versions, drafts, missing hashes and substituted asset URLs',()=>{
+const release={schema:1,source:'https://www.pt2vhf.com',product:'prop',status:'available',version:'0.3.0',notes:'Changes',files:[
+ {category:'windows-portable',kind:'portable',platform:'windows-x64',name:'PT2VHF-Prop-Tool-0.3.0-x64-portable.exe',url:'https://www.pt2vhf.com/downloads/prop-tool/PT2VHF-Prop-Tool-0.3.0-x64-portable.exe',size:60000000,sha256:'a'.repeat(64)},
+ {category:'windows-installer',kind:'installer',platform:'windows-x64',name:'PT2VHF-Prop-Tool-0.3.0-x64-setup.exe',url:'https://www.pt2vhf.com/downloads/prop-tool/PT2VHF-Prop-Tool-0.3.0-x64-setup.exe',size:65000000,sha256:'b'.repeat(64)}
+]};
+test('Site updates reject wrong product/platform/host, corrupted hashes and accept both package types',()=>{
  assert.equal(compareVersions('0.10.0','0.9.9'),1);assert.equal(compareVersions('0.2.0','0.2.0'),0);assert.equal(compareVersions('0.1.0','0.2.0'),-1);assert.throws(()=>compareVersions('oops','0.2.0'));
- assert.equal(releaseAsset(release).sha256,'a'.repeat(64));assert.throws(()=>releaseAsset({...release,draft:true}));assert.throws(()=>releaseAsset({...release,assets:[{...release.assets[0],digest:''}]}));assert.throws(()=>releaseAsset({...release,assets:[{...release.assets[0],browser_download_url:'https://github.com/other/repo/evil.exe'}]}));
- for(const u of ['http://github.com/x','https://github.com.evil.example/x','https://user:pass@github.com/x'])assert.equal(trustedDownloadURL(u),false);
+ assert.equal(releaseAsset(release).sha256,'a'.repeat(64));assert.equal(releaseAsset(release,'installer').sha256,'b'.repeat(64));
+ for(const input of [{...release,source:'https://gitlab.com'},{...release,status:'unpublished'},{...release,product:'other'},{...release,files:[{...release.files[0],sha256:''}]}])assert.throws(()=>releaseAsset(input));
+ assert.throws(()=>releaseAsset({...release,files:[{...release.files[0],url:'https://evil.example/bad.exe'}]}));
+ assert.throws(()=>releaseAsset({...release,files:[{...release.files[0],platform:'windows-arm64'}]}));
+ for(const v of ['http://www.pt2vhf.com/downloads/prop-tool/x','https://www.pt2vhf.com.evil.example/downloads/prop-tool/a.exe','https://user:pass@www.pt2vhf.com/downloads/prop-tool/a.exe','https://www.pt2vhf.com/downloads/aprs-client/file.exe','https://www.pt2vhf.com/downloads/prop-tool/evil.exe?trick=1'])assert.equal(trustedDownloadURL(v),false);
 });
 test('Portable download verifies SHA-256 and PE header; malicious redirects and corrupt files leave no partials',async()=>{
  const folder=await mkdtemp(join(tmpdir(),'prop-update-test-'));try{
- const bytes=Buffer.from('MZverified executable fixture'),asset={name:'PT2VHF-Prop-Tool-0.3.0-x64-portable.exe',url:release.assets[0].browser_download_url,size:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')};
+ const bytes=Buffer.from('MZverified executable fixture'),asset={name:'PT2VHF-Prop-Tool-0.3.0-x64-portable.exe',url:release.files[0].url,size:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')};
  const progress=[];const out=await updater.downloadAsset(asset,folder,p=>progress.push(p),async()=>new Response(bytes));assert.deepEqual(await readFile(out),bytes);assert.ok(progress.length);assert.equal(Math.round(progress.at(-1).percent),100);assert.equal(progress.at(-1).transferred,bytes.length);assert.equal(progress.at(-1).total,bytes.length);
  await assert.rejects(updater.downloadAsset({...asset,sha256:'b'.repeat(64)},folder,null,async()=>new Response(bytes)));
  await assert.rejects(updater.downloadAsset(asset,folder,null,async()=>new Response(null,{status:302,headers:{location:'https://evil.example/exe'}})));

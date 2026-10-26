@@ -5,7 +5,7 @@ Unicode true
 Name "PT2VHF Prop Tool"
 OutFile "${OUTPUT}"
 RequestExecutionLevel user
-SetCompressor zlib
+SetCompressor /SOLID lzma
 VIProductVersion "${VERSION}.0"
 VIAddVersionKey /LANG=1046 "ProductName" "PT2VHF Prop Tool"
 VIAddVersionKey /LANG=1046 "FileDescription" "PT2VHF Prop Tool"

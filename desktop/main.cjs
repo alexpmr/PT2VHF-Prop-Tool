@@ -5,11 +5,18 @@ const {spawn}=require('node:child_process');
 const {pathToFileURL,fileURLToPath}=require('node:url');
 const {downloadAsset,launchHandoff}=require('./portable-update.cjs');
 let win,state,file,dataDir,domain,sources,voacap,muf,alerts,i18n,versions,refreshing=false,checkingUpdate=false,downloadingUpdate=false;
-let scope='nearby',lastUpdateCheck=0,persistQueue=Promise.resolve(),update={state:'idle',notes:'',version:null},updater,asset,pendingFile;
+let scope='nearby',lastUpdateCheck=0,persistQueue=Promise.resolve(),update={state:'idle',notes:'',version:null},asset,pendingFile;
 let trafficLogs=[],trafficSeq=0,activity={rx:0,tx:0};const TRAFFIC_LIMIT=300;
 const portable=Boolean(process.env.PORTABLE_EXECUTABLE_DIR),smoke=process.argv.includes('--smoke-test'),captureDocs=process.argv.includes('--capture-docs');
+if(smoke||captureDocs){
+  app.disableHardwareAcceleration();
+  app.commandLine.appendSwitch('disable-gpu');
+  app.commandLine.appendSwitch('disable-gpu-compositing');
+  app.commandLine.appendSwitch('disable-features','Vulkan,CanvasOopRasterization');
+}
+
 if(smoke&&process.env.PROP_SMOKE_LOG){const {appendFileSync}=require('node:fs');const log=value=>{try{appendFileSync(process.env.PROP_SMOKE_LOG,value+'\n');}catch{}};log(JSON.stringify({argv:process.argv,portable,dir:process.env.PORTABLE_EXECUTABLE_DIR}));for(const name of ['log','error']){const original=console[name];console[name]=(...values)=>{log(values.map(v=>v?.stack||String(v)).join(' '));original(...values);};}}
-const repo='https://github.com/alexpmr/PT2VHF-Prop-Tool',mainURL=pathToFileURL(path.join(__dirname,'../ui/index.html')).href;
+const repo='https://www.pt2vhf.com/prop',mainURL=pathToFileURL(path.join(__dirname,'../ui/index.html')).href;
 const canonicalUI=realpathSync(fileURLToPath(mainURL));
 function isMainURL(value){try{const url=new URL(value);if(url.protocol!=='file:'||url.search||url.hash)return false;const actual=realpathSync(fileURLToPath(url));return process.platform==='win32'?actual.toLowerCase()===canonicalUI.toLowerCase():actual===canonicalUI;}catch{return false;}}
 const t=(key,vars)=>i18n.translate(state?.settings.language||'pt-BR',key,vars);
@@ -148,41 +155,56 @@ async function refresh(){
     emit();return snapshot();
   }finally{refreshing=false;}
 }
-function setupUpdater(){
-  if(portable||!app.isPackaged)return;
-  const {autoUpdater}=require('electron-updater');updater=autoUpdater;updater.autoDownload=false;updater.autoInstallOnAppQuit=false;updater.allowPrerelease=false;updater.allowDowngrade=false;updater.installDirectory=path.dirname(app.getPath('exe'));
-  updater.on('update-available',info=>{if(versions.compareVersions(info.version,app.getVersion())<=0)return;const notes=typeof info.releaseNotes==='string'?info.releaseNotes:Array.isArray(info.releaseNotes)?info.releaseNotes.map(v=>typeof v==='string'?v:v?.note||'').filter(Boolean).join('\n'):'';update={state:'available',version:info.version,notes};emit();});
-  updater.on('update-not-available',()=>{update={state:'current',version:app.getVersion(),notes:''};emit();});
-  updater.on('download-progress',p=>{update={...update,state:'downloading',percent:p.percent,transferred:p.transferred,total:p.total,bytesPerSecond:p.bytesPerSecond};emit();});
-  updater.on('update-downloaded',event=>{pendingFile=event?.downloadedFile||null;update={...update,state:'downloaded',percent:100};emit();});
-  updater.on('error',e=>{update={...update,state:'error',detail:e.message};emit();});
-}
+// Both Windows editions use the official site metadata and verified installers.
 async function checkUpdate(force=false){
   if(checkingUpdate||downloadingUpdate||update.state==='downloaded')return update;
   if(!force&&Date.now()-lastUpdateCheck<30000)return update;
   checkingUpdate=true;lastUpdateCheck=Date.now();update={...update,state:'checking'};emit();
   try{
     if(!app.isPackaged)update={state:'development',notes:''};
-    else if(updater)await updater.checkForUpdates();
-    else{const release=await sources.boundedFetch('https://api.github.com/repos/alexpmr/PT2VHF-Prop-Tool/releases/latest','json',undefined,recordTraffic);const incoming=String(release.tag_name||'').replace(/^v/,'');if(release.draft||release.prerelease)throw Error('Invalid release');const newer=versions.compareVersions(incoming,app.getVersion())>0;asset=newer?versions.releaseAsset(release):null;update={state:newer?'available':'current',version:incoming,notes:String(release.body||'')};}
-  }catch(e){update={...update,state:'error',detail:e.message};}finally{checkingUpdate=false;emit();}return update;
+    else{
+      const kind=portable?'portable':'installer';
+      const release=await sources.boundedFetch(versions.UPDATE_FEED+'&kind='+kind,'json',undefined,recordTraffic);
+      if(release?.schema!==1||release?.source!=='https://www.pt2vhf.com'||release?.product!=='prop')throw Error('Invalid PT2VHF update response');
+      if(release.status==='unpublished')throw Error('No verified Prop Tool package is published on the site');
+      if(release.status!=='available')throw Error('Unrecognized release state');
+      const incoming=String(release.version||'');
+      const newer=versions.compareVersions(incoming,app.getVersion())>0;
+      asset=newer?versions.releaseAsset(release,kind):null;
+      update={state:newer?'available':'current',version:incoming,notes:String(release.notes||'').slice(0,15000)};
+    }
+  }catch(e){asset=null;update={...update,state:'error',detail:e.message};}
+  finally{checkingUpdate=false;emit();}
+  return update;
 }
 async function downloadUpdate(){
-  if(downloadingUpdate||update.state!=='available')return;downloadingUpdate=true;update={...update,state:'downloading',percent:0,transferred:0,total:portable&&asset?asset.size:null,bytesPerSecond:null};emit();
-  try{if(portable){let lastAt=Date.now(),lastBytes=0;pendingFile=await downloadAsset(asset,path.join(path.dirname(file),'updates'),progress=>{const now=Date.now(),elapsed=Math.max(1,now-lastAt),speed=(progress.transferred-lastBytes)*1000/elapsed;lastAt=now;lastBytes=progress.transferred;update={...update,...progress,bytesPerSecond:speed};emit();});update={...update,state:'downloaded',percent:100,transferred:asset.size,total:asset.size,bytesPerSecond:0};emit();}else if(updater)await updater.downloadUpdate();else throw Error('No updater');}catch(e){update={...update,state:'error',detail:e.message};emit();throw e;}finally{downloadingUpdate=false;}
+  if(downloadingUpdate||update.state!=='available'||!asset)return;
+  downloadingUpdate=true;update={...update,state:'downloading',percent:0,transferred:0,total:asset.size,bytesPerSecond:null};emit();
+  try{
+    let lastAt=Date.now(),lastBytes=0;
+    pendingFile=await downloadAsset(asset,path.join(path.dirname(file),'updates'),progress=>{
+      const now=Date.now(),elapsed=Math.max(1,now-lastAt),speed=(progress.transferred-lastBytes)*1000/elapsed;
+      lastAt=now;lastBytes=progress.transferred;update={...update,...progress,bytesPerSecond:speed};emit();
+    });
+    update={...update,state:'downloaded',percent:100,transferred:asset.size,total:asset.size,bytesPerSecond:0};emit();
+  }catch(e){update={...update,state:'error',detail:e.message};emit();throw e;}
+  finally{downloadingUpdate=false;}
 }
 async function installUpdate(){
-  if(update.state!=='downloaded')return;
-  if(portable&&!pendingFile)return;
+  if(update.state!=='downloaded'||!pendingFile||!asset)return;
   try{
     update={...update,state:'installing',percent:100};emit();
     state.pendingNews={version:update.version,notes:String(update.notes||'')};await persist();
-    await new Promise(resolve=>setTimeout(resolve,180));
-    if(!portable&&updater){updater.quitAndInstall(true,true);return;}
-    const hash=crypto.createHash('sha256');for await(const chunk of createReadStream(pendingFile))hash.update(chunk);const sha256=hash.digest('hex');
-    const options={Mode:'portable',Candidate:pendingFile,Sha256:sha256,ExpectedVersion:update.version,StateFile:file};
-    if(!process.env.PORTABLE_EXECUTABLE_FILE||!asset||sha256!==asset.sha256)throw Error('Portable launcher metadata missing');
-    options.Original=process.env.PORTABLE_EXECUTABLE_FILE;options.Target=path.join(process.env.PORTABLE_EXECUTABLE_DIR,asset.name);options.LauncherPid=Number(process.env.PORTABLE_LAUNCHER_PID)||0;
+    const hash=crypto.createHash('sha256');
+    for await(const chunk of createReadStream(pendingFile))hash.update(chunk);
+    const sha256=hash.digest('hex');
+    if(sha256!==asset.sha256)throw Error('Update checksum mismatch');
+    const options={Mode:portable?'portable':'installed',Candidate:pendingFile,Sha256:sha256,ExpectedVersion:update.version,StateFile:file};
+    if(portable){
+      if(!process.env.PORTABLE_EXECUTABLE_FILE||!process.env.PORTABLE_EXECUTABLE_DIR)throw Error('Portable launcher metadata missing');
+      options.Original=process.env.PORTABLE_EXECUTABLE_FILE;options.Target=path.join(process.env.PORTABLE_EXECUTABLE_DIR,asset.name);
+      options.LauncherPid=Number(process.env.PORTABLE_LAUNCHER_PID)||0;
+    }else options.InstallDir=path.dirname(app.getPath('exe'));
     await launchHandoff(options,path.join(path.dirname(file),'updates'));app.quit();
   }catch(e){update={...update,state:'error',detail:e.message};emit();throw e;}
 }
@@ -253,8 +275,8 @@ async function start(){
   const handle=(name,fn)=>ipcMain.handle(name,(event,...args)=>{if(event.sender!==win.webContents||event.senderFrame!==win.webContents.mainFrame||!isMainURL(event.senderFrame.url))throw Error('Invalid origin');return fn(...args);});
   handle('snapshot',snapshot);handle('configure',async input=>{const settings=domain.validateSettings(input),old=state.settings;state.settings=settings;try{await persist();}catch(e){state.settings=old;throw e;}win.setAlwaysOnTop(settings.alwaysOnTop);if(['callsign','lat','lon','alertMinScore','alertMinDistance','alertCooldown','alertBands'].some(k=>JSON.stringify(old[k])!==JSON.stringify(settings[k])))alerts=new domain.AlertMachine();emit();return snapshot();});
   handle('refresh',refresh);handle('clear-logs',clearLogs);handle('export-logs',exportLogs);handle('factory-reset',factoryReset);handle('ack-news',acknowledgeNews);handle('check-update',()=>checkUpdate(true));handle('run-update-flow',runUpdateFlow);handle('download-update',downloadUpdate);handle('install-update',installUpdate);
-  const openLink=target=>{const links={project:repo,issues:repo+'/issues',profile:'https://github.com/alexpmr',releases:repo+'/releases',manual:`${repo}/releases/download/v${app.getVersion()}/PT2VHF-Prop-Tool-${app.getVersion()}-Manual.pdf`};if(!Object.hasOwn(links,target))throw Error('Invalid link');return shell.openExternal(links[target]);};handle('open-link',openLink);handle('open-releases',()=>openLink('releases'));
-  setupUpdater();await win.loadFile(path.join(__dirname,'../ui/index.html'));if(smoke)console.log('Smoke startup: renderer loaded');await rendererReady();const factoryResetError=process.argv.find(v=>v.startsWith('--factory-reset-error='));if(factoryResetError&&!smoke)await dialog.showMessageBox(win,{type:'error',title:'PT2VHF Prop Tool',message:t('factoryResetError'),detail:factoryResetError.slice(factoryResetError.indexOf('=')+1)});
+  const openLink=target=>{const links={project:repo,issues:'https://gitlab.com/pt2vhf-group/pt2vhf-prop-tool/-/issues',profile:'https://www.pt2vhf.com',releases:repo,manual:repo};if(!Object.hasOwn(links,target))throw Error('Invalid link');return shell.openExternal(links[target]);};handle('open-link',openLink);handle('open-releases',()=>openLink('releases'));
+  await win.loadFile(path.join(__dirname,'../ui/index.html'));if(smoke)console.log('Smoke startup: renderer loaded');await rendererReady();const factoryResetError=process.argv.find(v=>v.startsWith('--factory-reset-error='));if(factoryResetError&&!smoke)await dialog.showMessageBox(win,{type:'error',title:'PT2VHF Prop Tool',message:t('factoryResetError'),detail:factoryResetError.slice(factoryResetError.indexOf('=')+1)});
   if(captureDocs){
     win.show();win.focus();await new Promise(r=>setTimeout(r,450));
     const out=path.join(__dirname,'../docs/screenshots');await fs.mkdir(out,{recursive:true});

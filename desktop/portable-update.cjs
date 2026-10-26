@@ -2,16 +2,11 @@ const fs=require('node:fs/promises'),path=require('node:path'),crypto=require('n
 const {spawn}=require('node:child_process');
 async function downloadAsset(asset,folder,onProgress,fetchImpl=fetch){
   const {trustedDownloadURL}=await import('../src/updates.mjs');
-  if(!/^[a-f0-9]{64}$/.test(asset.sha256)||!/^PT2VHF-Prop-Tool-\d+\.\d+\.\d+-x64-portable\.exe$/.test(asset.name))throw Error('Invalid update asset');
+  if(!/^[a-f0-9]{64}$/.test(asset.sha256)||!/^PT2VHF-Prop-Tool-\d+\.\d+\.\d+-x64-(?:portable|setup)\.exe$/.test(asset.name)||!trustedDownloadURL(asset.url))throw Error('Invalid update asset');
   await fs.mkdir(folder,{recursive:true});const candidate=path.join(folder,asset.name),partial=candidate+'.partial';let file;
   try{
-    let url=asset.url,response;
-    for(let i=0;i<5;i++){
-      if(!trustedDownloadURL(url))throw Error('Untrusted update host');
-      response=await fetchImpl(url,{redirect:'manual',signal:AbortSignal.timeout(360000),headers:{'User-Agent':'PT2VHF-Prop-Tool'}});
-      if([301,302,303,307,308].includes(response.status)){const next=response.headers.get('location');await response.body?.cancel();if(!next)throw Error('Missing redirect');url=new URL(next,url).href;response=null;continue;}break;
-    }
-    if(!response?.ok||!response.body)throw Error('Update download failed');
+    const response=await fetchImpl(asset.url,{redirect:'manual',signal:AbortSignal.timeout(360000),headers:{'User-Agent':'PT2VHF-Prop-Tool'}});
+    if(response.status!==200||!response.body)throw Error('Update download failed or redirected');
     const hash=crypto.createHash('sha256');file=await fs.open(partial,'w',0o600);const reader=response.body.getReader();let received=0,header=Buffer.alloc(0);
     try{while(true){const {done,value}=await reader.read();if(done)break;received+=value.length;if(received>asset.size||received>700e6)throw Error('Update size exceeded');if(header.length<2)header=Buffer.concat([header,Buffer.from(value)]).subarray(0,2);hash.update(value);await file.write(value);onProgress?.({percent:received/asset.size*100,transferred:received,total:asset.size});}}finally{await reader.cancel();}
     await file.close();file=null;

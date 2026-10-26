@@ -11,7 +11,7 @@ const nsis=await getBinFromUrl('nsis','3.0.4.1','VKMiizYdmNdJOWpRGz4trl4lD++BvYP
 const compiler=join(nsis,process.platform==='win32'?'Bin/makensis.exe':process.platform==='darwin'?'mac/makensis':'linux/makensis');
 const appDir=resolve('dist/win-unpacked'),script=resolve('scripts/windows.nsi');
 if(!existsSync(join(appDir,'PT2VHF Prop Tool.exe')))throw new Error('Packaged Windows application missing');
-writeFileSync(join(appDir,'resources/app-update.yml'),'provider: github\nowner: alexpmr\nrepo: PT2VHF-Prop-Tool\nupdaterCacheDir: pt2vhf-prop-tool-updater\n');
+writeFileSync(join(appDir,'resources/app-update.yml'),'provider: generic\nurl: https://www.pt2vhf.com/downloads/prop-tool/\nupdaterCacheDir: pt2vhf-prop-tool-updater\n');
 // Enumerate exact installed files. Uninstall removes no unrelated files and retains AppData settings.
 const files=[],dirs=[];
 function visit(dir){for(const item of readdirSync(dir)){const p=join(dir,item);if(statSync(p).isDirectory()){visit(p);dirs.push(p);}else files.push(p);}}visit(appDir);
