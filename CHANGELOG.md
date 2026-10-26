@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.22 - 2026-10-26
+
+- Atualizador OTA consulta exclusivamente o catálogo oficial em https://www.pt2vhf.com/update.php?product=prop&platform=windows-x64; não depende do GitHub ou GitLab para verificar novas versões.
+- Validação estrita da versão, categoria (instalador/portátil), arquitetura, URL oficial, tamanho e SHA-256 antes de instalar a atualização.
+- Testes de regressão do feed, instalação e atualização portátil, reversão em falhas e rejeição de links/redirecionamentos não confiáveis.
+- Empacotamento Windows x64 com instalador e edição portátil; melhorias na compactação LZMA e testes completos de instalação/desinstalação.
+
 ## 0.2.21 - 2026-10-21
 
 - Atualizações: ao detectar versão nova, além do botão no menu superior, abre um aviso perguntando se deseja atualizar agora ("Atualizar agora" segue o fluxo do botão de versão, com verificação SHA-256). "Depois" adia a mesma versão por 24 horas; o aviso não abre sobre outro diálogo. Textos em todos os idiomas do aplicativo.
