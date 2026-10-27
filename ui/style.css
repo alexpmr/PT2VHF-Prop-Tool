@@ -119,3 +119,6 @@ select option,select optgroup{background:#0b1523;color:#d6e1ef}
 .bandButtons button.leaderPulse{animation:band-leader-pulse 900ms ease-in-out 3}
 @keyframes band-leader-pulse{0%,100%{outline-offset:1px;filter:brightness(1)}50%{outline-offset:3px;filter:brightness(1.2)}}
 @media(prefers-reduced-motion:reduce){.bandButtons button.leaderPulse{animation:none}.bandQuality i{transition:none}}
+
+/* Aviso "Downloads no site oficial" (mesmo visual do PT2VHF Mesh Analyzer) */
+#officialSiteDialog{width:540px;background:#2a2c33;border-color:#708a99;border-radius:13px}#officialSiteDialog h2{font-size:20px;margin:0 0 12px}#officialSiteDialog p{line-height:1.65;margin:0 0 15px}#officialSiteDialog a{color:#72d2ff;font-weight:bold;text-decoration:underline}#officialSiteOk{border:2px solid #f5c400}

@@ -21,6 +21,15 @@ function maybePromptUpdate(u){
 }
 $('updatePromptNow').onclick=()=>{$('updatePromptDialog').close();$('version').onclick();};
 $('updatePromptLater').onclick=()=>{try{localStorage.setItem('updatePromptSnooze.'+updatePromptedFor,String(Date.now()));}catch{}$('updatePromptDialog').close();};
+// Aviso "Downloads no site oficial": uma vez por abertura, sem sobrepor outro diálogo.
+let officialSiteShown=false;
+function showOfficialSiteNotice(){
+  if(officialSiteShown)return;
+  if(document.querySelector('dialog[open]')){setTimeout(showOfficialSiteNotice,2000);return;}
+  officialSiteShown=true;$('officialSiteDialog').showModal();$('officialSiteOk').focus();
+}
+$('officialSiteOk').onclick=()=>$('officialSiteDialog').close();
+setTimeout(showOfficialSiteNotice,1500);
 let previousLeaders=new Set();
 const heatScratch=document.createElement('canvas');
 let lastActivity={rx:0,tx:0},ledTimers={rx:null,tx:null};
