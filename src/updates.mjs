@@ -23,5 +23,17 @@ export function releaseAsset(release,kind='portable'){
   if(matches.length!==1)throw new Error('Missing exact site release asset');
   const file=matches[0];
   if(!trustedDownloadURL(file.url)||!Number.isSafeInteger(file.size)||file.size<50e6||file.size>700e6||!/^[a-f0-9]{64}$/.test(file.sha256||''))throw new Error('Invalid release size or digest');
-  return {version,name,url,size:file.size,sha256:file.sha256};
+  const counterKey=[file.counterKey,file.category].find(k=>typeof k==='string'&&/^[A-Za-z0-9_-]{1,40}$/.test(k))||null;
+  return {version,name,url,size:file.size,sha256:file.sha256,counterKey};
+}
+export const COUNTER_API='https://www.pt2vhf.com/download.php';
+// Atualização baixada pelo app soma no mesmo contador dos downloads pelo site; nunca bloqueia a instalação.
+export async function countDownload(asset,fetchImpl=globalThis.fetch){
+  if(!asset?.counterKey||typeof fetchImpl!=='function')return false;
+  try{
+    const res=await fetchImpl(COUNTER_API,{method:'POST',redirect:'error',signal:AbortSignal.timeout(4000),
+      headers:{'Content-Type':'application/x-www-form-urlencoded','User-Agent':'PT2VHF-Prop-Tool-updater'},
+      body:new URLSearchParams({action:'count',product:'prop',category:asset.counterKey}).toString()});
+    return res.ok;
+  }catch{return false;}
 }

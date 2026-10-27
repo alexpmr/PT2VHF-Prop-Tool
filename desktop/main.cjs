@@ -187,6 +187,7 @@ async function downloadUpdate(){
       lastAt=now;lastBytes=progress.transferred;update={...update,...progress,bytesPerSecond:speed};emit();
     });
     update={...update,state:'downloaded',percent:100,transferred:asset.size,total:asset.size,bytesPerSecond:0};emit();
+    versions.countDownload(asset).catch(()=>{});
   }catch(e){update={...update,state:'error',detail:e.message};emit();throw e;}
   finally{downloadingUpdate=false;}
 }
