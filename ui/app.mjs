@@ -12,15 +12,24 @@ const SOURCE_CONTROLS=[['psk','PSK'],['wspr','WSPR'],['rbn','RBN'],['noaa','NOAA
 const color=band=>colors[BANDS.findIndex(b=>b.name===band)]||'#6fe2bf';
 let current,scale=1,tx=0,ty=0,pointer,page='map',language='pt-BR',toastTimer,toastKey,configErrorKey,logsPaused=false,newsShownFor=null,heatFrame=0,updateFlowActive=false,countryFeatures=[];
 // Ao detectar versão nova, pergunta se deseja atualizar; "Depois" adia a mesma versão por 24 h.
-const UPDATE_PROMPT_SNOOZE_MS=24*60*60*1000;let updatePromptedFor=null;
+const UPDATE_PROMPT_SNOOZE_MS=24*60*60*1000;let updatePromptedFor=null,siteNoticeDone=false;
 function maybePromptUpdate(u){
   if(u?.state!=='available'||!u.version||updateFlowActive||updatePromptedFor===u.version)return;
   try{const at=Number(localStorage.getItem('updatePromptSnooze.'+u.version)||0);if(at&&Date.now()-at<UPDATE_PROMPT_SNOOZE_MS)return;}catch{}
-  if(document.querySelector('dialog[open]')){setTimeout(()=>maybePromptUpdate(current?.update),5000);return;}
+  if(!siteNoticeDone||document.querySelector('dialog[open]')){setTimeout(()=>maybePromptUpdate(current?.update),5000);return;}
   updatePromptedFor=u.version;$('updatePromptMessage').textContent=t('updatePromptQuestion',{version:u.version});$('updatePromptDialog').showModal();
 }
 $('updatePromptNow').onclick=()=>{$('updatePromptDialog').close();$('version').onclick();};
 $('updatePromptLater').onclick=()=>{try{localStorage.setItem('updatePromptSnooze.'+updatePromptedFor,String(Date.now()));}catch{}$('updatePromptDialog').close();};
+// Aviso do site oficial: aparece a cada abertura (sem "não mostrar novamente").
+// Novidades e aviso de versão nova esperam o aviso ser fechado.
+function showSiteNotice(snap){
+  if(!snap?.siteNotice){siteNoticeDone=true;return;}
+  $('siteNoticeMessage').textContent=t('siteNoticeMessage');$('siteNoticeDialog').showModal();
+}
+$('siteNoticeOpen').onclick=()=>api.openLink('site').catch(()=>toast('appError'));
+$('siteNoticeDialog').addEventListener('close',()=>{siteNoticeDone=true;if(current)render(current);});
+$('siteNoticeOk').onclick=()=>$('siteNoticeDialog').close();
 let previousLeaders=new Set();
 const heatScratch=document.createElement('canvas');
 let lastActivity={rx:0,tx:0},ledTimers={rx:null,tx:null};
@@ -219,7 +228,7 @@ function render(snap){
   $('mufStation').textContent=!mufActive?t('sourceDisabled'):(iono?iono.name+' ('+iono.code+') · '+date(iono.timestamp)+' · '+t('mufReferenceWarning'):(mufStatus.detail||t('mufUnavailable')));
   const kp=snap.kp,sw=snap.spaceWeather||{};$('kp').textContent=kp?kp.value.toLocaleString(language,{minimumFractionDigits:1,maximumFractionDigits:1}):'—';$('kpState').textContent=!noaaActive?t('sourceDisabled'):(kp?t(Date.now()-kp.timestamp>4*3600000?'oldMeasure':kp.value>=5?'elevated':'measurement'):sourceLabel(snap.sourceStatus.noaa));$('kpTime').textContent=kp?`${date(kp.timestamp)} · ${t('kpNote')}`:t('kpWaiting');$('sfi').textContent=sw.f107?.value??'—';$('bz').textContent=sw.bz?`${sw.bz.value} nT`:'—';$('wind').textContent=sw.wind?`${Math.round(sw.wind.value)} km/s`:'—';$('xray').textContent=sw.xray?.class??'—';
   $('pinWindow').setAttribute('aria-pressed',String(snap.settings.alwaysOnTop));renderSourceHealth();renderUpdate(snap.update);renderLogs();
-  if(snap.startupNews&&newsShownFor!==snap.startupNews.version){newsShownFor=snap.startupNews.version;$('newsVersion').textContent='v'+snap.startupNews.version;const notes=normalizeReleaseNotes(snap.startupNews.notes);$('newsNotes').textContent=notes||t('news0218');if(!$('newsDialog').open)$('newsDialog').showModal();}
+  if(siteNoticeDone&&snap.startupNews&&newsShownFor!==snap.startupNews.version){newsShownFor=snap.startupNews.version;$('newsVersion').textContent='v'+snap.startupNews.version;const notes=normalizeReleaseNotes(snap.startupNews.notes);$('newsNotes').textContent=notes||t('news0218');if(!$('newsDialog').open)$('newsDialog').showModal();}
 }
 
 function renderSourceHealth(){
@@ -296,4 +305,4 @@ for(const id of ['logDirection','logSource'])$(id).onchange=renderLogs;$('logSea
 function answer(question){if(/^(resumo|brief|resumen|bilan|lage|riepilogo)/i.test(question.trim()))return assistantBrief(current,$('band').value);return assistantReply(question,current,$('band').value,{countries:countryFeatures,language});}
 function renderConversation(){$('conversation').replaceChildren();for(const item of conversation){const p=document.createElement('p');p.className=item.user?'userMessage':'assistantMessage';const vars={...item.vars,age:age(item.vars?.latest),basis:item.vars?.basisKey?t(item.vars.basisKey):'',psk:item.vars?.psk?t('sourceState_'+item.vars.psk):item.vars?.psk,rbn:item.vars?.rbn?t('sourceState_'+item.vars.rbn):item.vars?.rbn,wspr:item.vars?.wspr?t('sourceState_'+item.vars.wspr):item.vars?.wspr,noaa:item.vars?.noaa?t('sourceState_'+item.vars.noaa):item.vars?.noaa};p.textContent=item.user||t(item.key,vars);$('conversation').append(p);}}
 $('chat').onsubmit=e=>{e.preventDefault();const q=$('question').value.trim();if(!q)return;conversation.push({user:q},answer(q));while(conversation.length>41)conversation.splice(1,2);renderConversation();$('conversation').scrollTop=$('conversation').scrollHeight;$('question').value='';};
-api.subscribe(render);render(await api.snapshot());document.documentElement.dataset.ready='true';
+api.subscribe(render);const firstSnapshot=await api.snapshot();render(firstSnapshot);showSiteNotice(firstSnapshot);document.documentElement.dataset.ready='true';

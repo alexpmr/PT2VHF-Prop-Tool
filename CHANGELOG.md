@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.23 - 2026-10-28
+
+- Aviso do site oficial a cada abertura do programa: downloads, novas versões e atualizações são distribuídos somente por www.pt2vhf.com. Sem opção de "não mostrar novamente"; botões "Abrir o site" e "Continuar". Textos em todos os idiomas do aplicativo.
+- O aviso não interfere no anúncio de versão nova nem nas novidades da versão: ambos aparecem logo depois que o aviso é fechado.
+
 ## 0.2.22 - 2026-10-26
 
 - Atualizador OTA consulta exclusivamente o catálogo oficial em https://www.pt2vhf.com/update.php?product=prop&platform=windows-x64; não depende do GitHub ou GitLab para verificar novas versões.

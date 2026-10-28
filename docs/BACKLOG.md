@@ -1,5 +1,9 @@
 # Backlog consolidado — PT2VHF Prop Tool
 
+## Entregue na v0.2.23
+
+- Aviso do site oficial www.pt2vhf.com sempre ao abrir (sem "não mostrar novamente"), sem interferir no anúncio de versão nova.
+
 ## Entregue na v0.2.20
 
 - Release completa do destaque da melhor banda, correção de métricas NOAA ausentes e ajuste de pintura/captura da figura nova no manual.
