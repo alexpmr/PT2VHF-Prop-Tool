@@ -1,5 +1,11 @@
 # Backlog consolidado — PT2VHF Prop Tool
 
+## Pendente
+
+- Backlog (29/10/2026, sugestão aprovada): o link "Relatar problema" (`openLink('issues')` em
+  `desktop/main.cjs` e `ui/app.mjs`) e o campo `repository` do `package.json` ainda apontam para um
+  endereço aposentado; trocar pelo site oficial (www.pt2vhf.com/prop) ou pelo repositório do GitHub.
+
 ## Entregue na v0.2.23
 
 - Aviso do site oficial www.pt2vhf.com sempre ao abrir (sem "não mostrar novamente"), sem interferir no anúncio de versão nova.
